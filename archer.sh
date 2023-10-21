@@ -506,22 +506,14 @@ w # Write changes
 q # Quit
 EOF
 
-		if [[ $disk == *"nvme"* ]]; then
-			disk=$disk"p"
-		elif [[ $disk == *"mmc"* ]]; then
-			disk=$disk"p"
-		fi
+		[[ $disk == *"nvme"* || $disk == *"mmc"* ]] && disk=$disk"p"
 		efi_partition=$disk"1"
 		root_partition=$disk"2"
 	
 
 	elif [[ $new_efi == "No" ]]; then
  	
-		if [[ $disk == *"nvme"* ]]; then
-			disk=$disk"p"
-		elif [[ $disk == *"mmc"* ]]; then
-			disk=$disk"p"
-		fi
+		[[ $disk == *"nvme"* || $disk == *"mmc"* ]] && disk=$disk"p"
 		root_partition=$disk"1"
 	fi
 
