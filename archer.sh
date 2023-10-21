@@ -337,7 +337,7 @@ efi_drive() {
 		while true; do
 			read -r -p "Partition: " efi_partition
 
-			read -r -p "Is the disk $disk correct? (Y/n) " yn
+			read -r -p "Is the partition $disk correct? (Y/n) " yn
 			case $yn in
 			[yY]) break ;;
 			[nN]) ;;
@@ -506,21 +506,27 @@ w # Write changes
 q # Quit
 EOF
 
-		[[ $disk == *"nvme"* || $disk == *"mmc"* ]] && disk=$disk"p"
-		efi_partition=$disk"1"
-		root_partition=$disk"2"
-	
+		if [[ $disk == *"nvme"* || $disk == *"mmc"* ]]; then
+			efi_partition=$disk"p1"
+			root_partition=$disk"p2"
+		else
+			efi_partition=$disk"1"
+			root_partition=$disk"2"
+		fi
 
 	elif [[ $new_efi == "No" ]]; then
  	
-		[[ $disk == *"nvme"* || $disk == *"mmc"* ]] && disk=$disk"p"
-		root_partition=$disk"1"
+		if [[ $disk == *"nvme"* || $disk == *"mmc"* ]]; then
+			root_partition=$disk"p2"
+		else
+			root_partition=$disk"2"
+		fi
 	fi
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating root partition"
 
-	sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' <<EOF | fdisk "$disk"
+	sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' <<EOF | fdisk "$install_disk"
 n # New partition
   # Default
   # Default
