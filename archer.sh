@@ -269,9 +269,7 @@ set_disk() {
 		read -r -p "Is the disk $disk correct? (Y/n) " yn
 
 		case $yn in
-		[yY1]) 
-			[[ $disk == *"nvme"* ]] && disk="${disk}p"
-			break ;;
+		[yY1]) break ;;
 		[nN2])
 			set_disk
 			break ;;
@@ -508,9 +506,11 @@ w # Write changes
 q # Quit
 EOF
 
-		efi_partition=$disk"1"
+		[[ $disk == *"nvme"* ]] && disk="${disk}p"
+  		efi_partition=$disk"1"
 		root_partition=$disk"2"
 	elif [[ $new_efi == "No" ]]; then
+ 		[[ $disk == *"nvme"* ]] && disk="${disk}p"
 		root_partition=$disk"1"
 	fi
 
