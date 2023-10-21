@@ -269,13 +269,17 @@ set_disk() {
 		read -r -p "Is the disk $disk correct? (Y/n) " yn
 
 		case $yn in
-		[yY1]) break ;;
+		[yY1]) 
+			[[ $disk == *"nvme"* ]] && disk="${disk}p"
+			break ;;
 		[nN2])
 			set_disk
 			break ;;
 		esac
 	done
+}
 
+set_swap() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enter size for swap file (GiB)"
 
@@ -484,6 +488,11 @@ w # Write changes
 q # Quit
 EOF
 
+	if [ $? -ne 0 ]; then
+    set_disk
+	prepare_drive
+	fi
+
 	if [[ $new_efi == "Yes" ]]; then
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Creating EFI Partition"
@@ -634,6 +643,7 @@ exit_install() {
 show_logo
 set_variables
 set_disk
+set_swap
 efi_drive
 kernel
 cpu_gpu_drivers
