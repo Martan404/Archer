@@ -526,7 +526,7 @@ EOF
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating root partition"
 
-	sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' <<EOF | fdisk "$install_disk"
+	sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' <<EOF | fdisk "$disk"
 n # New partition
   # Default
   # Default
