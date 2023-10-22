@@ -668,9 +668,24 @@ END
 
 system_config() {
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Adding custom PATH to /etc/profile.d/user-path.sh"
+	echo -e "Adding custom PATH to /etc/profile.d/custom-path.sh"
 
-	echo "export PATH=\$PATH:\$HOME/.local/bin" >> /etc/profile.d/user-path.sh
+	echo "export PATH=\$PATH:\$HOME/.local/bin" >> /etc/profile.d/custom-path.sh
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Adding sudo password exception to udisk2/mount"
+
+	cat <<-END > /etc/polkit-1/rules.d/10-udisks2.rules
+// Allow udisks2 to mount devices without authentication
+// for users in the "wheel" group.
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.udisks2.filesystem-mount-system" ||
+         action.id == "org.freedesktop.udisks2.filesystem-mount") &&
+        subject.isInGroup("wheel")) {
+        return polkit.Result.YES;
+    }
+});
+END
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling en_SE locale"	
@@ -702,6 +717,20 @@ Current=breeze
 END
 
 	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating Windows boot script"
+	cat <<-END >> /usr/local/bin/windows-boot
+#! /bin/bash
+# Set Windows Boot Manager as NextBoot and reboots
+efibootmgr -n \$(efibootmgr | awk '/Windows Boot Manager/ {gsub(/^Boot/, "", \$1); gsub(/\*/, "", \$1); print \$1}') && reboot
+END
+	chmod +x /usr/local/bin/windows-boot
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Adding sudo password exception to Windows boot script"
+
+	echo "%wheel ALL=(ALL) NOPASSWD: /usr/local/bin/windows-boot" >> /etc/sudoers
+
+	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up XDG user directories"
 
 	xdg-user-dirs-update
@@ -715,20 +744,6 @@ GAMES=Games
 PROJECTS=Projects
 SYNC=Sync
 END
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating Windows boot script"
-	cat <<-END >> /usr/local/bin/windows-boot
-#! /bin/bash
-# Set Windows Boot Manager as NextBoot and reboots
-efibootmgr -n \$(efibootmgr | awk '/Windows Boot Manager/ {gsub(/^Boot/, "", \$1); gsub(/\*/, "", \$1); print \$1}') && reboot
-END
-	chmod +x /usr/local/bin/windows-boot
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Adding sudo password exception to Windows boot script"
-
-	echo "%wheel ALL=(ALL) NOPASSWD: /usr/local/bin/windows-boot" >> /etc/sudoers
 }
 
 user_config() {
@@ -922,6 +937,9 @@ echo -e "Checking ~/.config/ size"
 du -sh \$HOME/.config/
 }; export -f arch-maintain
 
+ntfs-fix-partition() {
+sudo ntfsfix -d \$1
+}; export -f ntfs-fix-partition
 END
 chown "$user":"$user" /home/"$user"/.bash_aliases
 }

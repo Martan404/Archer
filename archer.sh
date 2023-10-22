@@ -277,43 +277,17 @@ set_disk() {
 	done
 }
 
-set_swap() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enter size for swap file (GiB)"
-
-	while [ -z "$swapsize" ]; do
-		read -r -p "Size: " swapsize
-	done
-	echo -e "Setting swap size to $swapsize GiB"
-}
-
-efi_drive() {
-	echo -e "-------------------------------------------------------------------------"
-	while true; do
-		read -r -p "Create a new EFI partition? (Y/n) " new_efi
-
-		case $new_efi in
-		[yY1])
-			new_efi="Yes"
-			break ;;
-		[nN2])
-			new_efi="No"
-			break ;;
-		esac
-	done
-
-	if [[ $new_efi == "Yes" ]]; then
+set_efi() {
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Set size for EFI partition"
-
 		echo -e "1. 256MB"
 		echo -e "2. 512MB"
 		echo -e "3. 1GB"
 
 		while true; do
-			read -r -p "Size: " size
+			read -r -p "Size: " efi_size
 
-			case $size in
+			case $efi_size in
 			1)
 				efi_size="257MiB";
 				break
@@ -328,25 +302,9 @@ efi_drive() {
 				;;
 			esac
 		done
-
-	elif [[ $new_efi == "No" ]]; then
-		echo -e "-------------------------------------------------------------------------"
-		lsblk
-		echo -e "Enter the EFI partition (/dev/...)"
-
-		while true; do
-			read -r -p "Partition: " efi_partition
-
-			read -r -p "Is the partition $disk correct? (Y/n) " yn
-			case $yn in
-			[yY]) break ;;
-			[nN]) ;;
-			esac
-		done
-	fi
 }
 
-kernel() {
+set_kernel() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Which kernel do you want to use?"
 
@@ -375,7 +333,18 @@ kernel() {
 	done
 }
 
-cpu_gpu_drivers() {
+set_swap() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enter size for swap file (GiB)"
+
+	while [ -z "$swapsize" ]; do
+		read -r -p "Size: " swapsize
+	done
+
+	echo -e "Setting swap size to $swapsize GiB"
+}
+
+set_drivers() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Checking CPU manufacturer"
 
@@ -418,16 +387,11 @@ cpu_gpu_drivers() {
 	elif [[ $lspci_output == *"NVIDIA"* ]] || [[ $lspci_output == *"GeForce"* ]]; then
 		if [[ $lspci_output == *"RTX"* ]]; then
 			echo -e "Found Nvidia RTX GPU"
-			nvidia_version="nvidia-open"
+			nvidia_version="nvidia-open-dkms"
 
 		else
 			echo -e "Found Nvidia GPU"
-			nvidia_version="nvidia"
-			[[ $kernel = "linux-lts" ]] && nvidia_version="nvidia-lts"
-		fi
-
-		if [[ $kernel != "linux" ]] && [[ $kernel != "linux-lts" ]]; then
-			nvidia_version="$nvidia_version-dkms"
+			nvidia_version="nvidia-dkms"
 		fi
 
 		echo -e "Installing $nvidia_version package"
@@ -446,27 +410,7 @@ cpu_gpu_drivers() {
 	fi
 }
 
-configure_environment() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling Network Time Sync"
-
-	timedatectl set-ntp true
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting Pacman configurations"
-
-	sed -i "s/^#Color/Color/" /etc/pacman.conf
-
-	sed -i "s/^#ParallelDownloads/ParallelDownloads/" /etc/pacman.conf
-	sed -i '/^ParallelDownloads = .*/a ILoveCandy' /etc/pacman.conf
-	
-	sed -i 's/^#\[multilib\]/\[multilib\]/' /etc/pacman.conf
-	sed -i '/^\[multilib\]$/,/^#Include/ s/^#//' /etc/pacman.conf
-
-	pacman -Sy
-}
-
-prepare_drive() {
+format_drive() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Wiping drive and setting up GPT partition table"
 
@@ -474,32 +418,14 @@ prepare_drive() {
 
 	if [ $? -ne 0 ]; then
     set_disk
-	prepare_drive
+	format_drive
 	fi
 
-	if [[ $new_efi == "Yes" ]]; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Creating EFI Partition"
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating EFI Partition"
 
 	parted -s $disk mkpart fat32 1MiB $efi_size
 	parted -s $disk set 1 esp on
-
-		if [[ $disk == *"nvme"* || $disk == *"mmc"* ]]; then
-			efi_partition=$disk"p1"
-			root_partition=$disk"p2"
-		else
-			efi_partition=$disk"1"
-			root_partition=$disk"2"
-		fi
-
-	elif [[ $new_efi == "No" ]]; then
- 	
-		if [[ $disk == *"nvme"* || $disk == *"mmc"* ]]; then
-			root_partition=$disk"p2"
-		else
-			root_partition=$disk"2"
-		fi
-	fi
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating root partition"
@@ -507,15 +433,22 @@ prepare_drive() {
 	parted -s $disk mkpart btrfs $efi_size 100%
 
 	fdisk "$disk" <<<"p"
+
+	if [[ $disk == *"nvme"* || $disk == *"mmc"* ]]; then
+		efi_partition="${disk}p1"
+		root_partition="${disk}p2"
+	else
+		efi_partition="${disk}1"
+		root_partition="${disk}2"
+	fi
 }
 
-format_mount() {
-	if [[ $new_efi == "Yes" ]]; then
-  echo -e "-------------------------------------------------------------------------"
-  echo -e "Formatting EFI partition"
+setup_drive() {
+  	echo -e "-------------------------------------------------------------------------"
+  	echo -e "Formatting EFI partition"
 
 	mkfs.fat -F32 "$efi_partition"
-  fi
+
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Formatting root partition"
@@ -574,6 +507,26 @@ format_mount() {
 	swapon /mnt/swap/swapfile
 }
 
+setup_environment() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling Network Time Sync"
+
+	timedatectl set-ntp true
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting Pacman configurations"
+
+	sed -i "s/^#Color/Color/" /etc/pacman.conf
+
+	sed -i "s/^#ParallelDownloads/ParallelDownloads/" /etc/pacman.conf
+	sed -i '/^ParallelDownloads = .*/a ILoveCandy' /etc/pacman.conf
+	
+	sed -i 's/^#\[multilib\]/\[multilib\]/' /etc/pacman.conf
+	sed -i '/^\[multilib\]$/,/^#Include/ s/^#//' /etc/pacman.conf
+
+	pacman -Sy
+}
+
 install_system() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing base and kernel packages"
@@ -621,15 +574,17 @@ exit_install() {
 }
 
 show_logo
+
 set_variables
 set_disk
+set_efi
+set_kernel
 set_swap
-efi_drive
-kernel
-cpu_gpu_drivers
-configure_environment
-prepare_drive
-format_mount
+set_drivers
+
+format_drive
+setup_drive
+setup_environment
 install_system
 create_package_lists
 arch_chroot
