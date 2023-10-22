@@ -256,7 +256,7 @@ set_disk() {
 		echo -e "Listing available disks to use for installation"
 
 		lsblk
-		fdisk -l | awk '$1=="Disk" && $2~"/dev/" {print $2" "$3" "$4}'
+		gdisk -l | awk '$1=="Disk" && $2~"/dev/" {print $2" "$3" "$4}'
 
 		echo -e "Which disk do you want to use for installation?"
 		read -r -p "Disk: " disk
@@ -470,20 +470,16 @@ prepare_drive() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Wiping drive and setting up GPT partition table"
 
-	sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' <<EOF | fdisk "$disk"
-d # Detele partition
-  # Default
-d # Detele partition
-  # Default
-d # Detele partition
-  # Default
-d # Detele partition
-  # Default
-d # Detele partition
-  # Default
-g # Create GPT partition table
-w # Write changes
-q # Quit
+# Sending commands in this order #
+# Create GPT partition table
+# Agree
+# Write changes
+# Agree
+	sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' <<EOF | gdisk "$disk"
+o
+y
+w
+y
 EOF
 
 	if [ $? -ne 0 ]; then
@@ -495,15 +491,22 @@ EOF
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Creating EFI Partition"
 
-		sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' <<EOF | fdisk "$disk"
-n # New partition
-  # Default
-  # Default
+# Sending commands in this order #
+# New partition
+# Default
+# Default
+# Set chosed size
+# Set EFI type
+# Write changes
+# Agree
+		sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' <<EOF | gdisk "$disk"
+n
+
+ 
 $efi_size
-t # Change partition type
-1 # Type EFI
-w # Write changes
-q # Quit
+ef00
+w
+y
 EOF
 
 		if [[ $disk == *"nvme"* || $disk == *"mmc"* ]]; then
@@ -526,16 +529,23 @@ EOF
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating root partition"
 
-	sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' <<EOF | fdisk "$disk"
-n # New partition
-  # Default
-  # Default
-  # Default
-w # Write changes
-q # Quit
+# Sending commands in this order #
+# New partition
+# Default
+# Default
+# Default
+# Write changes
+# Agree
+	sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' <<EOF | gdisk "$disk"
+n
+ 
+ 
+ 
+w
+y
 EOF
 
-	fdisk "$disk" <<<"p"
+	gdisk "$disk" <<<"p"
 }
 
 format_mount() {
