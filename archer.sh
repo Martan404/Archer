@@ -315,15 +315,15 @@ efi_drive() {
 
 			case $size in
 			1)
-				efi_size="+256M";
+				efi_size="256MiB";
 				break
 				;;
 			2)
-				efi_size="+512M"
+				efi_size="512MiB"
 				break
 				;;
 			3)
-				efi_size="+1G"
+				efi_size="1024MiB"
 				break
 				;;
 			esac
@@ -470,17 +470,7 @@ prepare_drive() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Wiping drive and setting up GPT partition table"
 
-# Sending commands in this order #
-# Create GPT partition table
-# Agree
-# Write changes
-# Agree
-	sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' <<EOF | gdisk "$disk"
-o
-y
-w
-y
-EOF
+	parted -s $disk mklabel gpt
 
 	if [ $? -ne 0 ]; then
     set_disk
@@ -491,23 +481,8 @@ EOF
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Creating EFI Partition"
 
-# Sending commands in this order #
-# New partition
-# Default
-# Default
-# Set chosed size
-# Set EFI type
-# Write changes
-# Agree
-		sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' <<EOF | gdisk "$disk"
-n
-
- 
-$efi_size
-ef00
-w
-y
-EOF
+	parted -s $disk mkpart fat32 1MiB $efi_size
+	parted -s $disk set 1 esp on
 
 		if [[ $disk == *"nvme"* || $disk == *"mmc"* ]]; then
 			efi_partition=$disk"p1"
@@ -529,23 +504,7 @@ EOF
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating root partition"
 
-# Sending commands in this order #
-# New partition
-# Default
-# Default
-# Default
-# Default
-# Write changes
-# Agree
-	sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' <<EOF | gdisk "$disk"
-n
- 
- 
-
-
-w
-y
-EOF
+	parted -s $disk mkpart btrfs $efi_size 100%
 
 	fdisk "$disk" <<<"p"
 }
