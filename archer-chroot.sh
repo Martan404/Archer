@@ -338,7 +338,7 @@ grub_setup() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing Grub packages"
 
-	package_installer "grub-btrfs efibootmgr inotify-tools"
+	package_installer "grub-btrfs efibootmgr inotify-tools os-prober"
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating efibootmgr wrapper script to prevent fail"
