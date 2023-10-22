@@ -347,7 +347,7 @@ grub_setup() {
 #!/bin/sh
 exec /usr/bin/efibootmgr -e 3 "\$@"
 END
-	chmod +x 
+	chmod +x /usr/local/bin/efibootmgr
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring Grub"
