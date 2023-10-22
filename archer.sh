@@ -315,15 +315,15 @@ efi_drive() {
 
 			case $size in
 			1)
-				efi_size="256MiB";
+				efi_size="257MiB";
 				break
 				;;
 			2)
-				efi_size="512MiB"
+				efi_size="513MiB"
 				break
 				;;
 			3)
-				efi_size="1024MiB"
+				efi_size="1025MiB"
 				break
 				;;
 			esac
