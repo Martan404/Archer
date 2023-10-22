@@ -256,7 +256,7 @@ set_disk() {
 		echo -e "Listing available disks to use for installation"
 
 		lsblk
-		gdisk -l | awk '$1=="Disk" && $2~"/dev/" {print $2" "$3" "$4}'
+		fdisk -l | awk '$1=="Disk" && $2~"/dev/" {print $2" "$3" "$4}'
 
 		echo -e "Which disk do you want to use for installation?"
 		read -r -p "Disk: " disk
@@ -533,19 +533,19 @@ EOF
 # New partition
 # Default
 # Default
-# Default
+# Linux filesystem
 # Write changes
 # Agree
 	sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' <<EOF | gdisk "$disk"
 n
  
  
- 
+8300
 w
 y
 EOF
 
-	gdisk "$disk" <<<"p"
+	fdisk "$disk" <<<"p"
 }
 
 format_mount() {
