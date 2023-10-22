@@ -721,7 +721,7 @@ END
 	cat <<-END >> /usr/local/bin/windows-boot
 #! /bin/bash
 # Set Windows Boot Manager as NextBoot and reboots
-efibootmgr -n \$(efibootmgr | awk '/Windows Boot Manager/ {gsub(/^Boot/, \"\", \$1); gsub(/\*/, \"\", \$1); print \$1}') && reboot
+efibootmgr -n \$(efibootmgr | awk '/Windows Boot Manager/ {gsub(/^Boot/, "", \$1); gsub(/\*/, "", \$1); print \$1}') && reboot
 END
 	chmod +x /usr/local/bin/windows-boot
 
