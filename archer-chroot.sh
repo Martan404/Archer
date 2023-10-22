@@ -343,7 +343,7 @@ grub_setup() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring Grub"
 
-	grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck
+	grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --removable
 	grub-mkconfig -o /boot/grub/grub.cfg
 
 	echo -e "-------------------------------------------------------------------------"
