@@ -533,14 +533,16 @@ EOF
 # New partition
 # Default
 # Default
-# Linux filesystem
+# Default
+# Default
 # Write changes
 # Agree
 	sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' <<EOF | gdisk "$disk"
 n
  
  
-8300
+
+
 w
 y
 EOF
