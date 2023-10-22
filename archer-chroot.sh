@@ -341,10 +341,20 @@ grub_setup() {
 	package_installer "grub-btrfs efibootmgr inotify-tools"
 
 	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating efibootmgr wrapper script to prevent fail"
+
+	cat <<-END > /usr/local/bin/efibootmgr
+#!/bin/sh
+exec /usr/bin/efibootmgr -e 3 "\$@"
+END
+	chmod +x 
+
+	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring Grub"
 
-	grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --removable
+	grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck
 	grub-mkconfig -o /boot/grub/grub.cfg
+
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling Grub OS prober"
