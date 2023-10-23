@@ -28,6 +28,7 @@ com.github.Matoking.protontricks
 com.github.zocker_160.SyncThingy
 com.spotify.Client
 com.usebottles.bottles
+com.valvesoftware.Steam.Utility.gamescope
 com.vysp3r.ProtonPlus
 net.lutris.Lutris
 org.gtk.Gtk3theme.Breeze

@@ -95,6 +95,15 @@ configure_system() {
 	echo "$hostname" >> /etc/hostname
 
 	echo -e "-------------------------------------------------------------------------"
+	echo -e "Configuring /etc/hosts"
+	{
+		echo "127.0.0.1		localhost		$hostname"
+		echo "::1			localhost ip6-localhost ip6-loopback"
+		echo "ff02::1       ip6-allnodes"
+		echo "ff02::2       ip6-allrouters"
+	} >> /etc/hosts
+
+	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling btrfs module in mkinitcpio.conf"
 
 	sed -i 's/^MODULES=()/MODULES=(btrfs)/' /etc/mkinitcpio.conf
