@@ -303,15 +303,14 @@ END
 }
 
 setup_laptop() {
-	if [ $laptop_status -eq 0 ]; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Installing laptop packages"
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing laptop packages"
 
-		package_installer "auto-cpufreq wireless-regdb"
+	package_installer "auto-cpufreq wireless-regdb"
 
-		systemctl mask power-profiles-daemon.service
-		systemctl enable auto-cpufreq.service
-	fi
+	systemctl mask power-profiles-daemon.service
+	systemctl enable auto-cpufreq.service
+
 }
 
 remove_orphans() {
@@ -844,7 +843,6 @@ END
 [ -f /etc/bash.bashrc ] && source /etc/bash.bashrc
 [ -f /etc/bash_aliases.bashrc ] && source /etc/bash_aliases.bashrc
 [ -f ~/.bash_aliases ] && source ~/.bash_aliases
-[ -f ~/.bash_distrobox ] && source ~/.bash_distrobox
 
 # Add ~/System/scripts to PATH
 [ -d "\$HOME/System/scripts" ] && export PATH=\$PATH:\$HOME/System/scripts
@@ -1135,7 +1133,7 @@ setup_paru_pipx
 install_packages
 config_packages
 setup_plasma
-setup_laptop
+[[ $laptop_status -eq 0 ]] && setup_laptop
 remove_orphans
 
 setup_grub
