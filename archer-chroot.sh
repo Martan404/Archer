@@ -11,6 +11,7 @@ gpu_manufacturer=${6}
 snapshot_subvol=${7}
 root_partition=${8}
 snap_manager=${9}
+laptop_status=${10}
 
 package_installer() {
 	input_packages=$1
@@ -59,7 +60,7 @@ setup_system() {
 	pacman -Syu --noconfirm
 }
 
-configure_system() {
+config_system() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting time zone"
 
@@ -244,7 +245,7 @@ END
 	fi
 }
 
-plasma_setup() {
+setup_plasma() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling automatic D-Bus activation for KWallet"
 
@@ -267,9 +268,9 @@ END
 	echo -e "Writing Plasma setup script"
 
 	sudo -u "$user" mkdir -p /home/"$user"/.config/plasma-workspace/env
-	sudo -u "$user" touch /home/"$user"/.config/plasma-workspace/env/plasma_setup.sh
+	sudo -u "$user" touch /home/"$user"/.config/plasma-workspace/env/setup_plasma.sh
 
-	cat <<-END >> /home/"$user"/.config/plasma-workspace/env/plasma_setup.sh
+	cat <<-END >> /home/"$user"/.config/plasma-workspace/env/setup_plasma.sh
 #!/usr/bin/env bash
 echo -ne "$archer_logo"
 echo -e "
@@ -296,23 +297,12 @@ State=AAAA/wAAAAD9AAAAAwAAAAAAAACmAAAB0/wCAAAAAvsAAAAWAGYAbwBsAGQAZQByAHMARABvAG
 EOF
 
 rm -f /home/$user/archer.knsv
-rm -f /home/$user/.config/plasma-workspace/env/plasma_setup.sh
+rm -f /home/$user/.config/plasma-workspace/env/setup_plasma.sh
 END
-	chmod a+x /home/"$user"/.config/plasma-workspace/env/plasma_setup.sh
+	chmod a+x /home/"$user"/.config/plasma-workspace/env/setup_plasma.sh
 }
 
-laptop_setup() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing laptop-detect package"
-
-	package_installer "laptop-detect"
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Checking if device is laptop"
-
-	laptop-detect
-	laptop_status=$?
-
+setup_laptop() {
 	if [ $laptop_status -eq 0 ]; then
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Installing laptop packages"
@@ -321,18 +311,7 @@ laptop_setup() {
 
 		systemctl mask power-profiles-daemon.service
 		systemctl enable auto-cpufreq.service
-
-	elif [ $laptop_status -eq 1 ]; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Device not recognized as laptop"
-
-	elif [ $laptop_status -eq 2 ]; then
-		laptop-detect -v
 	fi
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Uninstalling laptop-detect package"
-	pacman -Rs --noconfirm laptop-detect
 }
 
 remove_orphans() {
@@ -343,7 +322,7 @@ remove_orphans() {
 	pacman -Rns --noconfirm $(pacman -Qtdq)
 }
 
-grub_setup() {
+setup_grub() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing Grub packages"
 
@@ -415,7 +394,7 @@ END
 	systemctl enable grub-btrfsd
 }
 
-kernel_backup() {
+backup_kernel() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing rsync"
 
@@ -865,6 +844,7 @@ END
 [ -f /etc/bash.bashrc ] && source /etc/bash.bashrc
 [ -f /etc/bash_aliases.bashrc ] && source /etc/bash_aliases.bashrc
 [ -f ~/.bash_aliases ] && source ~/.bash_aliases
+[ -f ~/.bash_distrobox ] && source ~/.bash_distrobox
 
 # Add ~/System/scripts to PATH
 [ -d "\$HOME/System/scripts" ] && export PATH=\$PATH:\$HOME/System/scripts
@@ -953,7 +933,7 @@ END
 chown "$user":"$user" /home/"$user"/.bash_aliases
 }
 
-flatpak_setup() {
+setup_flatpak() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling Flatpak theming"
 
@@ -1059,78 +1039,6 @@ EOF
 	chmod a+x /home/"$user"/System/scripts/flatpak-setup
 }
 
-wine_setup() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Writing Wine setup script"
-
-	sudo -u "$user" touch /home/"$user"/System/scripts/wine-setup
-	cat <<EOF >> /home/"$user"/System/scripts/wine-setup
-#!/bin/bash
-show_logo() {
-	clear
-	echo -ne "$archer_logo"
-	echo -e "
-                            Wine setup script
--------------------------------------------------------------------------"
-}
-
-menu() {
-	echo -e "1. Setup Wine"
-	echo -e "2. Exit"
-	echo -e "0. Remove script"
-	while true; do
-		read -r -p "Select:  " selection
-
-		case \$selection in
-		[0])
-			remove_script
-			break ;;
-		[1])
-			install_wine
-			break ;;
-		[2])
-			exit
-		esac
-	done
-}
-
-install_wine() {
-	echo -e "Installing Wine packages"
-
-	sudo pacman -S wine wine-gecko wine-mono winetricks
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting Wine to Win10"
-
-	winetricks win10
-
-	echo -e "Installing Wine libraries and frameworks"
-
-	winetricks -q d3dx10 d3dx9 dotnet35 dotnet40 dotnet45 dotnet48 dxvk vcrun2008 vcrun2010 vcrun2012 vcrun2019 vcrun6sp6
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Checking installed Wine libraries and frameworks"
-
-	winetricks -q d3dx10 d3dx9 dotnet35 dotnet40 dotnet45 dotnet48 dxvk vcrun2008 vcrun2010 vcrun2012 vcrun2019 vcrun6sp6
-
-	echo -e "-------------------------------------------------------------------------"
-	read -r -p "Press any key to continiue..."
-
-	show_logo
-	menu
-}
-
-remove_script() {
-	rm -f /home/$user/.config/autostart/wine-setup.desktop
-	rm -f \${BASH_SOURCE[0]}
-}
-
-show_logo
-menu
-EOF
-	chmod a+x /home/"$user"/System/scripts/wine-setup
-}
-
 snapshot_rollback() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Writing Snapshot rollback script"
@@ -1221,17 +1129,17 @@ set_password() {
 }
 
 setup_system
-configure_system
+config_system
 
 setup_paru_pipx
 install_packages
 config_packages
-plasma_setup
-laptop_setup
+setup_plasma
+setup_laptop
 remove_orphans
 
-grub_setup
-kernel_backup
+setup_grub
+backup_kernel
 [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "snapper" ]] && snapper_setup
 [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "yabsnap" ]] && yabsnap_setup
 [[ $snapshot_layout == "snapper" ]] && snapper_setup
@@ -1242,8 +1150,7 @@ system_config
 user_config
 bash_config
 
-flatpak_setup
-wine_setup
+setup_flatpak
 snapshot_rollback
 
 set_password

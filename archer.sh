@@ -411,16 +411,34 @@ set_drivers() {
 	fi
 }
 
+check_laptop() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing laptop-detect package"
+
+	pacman -S --noconfirm laptop-detect
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Checking if device is laptop"
+
+	laptop-detect
+	laptop_status=$?
+
+	if [ $laptop_status -eq 0 ]; then
+		echo -e "Device recogniced as laptop"
+
+	elif [ $laptop_status -eq 1 ]; then
+		echo -e "Device not recognized as laptop"
+
+	elif [ $laptop_status -eq 2 ]; then
+		laptop-detect -v
+	fi
+}
+
 format_drive() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Wiping drive and setting up GPT partition table"
 
 	parted -s $disk mklabel gpt
-
-	if [ $? -ne 0 ]; then
-    set_disk
-	format_drive
-	fi
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating EFI Partition"
@@ -560,7 +578,7 @@ arch_chroot() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Entering arch-chroot"
 
-	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot.sh "$archer_logo" "$user" "$hostname" "$snapshot_layout" "$cpu_manufacturer" "$gpu_manufacturer" "$snapshot_subvol" "$root_partition" "$snap_manager"
+	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot.sh "$archer_logo" "$user" "$hostname" "$snapshot_layout" "$cpu_manufacturer" "$gpu_manufacturer" "$snapshot_subvol" "$root_partition" "$snap_manager" "$laptop_status"
 	rm -rf /mnt/Archer-main
 }
 
@@ -582,6 +600,7 @@ set_efi
 set_kernel
 set_swap
 set_drivers
+check_laptop
 
 format_drive
 setup_drive
