@@ -488,7 +488,7 @@ snapper_setup() {
 		snapper --no-dbus -c root create-config /
 
 		echo -e "-------------------------------------------------------------------------"
-		echo -e "Removing snapper .snapshots subvolume"
+		echo -e "Removing snapper /.snapshots subvolume"
 
 		btrfs subvolume delete /.snapshots
 
@@ -521,7 +521,7 @@ snapper_setup() {
 	sed -i 's/^ALLOW_GROUPS=""/ALLOW_GROUPS="wheel"/' /etc/snapper/configs/root
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Excluding .snapshots from updatedb"
+	echo -e "Excluding /.snapshots from updatedb"
 
 	echo "PRUNENAMES = \".snapshots\"" >> /etc/updatedb.conf
 
@@ -549,7 +549,7 @@ yabsnap_setup() {
 	sed -i 's/keep_preinstall = 1/keep_preinstall = 10/' /etc/yabsnap/configs/root.conf
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Excluding .snapshots from updatedb"
+	echo -e "Excluding /.snapshots from updatedb"
 
 	echo "PRUNENAMES = \".snapshots\"" >> /etc/updatedb.conf
 
