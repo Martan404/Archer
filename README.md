@@ -27,7 +27,7 @@ bash <(curl -L tinyurl.com/archersh)
 
 ## Wifi
 
-You can check if the WiFi is blocked by running `rfkill list`.
+You can check if the WiFi is blocked by running `rfkill list`
 If it says **Soft blocked: yes**, then run `rfkill unblock wifi`
 
 
@@ -36,5 +36,12 @@ From initial prompt run `iwctl` then:
 device list
 station [device name] scan
 station [device name] get-networks
+station [device name] connect [network name]
 ```
-Find your network, and run `station [device name] connect [network name]`, enter your password and run `exit`. You can test if you have internet connection by running `ping archlinux.org`, and then Press Ctrl and C to stop the ping test.
+Enter your password and run `exit`. You can test if you have internet connection by running `ping archlinux.org`, press Ctrl + C to stop the ping test
+
+## Edit script during installation
+
+First download the script with `curl -L tinyurl.com/archersh > archer.sh` and then `nano archer.sh` to edit
+
+Don't forget to run `chmod +x archer.sh` to make it executable and then `./archer.sh` to run the script
