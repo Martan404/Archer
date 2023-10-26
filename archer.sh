@@ -28,9 +28,9 @@ com.github.Matoking.protontricks
 com.github.zocker_160.SyncThingy
 com.spotify.Client
 com.usebottles.bottles
-com.valvesoftware.Steam.Utility.gamescope
 com.vysp3r.ProtonPlus
 net.lutris.Lutris
+org.freedesktop.Platform.VulkanLayer.gamescope
 org.gtk.Gtk3theme.Breeze
 org.kde.kdenlive
 org.kde.krita
