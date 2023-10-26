@@ -187,6 +187,10 @@ xsettingsd
 EOF
 }
 
+# If the script is run for a second time then we need to make sure everything is unmounted
+[[ -e "archer-check" ]] && swapoff /mnt/swap/swapfile > /dev/null 2>&1
+[[ -e "archer-check" ]] && umount -af > /dev/null 2>&1
+
 set_variables() {
 	echo -e "Enter hostname for System"
 
@@ -521,6 +525,8 @@ setup_environment() {
 	sed -i '/^\[multilib\]$/,/^#Include/ s/^#//' /etc/pacman.conf
 
 	pacman -Sy
+
+	touch archer-check # This is to prevent setting up the enviornment two times
 }
 
 install_system() {
@@ -565,7 +571,8 @@ exit_install() {
 
 	read -r -p "Press any key to shutdown..."
 	
-	umount -af > /dev/null
+	swapoff /mnt/swap/swapfile > /dev/null 2>&1
+	umount -af > /dev/null 2>&1
 	shutdown now && exit
 }
 
@@ -580,7 +587,7 @@ set_drivers
 
 format_drive
 setup_drive
-setup_environment
+[[ ! -e "archer-check" ]] && setup_environment
 install_system
 create_package_lists
 arch_chroot
