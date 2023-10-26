@@ -11,7 +11,6 @@ gpu_manufacturer=${6}
 snapshot_subvol=${7}
 root_partition=${8}
 snap_manager=${9}
-laptop_status=${10}
 
 package_installer() {
 	input_packages=$1
@@ -303,14 +302,37 @@ END
 }
 
 setup_laptop() {
+echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing laptop-detect package"
+
+	package_installer "laptop-detect"
+
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing laptop packages"
+	echo -e "Checking if device is laptop"
 
-	package_installer "auto-cpufreq wireless-regdb"
+	laptop-detect
+	laptop_status=$?
 
-	systemctl mask power-profiles-daemon.service
-	systemctl enable auto-cpufreq.service
+	if [ $laptop_status -eq 0 ]; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Installing laptop packages"
 
+		package_installer "auto-cpufreq wireless-regdb"
+
+		systemctl mask power-profiles-daemon.service
+		systemctl enable auto-cpufreq.service
+
+	elif [ $laptop_status -eq 1 ]; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Device not recognized as laptop"
+
+	elif [ $laptop_status -eq 2 ]; then
+		laptop-detect -v
+	fi
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Uninstalling laptop-detect package"
+	pacman -Rs --noconfirm laptop-detect
 }
 
 remove_orphans() {
@@ -1133,7 +1155,7 @@ setup_paru_pipx
 install_packages
 config_packages
 setup_plasma
-[[ $laptop_status -eq 0 ]] && setup_laptop
+setup_laptop
 remove_orphans
 
 setup_grub

@@ -411,30 +411,6 @@ set_drivers() {
 	fi
 }
 
-check_laptop() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing laptop-detect package"
-
-	pacman -Syu --noconfirm
-	pacman -S --noconfirm laptop-detect
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Checking if device is laptop"
-
-	laptop-detect
-	laptop_status=$?
-
-	if [ $laptop_status -eq 0 ]; then
-		echo -e "Device recogniced as laptop"
-
-	elif [ $laptop_status -eq 1 ]; then
-		echo -e "Device not recognized as laptop"
-
-	elif [ $laptop_status -eq 2 ]; then
-		laptop-detect -v
-	fi
-}
-
 format_drive() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Wiping drive and setting up GPT partition table"
@@ -601,7 +577,6 @@ set_efi
 set_kernel
 set_swap
 set_drivers
-check_laptop
 
 format_drive
 setup_drive
