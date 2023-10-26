@@ -189,7 +189,7 @@ EOF
 
 # If the script is run for a second time then we need to make sure everything is unmounted
 [[ -e "archer-check" ]] && swapoff /mnt/swap/swapfile > /dev/null 2>&1
-[[ -e "archer-check" ]] && umount -af > /dev/null 2>&1
+[[ -e "archer-check" ]] && umount -l /mnt > /dev/null 2>&1
 
 set_variables() {
 	echo -e "Enter hostname for System"
