@@ -38,8 +38,8 @@ Enter your password and run `exit`. You can test if you have internet connection
 
 *You can check if the WiFi is blocked by running `rfkill list`. If it says **Soft blocked: yes**, then run `rfkill unblock wifi`*
 
-## Edit script during installation
+## Edit script during Install
 
-First download the script with `curl -L tinyurl.com/archersh > archer.sh` and then `nano archer.sh` to edit
+From initial prompt run `curl -L tinyurl.com/archersh > archer.sh` and then run `nano archer.sh` to edit the script
 
-Don't forget to run `chmod +x archer.sh` to make it executable and then `./archer.sh` to run the script
+After editing run `chmod +x archer.sh` to make the script executable and then `./archer.sh` to run it
