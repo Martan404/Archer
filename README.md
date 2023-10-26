@@ -28,6 +28,7 @@ bash <(curl -L tinyurl.com/archersh)
 ## Wifi
 
 You can check if the WiFi is blocked by running `rfkill list`
+
 If it says **Soft blocked: yes**, then run `rfkill unblock wifi`
 
 
