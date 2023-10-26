@@ -415,6 +415,7 @@ check_laptop() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing laptop-detect package"
 
+	pacman -Syu --noconfirm
 	pacman -S --noconfirm laptop-detect
 
 	echo -e "-------------------------------------------------------------------------"
