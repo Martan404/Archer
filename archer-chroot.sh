@@ -375,7 +375,6 @@ END
 
 	sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet"/GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3"/' /etc/default/grub
 
-
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting kernel boot parameters for CPU"
 
