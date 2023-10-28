@@ -142,7 +142,6 @@ krename
 kscreen
 kscreenlocker
 ksshaskpass
-ksysguard
 ksystemlog
 ksystemstats
 kwallet-pam
@@ -572,7 +571,7 @@ exit_install() {
 	read -r -p "Press any key to shutdown..."
 	
 	swapoff /mnt/swap/swapfile > /dev/null 2>&1
-	umount -af > /dev/null 2>&1
+	umount -l /mnt > /dev/null 2>&1
 	shutdown now && exit
 }
 

@@ -375,6 +375,7 @@ END
 
 	sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet"/GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3"/' /etc/default/grub
 
+
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting kernel boot parameters for CPU"
 
@@ -413,6 +414,12 @@ END
 	echo -e "Enabling GRUB-btrfsd snapshot daemon"
 
 	systemctl enable grub-btrfsd
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Disabling snapshot listing in grub-btrfs"
+
+	sed -i '/^#GRUB_BTRFS_SHOW_SNAPSHOTS_FOUND="false"/s/^#//' /etc/default/grub-btrfs/config
+
 }
 
 backup_kernel() {
@@ -427,7 +434,7 @@ backup_kernel() {
 	mkdir /etc/pacman.d/hooks
 	mkdir -p /.bootbackup/{preupdate,postupdate}
 
-	cat <<-END > /etc/pacman.d/hooks/0-bootbackup-preupdate.hook
+	cat <<-END > /etc/pacman.d/hooks/95-bootbackup-preupdate.hook
 [Trigger]
 Operation = Upgrade
 Operation = Install
@@ -799,7 +806,7 @@ bash_config() {
 	sed -i '/PS1/d' /etc/bash.bashrc
 
 	cat <<-END >> /etc/bash.bashrc
-[ -f /etc/bash_aliases.bashrc ] && source /etc/bash_aliases.bashrc
+[ -f /etc/bash.bash_aliases ] && source /etc/bash.bash_aliases
 
 # Prompt style - generated from https://bash-prompt-generator.org/
 PS1='[\[\e[38;5;39m\]\u\[\e[38;5;245m\]@\[\e[38;5;33m\]\h\[\e[0m\] \[\e[38;5;64m\]\W\[\e[0m\]]\$ '
@@ -825,9 +832,9 @@ sudo grub-mkconfig -o /boot/grub/grub.cfg
 END
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Configuring /etc/bash_aliases.bashrc"
+	echo -e "Configuring /etc/bash.bash_aliases"
 
-	cat <<-END >> /etc/bash_aliases.bashrc
+	cat <<-END >> /etc/bash.bash_aliases
 # Color
 alias ls='ls --color=auto'
 alias ll='ls -ahlF --color=auto'
@@ -863,7 +870,7 @@ END
 
 	cat <<-END >> /home/"$user"/.bashrc
 [ -f /etc/bash.bashrc ] && source /etc/bash.bashrc
-[ -f /etc/bash_aliases.bashrc ] && source /etc/bash_aliases.bashrc
+[ -f /etc/bash.bash_aliases ] && source /etc/bash.bash_aliases
 [ -f ~/.bash_aliases ] && source ~/.bash_aliases
 
 # Add ~/System/scripts to PATH
