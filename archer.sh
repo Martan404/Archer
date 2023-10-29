@@ -123,7 +123,6 @@ kcron
 kde-cli-tools
 kde-gtk-config
 kde-inotify-survey
-kdenetwork-filesharing
 kdeplasma-addons
 kdecoration
 kdegraphics-thumbnailers

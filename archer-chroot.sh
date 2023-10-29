@@ -379,29 +379,36 @@ END
 	echo -e "Setting kernel boot parameters for CPU"
 
 	if [ "$cpu_manufacturer" = "amd" ]; then
-	boot_parameter=""
+		kernel_parameters=""
 
 	elif [ "$gpu_manufacturer" = "intel" ]; then
-	boot_parameter="intel_iommu=on iommu=pt"
+		kernel_parameters="intel_iommu=on iommu=pt"
 	
-	fi; sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"loglevel=3\)\(.*\)\"/\1 $boot_parameter\2\"/" /etc/default/grub
+	fi; sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"loglevel=3\)\(.*\)\"/\1 $kernel_parameters\2\"/" /etc/default/grub
 	
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting kernel boot parameters for GPU"
 
 	if [ "$gpu_manufacturer" = "amd" ]; then
-	boot_parameter=""
+		kernel_parameters=""
 
 	elif [ "$gpu_manufacturer" = "intel" ]; then
-	boot_parameter=""
+		kernel_parameters=""
 
 	elif [ "$gpu_manufacturer" = "nvidia" ]; then
-	boot_parameter="nvidia_drm.modeset=1"
+		kernel_parameters="nvidia_drm.modeset=1 nvidia.NVreg_PreserveVideoMemoryAllocations=1"
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Enabling support for suspend/wakeup"
+
+		systemctl enable nvidia-suspend.service
+		systemctl enable nvidia-hibernate.service
+		systemctl enable nvidia-resume.service
 
 	elif [ "$gpu_manufacturer" = "vm" ]; then
-	boot_parameter=""
+		kernel_parameters=""
 
-	fi; sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"loglevel=3\)\(.*\)\"/\1 $boot_parameter\2\"/" /etc/default/grub
+	fi; sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"loglevel=3\)\(.*\)\"/\1 $kernel_parameters\2\"/" /etc/default/grub
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing Grub theme"
@@ -828,6 +835,10 @@ grub-update() {
 sudo grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck
 sudo grub-mkconfig -o /boot/grub/grub.cfg
 }; export -f grub-update
+
+grub-rebuild() {
+sudo grub-mkconfig -o /boot/grub/grub.cfg
+}; export -f grub-rebuild
 END
 
 	echo -e "-------------------------------------------------------------------------"
