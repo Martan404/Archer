@@ -815,36 +815,55 @@ bash_config() {
 [ -f /etc/bash.bash_aliases ] && source /etc/bash.bash_aliases
 
 # Prompt style - generated from https://bash-prompt-generator.org/
-PS1='[\[\e[38;5;39m\]\u\[\e[38;5;245m\]@\[\e[38;5;33m\]\h\[\e[0m\] \[\e[38;5;64m\]\W\[\e[0m\]]\$ '
+PS1='[\[\e[38;5;39m\]\u\[\e[38;5;245m\]@\[\e[38;5;33m\]\h\[\e[0m\] \[\e[38;5;64m\]\W\[\e[0m\]]$ '
 
 # Color style - https://github.com/sharkdp/vivid
 export LS_COLORS=\$(vivid generate solarized-dark)
+
+# ble.sh
+[[ -r /usr/share/blesh/ble.sh ]] && [[ \$- == *i* ]] && source /usr/share/blesh/ble.sh
+
+# Bash completion
+[[ -r /usr/share/bash-completion/bash_completion ]] && source /usr/share/bash-completion/bash_completion
 
 # Cycle in autocomplete
 bind "set completion-ignore-case on"
 bind 'set show-all-if-ambiguous on'
 bind 'TAB:menu-complete'
 
+# Partially search in history
+bind '"\e[A": history-search-backward'
+bind '"\e[B": history-search-forward'
+
 # Autojump
-[[ -s /etc/profile.d/autojump.sh ]] && source /etc/profile.d/autojump.sh
+[[ -r /etc/profile.d/autojump.sh ]] && source /etc/profile.d/autojump.sh
 
 # Add pipx to PATH
 eval "\$(register-python-argcomplete pipx)"
 
-grub-update() {
-sudo grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck
-sudo grub-mkconfig -o /boot/grub/grub.cfg
-}; export -f grub-update
+# Enter directory by only typing the name
+shopt -s autocd
 
-grub-rebuild() {
-sudo grub-mkconfig -o /boot/grub/grub.cfg
-}; export -f grub-rebuild
+# Automatically do an ls after each cd
+cd() { builtin cd "\${1:-~}" && ls; }
+
+# Check why a package is installed
+why() { pacman -Qi \$1; }
+
 END
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /etc/bash.bash_aliases"
 
 	cat <<-END >> /etc/bash.bash_aliases
+# Shortcuts
+alias home='cd ~'
+alias cd..='cd ..'
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias .....='cd ../../../..'
+
 # Color
 alias ls='ls --color=auto'
 alias ll='ls -ahlF --color=auto'
@@ -856,41 +875,21 @@ alias grep='grep --color=auto'
 alias vdir='vdir --color=auto'
 alias wget='wget -c'
 
-# Shortcuts
-alias home='cd ~'
-alias cd..='cd ..'
-alias ..='cd ..'
-alias ...='cd ../..'
-alias ....='cd ../../..'
-alias .....='cd ../../../..'
-
-# Enter directory by only typing the name
-shopt -s autocd
-
-# Automatically do an ls after each cd
-cd() { builtin cd "\${1:-~}" && ls; }
-
-why() { pacman -Qi \$1; }
-export -f why
-
 END
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /home/$user/.bashrc"
 
 	cat <<-END >> /home/"$user"/.bashrc
-[ -f /etc/bash.bashrc ] && source /etc/bash.bashrc
-[ -f /etc/bash.bash_aliases ] && source /etc/bash.bash_aliases
-[ -f ~/.bash_aliases ] && source ~/.bash_aliases
+# Check /etc/bash.bashrc for more configuration
+[[ -r ~/.bash_aliases ]] && source ~/.bash_aliases
+[[ -r ~/.distrobox_bash ]] && source ~/.distrobox_bash # Just source the system bashrc like systemctl info from github
 
 # Add ~/System/scripts to PATH
-[ -d "\$HOME/System/scripts" ] && export PATH=\$PATH:\$HOME/System/scripts
+[[ -d "\$HOME/System/scripts" ]] && export PATH=\$PATH:\$HOME/System/scripts
 
-# Function example
-null-test() { # Takes arguments (\$1 \$2 ..)
-echo "\$1 \$2" > /dev/null
-}
-export -f null-test
+# Display system information
+neofetch --ascii_distro arch_small --colors 4 7 4 4 7 7 --ascii_colors 4 4 --disable title underline distro shell resolution de wm wm_theme theme icons term term_font
 
 END
 	chown "$user":"$user" /home/"$user"/.bashrc
@@ -899,12 +898,24 @@ END
 	echo -e "Configuring /home/$user/.bash_aliases"
 
 	cat <<-END >> /home/"$user"/.bash_aliases
+alias neofetch='neofetch --colors 4 7 4 4 7 7 --ascii_colors 4 4'
+
+alias last-boot-log='journalctl -b -1 -r'
+alias windows-boot='sudo windows-boot'
+alias logout="shopt -q login_shell && logout || qdbus org.kde.ksmserver /KSMServer logout 0 0 1"
+
 alias update='paru -Syu'
 alias package-cache-cleanup='paru -Scd'
-alias windows-boot='sudo windows-boot'
 alias sudo-password-unlock='faillock --user \$USER --reset'
 alias pacman-refresh-mirrors='sudo reflector --age 48 --country "\$(curl ifconfig.co/country-iso)" --fastest 5 --latest 20 --sort rate --save /etc/pacman.d/mirrorlist'
 alias pacman-db-unlock='sudo rm /var/lib/pacman/db.lck'
+
+# Fix unmountable ntfs partitions
+ntfs-fix-partition() { sudo ntfsfix -d \$1; }
+
+grub-update() { sudo grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; sudo grub-mkconfig -o /boot/grub/grub.cfg; }
+
+grub-rebuild() { sudo grub-mkconfig -o /boot/grub/grub.cfg; }
 
 pacman-fix-keys() {
 echo -e "Refresh keys"
@@ -923,18 +934,6 @@ echo -e "Updating system"
 sudo pacman -Syu
 }; export -f pacman-fix-keys
 
-arch-clean() {
-echo -e "Removing cached packages"
-paccache -rvuk0
-echo -e "Removing cached AUR packages"
-paru --clean
-echo -e "Cleaning user ~/.cache"
-rm -rf \$HOME/.cache/*
-echo -e "Cleaning logs"
-sudo journalctl --vacuum-time=1day
-sudo journalctl --flush --rotate
-}; export -f arch-clean
-
 arch-maintain() {
 sudo echo "" > /dev/null
 echo -e "Checking for failed systemd services"
@@ -942,32 +941,37 @@ systemctl --failed
 echo -e "Checking log files"
 sudo timeout 3s journalctl -p 3 -xb -f
 echo -e "Cleaning log files"
-sudo journalctl --vacuum-time=7day
+sudo journalctl --vacuum-time=1day
+sudo journalctl --flush --rotate
 echo -e "Refreshing pacman mirrors"
 sudo reflector --age 48 --country "\$(curl ifconfig.co/country-iso)" --fastest 5 --latest 20 --sort rate --save /etc/pacman.d/mirrorlist
 echo -e "Updating system"
 sudo pacman -Syu
 echo -e "Removing orphaned packages"
 sudo pacman -Rns \$(pacman -Qtdq)
-echo -e "Checking ~/.cache/ size"
-du -sh \$HOME/.cache/
-while true; do
-	read -r -p "Do you want to clean the .cache directory? (Y/n) " yn
-	case \$yn in
-		[yY]) rm -rf \$HOME/.cache/*
-		break ;;
-		[nN]) break ;;
-	esac
-done
+echo -e "Removing cached packages"
+paccache -rvuk0
+echo -e "Removing cached AUR packages"
+paru --clean
+echo -e "Cleaning user ~/.cache"
+rm -rf $HOME/.cache/*
 echo -e "Checking ~/.config/ size"
-du -sh \$HOME/.config/
+du -sh $HOME/.config/
 }; export -f arch-maintain
 
-ntfs-fix-partition() {
-sudo ntfsfix -d \$1
-}; export -f ntfs-fix-partition
 END
 chown "$user":"$user" /home/"$user"/.bash_aliases
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating ble.sh configuration file"
+
+	cat <<-END >> /home/"$user"/.blerc
+# https://github.com/akinomyoga/ble.sh/blob/master/blerc.template
+bleopt editor=micro
+bleopt exec_errexit_mark=
+
+END
+	chown "$user":"$user" /home/"$user"/.blerc
 }
 
 setup_flatpak() {

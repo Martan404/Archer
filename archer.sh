@@ -76,6 +76,7 @@ appimagelauncher-bin
 autojump
 bash-completion
 bash-language-server
+blesh
 btop
 btrfs-assistant
 btrfsmaintenance
