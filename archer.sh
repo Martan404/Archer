@@ -122,7 +122,7 @@ drkonqi
 ffmpegthumbs
 flatpak
 flatpak-kcm
-glfw-wayland
+glfw
 gnome-settings-daemon
 gsettings-desktop-schemas
 gsettings-qt
@@ -136,7 +136,7 @@ kdecoration
 kdegraphics-thumbnailers
 kdialog
 kfind
-kgamma5
+kgamma
 khelpcenter
 khotkeys
 kinfocenter
@@ -171,7 +171,6 @@ plasma-systemmonitor
 plasma-thunderbolt
 plasma-vault
 plasma-wayland-protocols
-plasma-wayland-session
 plasma-workspace
 plasma-workspace-wallpapers
 polkit-kde-agent
