@@ -14,6 +14,8 @@ snap_manager=${9}
 
 package_installer() {
 	input_packages=$1
+	max_tries=5
+	try_count=0
 
 	# Check if argument is .txt file and combine each line
     if [[ "$input_packages" == *.txt ]]; then
@@ -23,11 +25,18 @@ package_installer() {
 		packages=$input_packages
 	fi
 
-    while true; do
-        # shellcheck disable=SC2086
-        sudo -u $user paru -S --needed --noconfirm $packages && break
-    	echo "$(tput setaf 9)Package installation failed. Retrying...$(tput sgr0)"
+	while [ "$try_count" -lt "$max_tries" ]; do
+	    try_count=$((try_count+1))
+		# shellcheck disable=SC2086
+    	sudo -u "$user" paru -S --needed --noconfirm $packages && break
+    	echo "$(tput setaf 9)Package installation failed. Retrying... ($try_count/$max_tries)$(tput sgr0)"
 	done
+
+if [ "$try_count" -eq "$max_tries" ]; then
+    echo "$(tput setaf 9)Package installation failed after $try_count attempts$(tput sgr0)"
+	echo "$(tput setaf 9)Exiting...$(tput sgr0)"
+	exit
+fi
 }
 
 setup_system() {
@@ -476,7 +485,7 @@ snapper_setup() {
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Installing Snapper packages"
 
-		package_installer "snapper snap-pac snap-pac-grub snapper-tools-git snapper-support"
+		package_installer "snapper snap-pac snap-pac-grub snapper-support"
 
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Creating Snapper root config"
