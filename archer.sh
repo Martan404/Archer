@@ -110,7 +110,6 @@ ufw
 vivid
 EOF
 	cat <<EOF > /mnt/kde.txt
-adw-gtk3
 bluedevil
 breeze
 breeze-gtk
@@ -138,7 +137,6 @@ kdialog
 kfind
 kgamma
 khelpcenter
-khotkeys
 kinfocenter
 kjournald
 kmenuedit
