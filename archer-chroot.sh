@@ -435,12 +435,12 @@ backup_kernel() {
 	package_installer "rsync"
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Adding pacman hooks to rsync for kernel backup"
+	echo -e "Adding pacman hooks for kernel backup"
 
 	mkdir /etc/pacman.d/hooks
 	mkdir -p /.bootbackup/{preupdate,postupdate}
 
-	cat <<-END > /etc/pacman.d/hooks/95-bootbackup-preupdate.hook
+	cat <<-END > /etc/pacman.d/hooks/00-bootbackup-preupdate.hook
 [Trigger]
 Operation = Upgrade
 Operation = Install
@@ -476,7 +476,7 @@ snapper_setup() {
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Installing Snapper packages"
 
-		package_installer "snapper snap-pac snap-pac-grub snapper-tools snapper-support"
+		package_installer "snapper snap-pac snap-pac-grub snapper-tools-git snapper-support"
 
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Creating Snapper root config"
@@ -609,30 +609,18 @@ enable_services() {
 	systemctl enable bluetooth.service
 
 	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling uncomplicated firewall"
+
+	ufw enable
+	systemctl enable ufw.service
+
+	echo -e "-------------------------------------------------------------------------"
 	echo -e "Rebuilding GRUB configs"
 
 	grub-mkconfig -o /boot/grub/grub.cfg
 }
 
 pacman_hooks() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating Grub update hook"
-
-	cat <<-END > /etc/pacman.d/hooks/1-grubupdate.hook
-[Trigger]
-Operation = Install
-Operation = Upgrade
-Operation = Remove
-Type = Package
-Target = grub
-
-[Action]
-Description = Grub has been updated
-Depends = grub
-When = PostTransaction
-Exec = echo -e "\e[1mRun\e[34m grub-update\e[0m\e[1m to complete the installation\e[0m"
-END
-
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating Package cache cleaner hook"
 
@@ -685,6 +673,38 @@ Description = Checking for .pacnew and .pacsave files...
 When = PostTransaction
 Exec = /usr/bin/bash -c 'pacfiles=\$(pacdiff -o); if [[ -n "\$pacfiles" ]]; then echo -e "\\e[1m.pac* files found:\\e[0m\\n\$pacfiles\\n\\e[1mPlease check and merge\\e[0m"; fi'
 Depends = pacman-contrib
+END
+
+	cat <<-END > /etc/pacman.d/hooks/zz-kernelupdate.hook
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Type = Path
+Target = usr/lib/modules/*/vmlinuz
+
+[Action]
+Description = The kernel has been updated
+When = PostTransaction
+Exec = /usr/bin/echo -e "\e[1mPlease\e[34m reboot\e[0m\e[1m to complete the installation\e[0m"
+END
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating Grub update hook"
+
+	cat <<-END > /etc/pacman.d/hooks/zz-grubupdate.hook
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Type = Package
+Target = grub
+
+[Action]
+Description = Grub has been updated
+Depends = grub
+When = PostTransaction
+Exec = /usr/bin/echo -e "\e[1mRun\e[34m grub-update\e[0m\e[1m to complete the installation\e[0m"
 END
 }
 
@@ -855,7 +875,16 @@ END
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /etc/bash.bash_aliases"
 
-	cat <<-END >> /etc/bash.bash_aliases
+	cat <<-END > /etc/bash.bash_aliases
+#
+# /etc/bash.bash_aliases
+#
+
+# Repair GRUB
+grub-repair() { pacman --noconfirm -S grub efibootmgr; grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; grub-mkconfig -o /boot/grub/grub.cfg; }
+grub-rescue() { pacman --noconfirm -S grub efibootmgr; grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; grub-mkconfig -o /boot/grub/grub.cfg; }
+grub-update() { grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; grub-mkconfig -o /boot/grub/grub.cfg; }
+
 # Shortcuts
 alias home='cd ~'
 alias cd..='cd ..'
@@ -865,6 +894,7 @@ alias ....='cd ../../..'
 alias .....='cd ../../../..'
 
 # Color
+alias neofetch='neofetch --colors 4 7 4 4 7 7 --ascii_colors 4 4'
 alias ls='ls --color=auto'
 alias ll='ls -ahlF --color=auto'
 alias la='ls -A --color=auto'
@@ -897,7 +927,9 @@ END
 	echo -e "Configuring /home/$user/.bash_aliases"
 
 	cat <<-END >> /home/"$user"/.bash_aliases
-alias neofetch='neofetch --colors 4 7 4 4 7 7 --ascii_colors 4 4'
+#
+# ~/.bash_aliases
+#
 
 alias last-boot-log='journalctl -b -1 -r'
 alias windows-boot='sudo windows-boot'
@@ -908,6 +940,7 @@ alias package-cache-cleanup='paru -Scd'
 alias sudo-password-unlock='faillock --user \$USER --reset'
 alias pacman-refresh-mirrors='sudo reflector --age 48 --country "\$(curl ifconfig.co/country-iso)" --fastest 5 --latest 20 --sort rate --save /etc/pacman.d/mirrorlist'
 alias pacman-db-unlock='sudo rm /var/lib/pacman/db.lck'
+alias pacman-remove-orphans='sudo pacman -Rns \$(pacman -Qtdq)'
 
 # Fix unmountable ntfs partitions
 ntfs-fix-partition() { sudo ntfsfix -d \$1; }
@@ -952,7 +985,7 @@ echo -e "Removing cached packages"
 paccache -rvuk0
 echo -e "Removing cached AUR packages"
 paru --clean
-echo -e "Cleaning user ~/.cache"
+echo -e "Cleaning ~/.cache"
 rm -rf $HOME/.cache/*
 echo -e "Checking ~/.config/ size"
 du -sh $HOME/.config/
@@ -968,7 +1001,78 @@ chown "$user":"$user" /home/"$user"/.bash_aliases
 # https://github.com/akinomyoga/ble.sh/blob/master/blerc.template
 bleopt editor=micro
 bleopt exec_errexit_mark=
+bleopt filename_ls_colors="\$LS_COLORS"
 
+## The following settings specify graphic styles of each faces.
+
+#ble-face -s region                    fg=white,bg=60
+#ble-face -s region_insert             fg=blue,bg=252
+#ble-face -s region_match              fg=white,bg=55
+#ble-face -s region_target             fg=black,bg=153
+#ble-face -s disabled                  fg=242
+#ble-face -s overwrite_mode            fg=black,bg=51
+#ble-face -s auto_complete             fg=238,bg=254
+#ble-face -s menu_filter_fixed         bold
+#ble-face -s menu_filter_input         fg=16,bg=229
+#ble-face -s vbell                     reverse
+#ble-face -s vbell_erase               bg=252
+#ble-face -s vbell_flash               fg=green,reverse
+#ble-face -s prompt_status_line        fg=231,bg=240
+
+#ble-face -s syntax_default            none
+#ble-face -s syntax_command            fg=brown
+#ble-face -s syntax_quoted             fg=green
+#ble-face -s syntax_quotation          fg=green,bold
+#ble-face -s syntax_escape             fg=magenta
+#ble-face -s syntax_expr               fg=navy
+#ble-face -s syntax_error              bg=203,fg=231
+#ble-face -s syntax_varname            fg=202
+#ble-face -s syntax_delimiter          bold
+#ble-face -s syntax_param_expansion    fg=purple
+#ble-face -s syntax_history_expansion  bg=94,fg=231
+#ble-face -s syntax_function_name      fg=92,bold
+#ble-face -s syntax_comment            fg=gray
+#ble-face -s syntax_glob               fg=198,bold
+#ble-face -s syntax_brace              fg=37,bold
+#ble-face -s syntax_tilde              fg=navy,bold
+#ble-face -s syntax_document           fg=94
+#ble-face -s syntax_document_begin     fg=94,bold
+#ble-face -s command_builtin_dot       fg=red,bold
+#ble-face -s command_builtin           fg=red
+#ble-face -s command_alias             fg=teal
+#ble-face -s command_function          fg=92 # fg=purple
+#ble-face -s command_file              fg=green
+#ble-face -s command_keyword           fg=blue
+#ble-face -s command_jobs              fg=red,bold
+ble-face -s command_directory         fg=navy
+#ble-face -s argument_option           fg=teal
+#ble-face -s argument_option           fg=black,bg=225
+ble-face -s filename_directory        fg=26
+ble-face -s filename_directory_sticky fg=white,bg=26
+ble-face -s filename_link             fg=teal
+ble-face -s filename_orphan           fg=teal,bg=224
+ble-face -s filename_setuid           fg=black,bg=220
+ble-face -s filename_setgid           fg=black,bg=191
+ble-face -s filename_executable       fg=green
+ble-face -s filename_other            fg=white
+ble-face -s filename_socket           fg=cyan,bg=black
+ble-face -s filename_pipe             fg=lime,bg=black
+ble-face -s filename_character        fg=white,bg=black
+ble-face -s filename_block            fg=yellow,bg=black
+ble-face -s filename_warning          fg=red
+ble-face -s filename_url              fg=blue
+ble-face -s filename_ls_colors        fg=white
+#ble-face -s varname_array             fg=orange,bold
+#ble-face -s varname_empty             fg=31
+#ble-face -s varname_export            fg=200,bold
+#ble-face -s varname_expr              fg=92,bold
+#ble-face -s varname_hash              fg=70,bold
+#ble-face -s varname_number            fg=64
+#ble-face -s varname_readonly          fg=200
+#ble-face -s varname_transform         fg=29,bold
+#ble-face -s varname_unset             fg=124
+
+#ble-face -s cmdinfo_cd_cdpath         fg=26,bg=155
 END
 	chown "$user":"$user" /home/"$user"/.blerc
 }
