@@ -54,6 +54,7 @@ pipewire-alsa
 pipewire-audio
 pipewire-ffado
 pipewire-jack
+pipewire-jack
 pipewire-pulse
 pipewire-roc
 pipewire-v4l2
@@ -66,7 +67,12 @@ noto-fonts-cjk
 noto-fonts-emoji
 noto-fonts-extra
 ttf-bitstream-vera
+ttf-dejavu
+ttf-liberation
 ttf-ms-fonts
+ttf-nerd-fonts-symbols
+ttf-nerd-fonts-symbols-common
+ttf-nerd-fonts-symbols-mono
 EOF
 	cat <<EOF > /mnt/system.txt
 ark
@@ -100,6 +106,7 @@ reflector
 shellcheck
 spectacle
 texinfo
+ufw
 vivid
 EOF
 	cat <<EOF > /mnt/kde.txt
@@ -178,7 +185,6 @@ systemsettings
 wayland
 wayland-protocols
 xdg-desktop-portal
-xdg-desktop-portal-gtk
 xdg-desktop-portal-kde
 xorg-xlsclients
 xorg-xwayland
@@ -418,18 +424,18 @@ format_drive() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Wiping drive and setting up GPT partition table"
 
-	parted -s $disk mklabel gpt
+	parted -s "$disk" mklabel gpt
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating EFI Partition"
 
-	parted -s $disk mkpart fat32 1MiB $efi_size
-	parted -s $disk set 1 esp on
+	parted -s "$disk" mkpart fat32 0% "$efi_size"
+	parted -s "$disk" set 1 esp on
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating root partition"
 
-	parted -s $disk mkpart btrfs $efi_size 100%
+	parted -s "$disk" mkpart btrfs "$efi_size" 100%
 
 	fdisk "$disk" <<<"p"
 
@@ -560,7 +566,7 @@ arch_chroot() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Entering arch-chroot"
 
-	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot.sh "$archer_logo" "$user" "$hostname" "$snapshot_layout" "$cpu_manufacturer" "$gpu_manufacturer" "$snapshot_subvol" "$root_partition" "$snap_manager" "$laptop_status"
+	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot.sh "$archer_logo" "$user" "$hostname" "$snapshot_layout" "$cpu_manufacturer" "$gpu_manufacturer" "$snapshot_subvol" "$root_partition" "$snap_manager"
 	rm -rf /mnt/Archer-main
 }
 
