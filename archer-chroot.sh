@@ -14,7 +14,7 @@ snap_manager=${9}
 
 package_installer() {
 	input_packages=$1
-	max_tries=5
+	max_tries=3
 	try_count=0
 
 	# Check if argument is .txt file and combine each line
@@ -39,19 +39,18 @@ if [ "$try_count" -eq "$max_tries" ]; then
 	echo -e "1. Continiue"
 	echo -e "2. Exit"
 
-
 	while true; do
 		read -r -p "Select: " choice
 
 		case $choice in
 		1)
-			choice="continiue";
+			choice="continiue"
 			break
 			;;
 		2)
 			choice="exit"
-				echo "$(tput setaf 9)Exiting...$(tput sgr0)"
-				exit
+			echo "$(tput setaf 9)Exiting...$(tput sgr0)"
+			exit
 			;;
 		esac
 	done
@@ -504,7 +503,7 @@ snapper_setup() {
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Installing Snapper packages"
 
-		package_installer "snapper snap-pac snap-pac-grub snapper-support snapper-tools-git"
+		package_installer "snapper snap-pac snap-pac-grub snapper-support"
 
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Creating Snapper root config"
@@ -639,7 +638,6 @@ enable_services() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling uncomplicated firewall"
 
-	ufw enable
 	systemctl enable ufw.service
 
 	echo -e "-------------------------------------------------------------------------"

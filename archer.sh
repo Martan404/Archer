@@ -413,7 +413,27 @@ set_drivers() {
 		export gpu_manufacturer="vm"
 
 	else
+		lspci_output=$(lspci | grep VGA)
+		read -r -t 1
+
 		echo "No GPU detected"
+		echo -e "Do you want to install VM drivers?"
+		echo -e "1. Yes"
+		echo -e "2. No"
+			while true; do
+				read -r -p "Select: " choice
+
+				case $choice in
+				1)
+					gpu_driver="qemu-guest-agent vulkan-virtio lib32-vulkan-virtio"
+					export gpu_manufacturer="vm"
+					break
+					;;
+				2)
+					break
+					;;
+				esac
+			done
 	fi
 }
 
