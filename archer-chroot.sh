@@ -43,11 +43,11 @@ if [ "$try_count" -eq "$max_tries" ]; then
 		read -r -p "Select: " choice
 
 		case $choice in
-		1)
+		[yY1])
 			choice="continiue"
 			break
 			;;
-		2)
+		[nN2])
 			choice="exit"
 			echo "$(tput setaf 9)Exiting...$(tput sgr0)"
 			exit

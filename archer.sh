@@ -416,19 +416,16 @@ set_drivers() {
 		read -r -t 1
 
 		echo "No GPU detected"
-		echo -e "Do you want to install VM drivers?"
-		echo -e "1. Yes"
-		echo -e "2. No"
 			while true; do
-				read -r -p "Select: " choice
+				read -r -p "Do you want to install VM drivers? (y/N) " yN
 
-				case $choice in
-				1)
+				case $yN in
+				[yY1])
 					gpu_driver="qemu-guest-agent vulkan-virtio lib32-vulkan-virtio"
 					export gpu_manufacturer="vm"
 					break
 					;;
-				2)
+				[nN2])
 					break
 					;;
 				esac
