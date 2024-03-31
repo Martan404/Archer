@@ -421,11 +421,13 @@ set_drivers() {
 
 				case $yN in
 				[yY1])
+					echo "Installing VM drivers"
 					gpu_driver="qemu-guest-agent vulkan-virtio lib32-vulkan-virtio"
 					export gpu_manufacturer="vm"
 					break
 					;;
 				[nN2])
+					echo "Skipping GPU drivers"
 					break
 					;;
 				esac
