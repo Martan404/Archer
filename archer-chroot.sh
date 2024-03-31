@@ -34,8 +34,27 @@ package_installer() {
 
 if [ "$try_count" -eq "$max_tries" ]; then
     echo "$(tput setaf 9)Package installation failed after $try_count attempts$(tput sgr0)"
-	echo "$(tput setaf 9)Exiting...$(tput sgr0)"
-	exit
+
+	echo -e "Should we keep installing or exit?"
+	echo -e "1. Continiue"
+	echo -e "2. Exit"
+
+
+	while true; do
+		read -r -p "Select: " choice
+
+		case $choice in
+		1)
+			choice="continiue";
+			break
+			;;
+		2)
+			choice="exit"
+				echo "$(tput setaf 9)Exiting...$(tput sgr0)"
+				exit
+			;;
+		esac
+	done
 fi
 }
 
@@ -485,7 +504,7 @@ snapper_setup() {
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Installing Snapper packages"
 
-		package_installer "snapper snap-pac snap-pac-grub snapper-support"
+		package_installer "snapper snap-pac snap-pac-grub snapper-support snapper-tools-git"
 
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Creating Snapper root config"
