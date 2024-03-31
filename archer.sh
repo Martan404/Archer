@@ -30,7 +30,6 @@ com.spotify.Client
 com.usebottles.bottles
 com.vysp3r.ProtonPlus
 net.lutris.Lutris
-org.freedesktop.Platform.VulkanLayer.gamescope
 org.gtk.Gtk3theme.Breeze
 org.kde.kdenlive
 org.kde.krita
