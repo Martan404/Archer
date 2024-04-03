@@ -374,6 +374,7 @@ set_drivers() {
 	echo -e "Checking GPU manufacturer"
 
 	lspci_output=$(lspci | grep VGA)
+	lspci_output_full=$(lspci)
 	read -r -t 1
 	gpu_driver=""
 	gpu_manufacturer="none"
@@ -405,33 +406,29 @@ set_drivers() {
 		gpu_driver="$nvidia_version nvidia-utils lib32-nvidia-utils nvidia-settings"
 		export gpu_manufacturer="nvidia"
 
-	elif [[ $lspci_output == *"Virtio"* ]]; then
-		echo "Found Virtio GPU"
-		
+	elif [[ ${lspci_output} =~ (Virtio|QEMU) ]] || [[ ${lspci_output_full} =~ (Virtio|QEMU) ]]; then
+		echo "Found VM GPU"
 		gpu_driver="qemu-guest-agent vulkan-virtio lib32-vulkan-virtio"
 		export gpu_manufacturer="vm"
-
+	
 	else
-		lspci_output=$(lspci | grep VGA)
-		read -r -t 1
+		echo "GPU could not be detected"
+		while true; do
+			read -r -p "Do you want to install VirtIO VM drivers? (y/N) " yN
 
-		echo "No GPU detected"
-			while true; do
-				read -r -p "Do you want to install VM drivers? (y/N) " yN
-
-				case $yN in
-				[yY1])
-					echo "Installing VM drivers"
-					gpu_driver="qemu-guest-agent vulkan-virtio lib32-vulkan-virtio"
-					export gpu_manufacturer="vm"
-					break
-					;;
-				[nN2])
-					echo "Skipping GPU drivers"
-					break
-					;;
-				esac
-			done
+			case $yN in
+			[yY1])
+				echo "Installing VM drivers"
+				gpu_driver="qemu-guest-agent vulkan-virtio lib32-vulkan-virtio"
+				export gpu_manufacturer="vm"
+				break
+				;;
+			[nN2])
+				echo "Skipping GPU drivers"
+				break
+				;;
+			esac
+		done
 	fi
 }
 
