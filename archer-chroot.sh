@@ -1050,7 +1050,7 @@ setup_flatpak() {
 	
 	cat <<EOF >> /home/"$user"/.config/autostart/flatpak-setup.desktop
 [Desktop Entry]
-Exec=konsole -e /home/martin/System/scripts/flatpak-setup
+Exec=konsole -e /home/$user/System/scripts/flatpak-setup
 Icon=/usr/share/pixmaps/archlinux-logo.png
 StartupNotify=true
 Type=Application

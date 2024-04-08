@@ -77,7 +77,6 @@ EOF
 ark
 p7zip
 unrar
-appimagelauncher-bin
 autojump
 bash-completion
 bash-language-server
