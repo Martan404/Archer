@@ -868,6 +868,9 @@ PS1='[\[\e[38;5;39m\]\u\[\e[38;5;245m\]@\[\e[38;5;33m\]\h\[\e[0m\] \[\e[38;5;64m
 # Color style - https://github.com/sharkdp/vivid
 export LS_COLORS=\$(vivid generate solarized-dark)
 
+# Bash completion
+[[ -r /usr/share/bash-completion/bash_completion ]] && source /usr/share/bash-completion/bash_completion
+
 # Cycle in autocomplete
 bind 'set completion-ignore-case on'
 bind 'set show-all-if-ambiguous on'
@@ -947,7 +950,7 @@ END
 neofetch --ascii_distro arch_small --colors 4 7 4 4 7 7 --ascii_colors 4 4 --disable title underline distro shell resolution de wm wm_theme theme icons term term_font
 
 # ble.sh
-[[ -r /usr/share/blesh/ble.sh ]] && [[ $- == *i* ]] && source /usr/share/blesh/ble.sh
+[[ -r /usr/share/blesh/ble.sh ]] && [[ \$- == *i* ]] && source /usr/share/blesh/ble.sh
 END
 	chown "$user":"$user" /home/"$user"/.bashrc
 	
