@@ -865,7 +865,6 @@ bash_config() {
 
 [[ \$DISPLAY ]] && shopt -s checkwinsize
 
-
 case \${TERM} in
   Eterm*|alacritty*|aterm*|foot*|gnome*|konsole*|kterm*|putty*|rxvt*|tmux*|xterm*)
     PROMPT_COMMAND+=('printf "\033]0;%s@%s:%s\007" "\${USER}" "\${HOSTNAME%%.*}" "\${PWD/#\$HOME/\~}"')
@@ -950,9 +949,6 @@ END
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /home/$user/.bashrc"
-
-	sed -i '/PS1/d' /etc/bash.bashrc
-	sed -i '/alias/d' /etc/bash.bashrc
 
 	cat <<-END > /home/"$user"/.bashrc
 #
