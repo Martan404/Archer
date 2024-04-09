@@ -855,6 +855,9 @@ bash_config() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /etc/bash.bashrc"
 
+	sed -i '/PS1/d' /etc/bash.bashrc
+	awk -v lines="$(wc -l < /etc/bash.bashrc)" 'NR <= lines-3' /etc/bash.bashrc > /etc/bash.bashrc.new && mv /etc/bash.bashrc.new /etc/bash.bashrc
+
 	cat <<-END >> /etc/bash.bashrc
 
 [ -f /etc/bash.bash_aliases ] && source /etc/bash.bash_aliases
@@ -929,7 +932,10 @@ END
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /home/$user/.bashrc"
 
-	cat <<-END > /home/"$user"/.bashrc
+	sed -i '/PS1/d' /etc/bash.bashrc
+	sed -i '/alias/d' /etc/bash.bashrc
+
+	cat <<-END >> /home/"$user"/.bashrc
 #
 # ~/.bashrc
 #
