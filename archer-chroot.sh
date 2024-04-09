@@ -855,25 +855,11 @@ bash_config() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /etc/bash.bashrc"
 
-	cat <<-END > /etc/bash.bashrc
-#
-# /etc/bash.bashrc
-#
+	# Cleanup
+	sed -i '/PS1/,+1d' /etc/bash.bashrc
+	sed -i '/bash_completion/d' /etc/bash.bashrc && sed -i '/fi/d' /etc/bash.bashrc
 
-# If not running interactively, don't do anything
-[[ \$- != *i* ]] && return
-
-[[ \$DISPLAY ]] && shopt -s checkwinsize
-
-case \${TERM} in
-  Eterm*|alacritty*|aterm*|foot*|gnome*|konsole*|kterm*|putty*|rxvt*|tmux*|xterm*)
-    PROMPT_COMMAND+=('printf "\033]0;%s@%s:%s\007" "\${USER}" "\${HOSTNAME%%.*}" "\${PWD/#\$HOME/\~}"')
-
-    ;;
-  screen*)
-    PROMPT_COMMAND+=('printf "\033_%s@%s:%s\033\\\\" "\${USER}" "\${HOSTNAME%%.*}" "\${PWD/#\$HOME/\~}"')
-    ;;
-esac
+	cat <<-END >> /etc/bash.bashrc
 
 [ -f /etc/bash.bash_aliases ] && source /etc/bash.bash_aliases
 
@@ -915,7 +901,7 @@ END
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /etc/bash.bash_aliases"
 
-	cat <<-END > /etc/bash.bash_aliases
+	cat <<-END >> /etc/bash.bash_aliases
 #
 # /etc/bash.bash_aliases
 #
@@ -950,13 +936,11 @@ END
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /home/$user/.bashrc"
 
-	cat <<-END > /home/"$user"/.bashrc
-#
-# ~/.bashrc
-#
-
-# If not running interactively, don't do anything
-[[ \$- != *i* ]] && return
+	# Cleanup
+	sed -i '/PS1/d' /home/"$user"/.bashrc
+	sed -i '/alias/d' /home/"$user"/.bashrc
+	
+	cat <<-END >> /home/"$user"/.bashrc
 
 # Check /etc/bash.bashrc for more configuration
 [[ -r ~/.bash_aliases ]] && source ~/.bash_aliases
