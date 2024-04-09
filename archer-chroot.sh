@@ -856,7 +856,8 @@ bash_config() {
 	echo -e "Configuring /etc/bash.bashrc"
 
 	sed -i '/PS1/,+1d' /etc/bash.bashrc
-	awk -v lines="$(wc -l < /etc/bash.bashrc)" 'NR <= lines-3' /etc/bash.bashrc > /etc/bash.bashrc.new && mv /etc/bash.bashrc.new /etc/bash.bashrc
+	sed -i '/bash_completion/{N;d;}' /etc/bash.bashrc
+	sleep 1
 
 	cat <<-END >> /etc/bash.bashrc
 
