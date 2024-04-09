@@ -855,12 +855,10 @@ bash_config() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /etc/bash.bashrc"
 
-	# Cleanup
 	sed -i '/PS1/,+1d' /etc/bash.bashrc
 	sed -i '/bash_completion/d' /etc/bash.bashrc && sed -i '/fi/d' /etc/bash.bashrc
 
 	cat <<-END >> /etc/bash.bashrc
-
 [ -f /etc/bash.bash_aliases ] && source /etc/bash.bash_aliases
 
 # Prompt style - generated from https://bash-prompt-generator.org/
@@ -936,12 +934,10 @@ END
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /home/$user/.bashrc"
 
-	# Cleanup
 	sed -i '/PS1/d' /home/"$user"/.bashrc
 	sed -i '/alias/d' /home/"$user"/.bashrc
 	
 	cat <<-END >> /home/"$user"/.bashrc
-
 # Check /etc/bash.bashrc for more configuration
 [[ -r ~/.bash_aliases ]] && source ~/.bash_aliases
 
