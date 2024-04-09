@@ -936,12 +936,6 @@ END
 	sed -i '/alias/d' /etc/bash.bashrc
 
 	cat <<-END >> /home/"$user"/.bashrc
-#
-# ~/.bashrc
-#
-
-# If not running interactively, don't do anything
-[[ \$- != *i* ]] && return
 
 # Check /etc/bash.bashrc for more configuration
 [[ -r ~/.bash_aliases ]] && source ~/.bash_aliases
