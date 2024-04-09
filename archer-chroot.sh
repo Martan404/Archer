@@ -858,22 +858,20 @@ bash_config() {
 	sed -i '/PS1/d' /etc/bash.bashrc
 
 	cat <<-END >> /etc/bash.bashrc
+
 [ -f /etc/bash.bash_aliases ] && source /etc/bash.bash_aliases
 
 # Prompt style - generated from https://bash-prompt-generator.org/
-PS1='[\[\e[38;5;39m\]\u\[\e[38;5;245m\]@\[\e[38;5;33m\]\h\[\e[0m\] \[\e[38;5;64m\]\W\[\e[0m\]]\$ '
+PS1='[\[\e[38;5;39m\]\u\[\e[38;5;245m\]@\[\e[38;5;33m\]\h\[\e[0m\] \[\e[38;5;64m\]\W\[\e[0m\]]$ '
 
 # Color style - https://github.com/sharkdp/vivid
 export LS_COLORS=\$(vivid generate solarized-dark)
-
-# ble.sh
-[[ -r /usr/share/blesh/ble.sh ]] && [[ \$- == *i* ]] && source /usr/share/blesh/ble.sh
 
 # Bash completion
 [[ -r /usr/share/bash-completion/bash_completion ]] && source /usr/share/bash-completion/bash_completion
 
 # Cycle in autocomplete
-bind "set completion-ignore-case on"
+bind 'set completion-ignore-case on'
 bind 'set show-all-if-ambiguous on'
 bind 'TAB:menu-complete'
 
@@ -907,9 +905,9 @@ END
 #
 
 # Repair GRUB
-grub-repair() { pacman --noconfirm -S grub efibootmgr; grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; grub-mkconfig -o /boot/grub/grub.cfg; }
-grub-rescue() { pacman --noconfirm -S grub efibootmgr; grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; grub-mkconfig -o /boot/grub/grub.cfg; }
 grub-update() { grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; grub-mkconfig -o /boot/grub/grub.cfg; }
+grub-repair() { pacman --noconfirm -S grub efibootmgr; grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; grub-mkconfig -o /boot/grub/grub.cfg; }
+alias grub-rescue='grub-repair'
 
 # Shortcuts
 alias home='cd ~'
@@ -946,8 +944,15 @@ END
 # Display system information
 neofetch --ascii_distro arch_small --colors 4 7 4 4 7 7 --ascii_colors 4 4 --disable title underline distro shell resolution de wm wm_theme theme icons term term_font
 
+# ble.sh
+[[ -r /usr/share/blesh/ble.sh ]] && [[ $- == *i* ]] && source /usr/share/blesh/ble.sh
 END
 	chown "$user":"$user" /home/"$user"/.bashrc
+	
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Symlinking /home/$user/.bashrc to /root/.bashrc"
+	
+	sudo ln -s /home/"$user"/.bashrc /root/.bashrc
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /home/$user/.bash_aliases"
@@ -956,10 +961,7 @@ END
 #
 # ~/.bash_aliases
 #
-
-alias last-boot-log='journalctl -b -1 -r'
-alias windows-boot='sudo windows-boot'
-alias logout="shopt -q login_shell && logout || qdbus org.kde.ksmserver /KSMServer logout 0 0 1"
+archer-help() { grep '^[[:alnum:]-]*()' ~/.bash_aliases | awk -F'[(]' '{print \$1}'; grep "^alias" ~/.bash_aliases | awk -F= '{sub("^alias[ \t]*", ""); print \$1}'; }
 
 alias update='paru -Syu'
 alias package-cache-cleanup='paru -Scd'
@@ -968,12 +970,19 @@ alias pacman-refresh-mirrors='sudo reflector --age 48 --country "\$(curl ifconfi
 alias pacman-db-unlock='sudo rm /var/lib/pacman/db.lck'
 alias pacman-remove-orphans='sudo pacman -Rns \$(pacman -Qtdq)'
 
+alias last-boot-log='journalctl -b -1 -r'
+alias windows-boot='sudo windows-boot'
+alias logout="shopt -q login_shell && logout || qdbus org.kde.ksmserver /KSMServer logout 0 0 1"
+
+alias neofetch='neofetch --colors 4 7 4 4 7 7 --ascii_colors 4 4'
+
 # Fix unmountable ntfs partitions
 ntfs-fix-partition() { sudo ntfsfix -d \$1; }
 
 grub-update() { sudo grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; sudo grub-mkconfig -o /boot/grub/grub.cfg; }
-
 grub-rebuild() { sudo grub-mkconfig -o /boot/grub/grub.cfg; }
+grub-repair() { sudo pacman --noconfirm -S grub efibootmgr; sudo grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; sudo grub-mkconfig -o /boot/grub/grub.cfg; }
+alias grub-rescue="grub-repair"
 
 pacman-fix-keys() {
 echo -e "Refresh keys"
@@ -1012,9 +1021,9 @@ paccache -rvuk0
 echo -e "Removing cached AUR packages"
 paru --clean
 echo -e "Cleaning ~/.cache"
-rm -rf $HOME/.cache/*
+rm -rf \$HOME/.cache/*
 echo -e "Checking ~/.config/ size"
-du -sh $HOME/.config/
+du -sh \$HOME/.config/
 }; export -f arch-maintain
 
 END
