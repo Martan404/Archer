@@ -855,11 +855,26 @@ bash_config() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /etc/bash.bashrc"
 
-	sed -i '/PS1/,+1d' /etc/bash.bashrc
-	sed -i '/bash_completion/{N;d;}' /etc/bash.bashrc
-	sleep 1
+	cat <<-END > /etc/bash.bashrc
+#
+# /etc/bash.bashrc
+#
 
-	cat <<-END >> /etc/bash.bashrc
+# If not running interactively, don't do anything
+[[ \$- != *i* ]] && return
+
+[[ \$DISPLAY ]] && shopt -s checkwinsize
+
+
+case \${TERM} in
+  Eterm*|alacritty*|aterm*|foot*|gnome*|konsole*|kterm*|putty*|rxvt*|tmux*|xterm*)
+    PROMPT_COMMAND+=('printf "\033]0;%s@%s:%s\007" "\${USER}" "\${HOSTNAME%%.*}" "\${PWD/#\$HOME/\~}"')
+
+    ;;
+  screen*)
+    PROMPT_COMMAND+=('printf "\033_%s@%s:%s\033\\\\" "\${USER}" "\${HOSTNAME%%.*}" "\${PWD/#\$HOME/\~}"')
+    ;;
+esac
 
 [ -f /etc/bash.bash_aliases ] && source /etc/bash.bash_aliases
 
@@ -939,7 +954,13 @@ END
 	sed -i '/PS1/d' /etc/bash.bashrc
 	sed -i '/alias/d' /etc/bash.bashrc
 
-	cat <<-END >> /home/"$user"/.bashrc
+	cat <<-END > /home/"$user"/.bashrc
+#
+# ~/.bashrc
+#
+
+# If not running interactively, don't do anything
+[[ \$- != *i* ]] && return
 
 # Check /etc/bash.bashrc for more configuration
 [[ -r ~/.bash_aliases ]] && source ~/.bash_aliases
