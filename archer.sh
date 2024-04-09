@@ -542,7 +542,7 @@ setup_environment() {
 
 	pacman -Sy
 
-	touch archer-check # This is to check if the script is ran a second time
+	touch archer-check # This is used to check if the script is ran a second time
 }
 
 install_system() {
