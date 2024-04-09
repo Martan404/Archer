@@ -855,20 +855,15 @@ bash_config() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /etc/bash.bashrc"
 
-	sed -i '/PS1/d' /etc/bash.bashrc
-
 	cat <<-END >> /etc/bash.bashrc
 
 [ -f /etc/bash.bash_aliases ] && source /etc/bash.bash_aliases
 
 # Prompt style - generated from https://bash-prompt-generator.org/
-PS1='[\[\e[38;5;39m\]\u\[\e[38;5;245m\]@\[\e[38;5;33m\]\h\[\e[0m\] \[\e[38;5;64m\]\W\[\e[0m\]]$ '
+PS1='[\[\e[38;5;39m\]\u\[\e[38;5;245m\]@\[\e[38;5;33m\]\h\[\e[0m\] \[\e[38;5;64m\]\W\[\e[0m\]]\$ '
 
 # Color style - https://github.com/sharkdp/vivid
 export LS_COLORS=\$(vivid generate solarized-dark)
-
-# Bash completion
-[[ -r /usr/share/bash-completion/bash_completion ]] && source /usr/share/bash-completion/bash_completion
 
 # Cycle in autocomplete
 bind 'set completion-ignore-case on'
@@ -934,7 +929,14 @@ END
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /home/$user/.bashrc"
 
-	cat <<-END >> /home/"$user"/.bashrc
+	cat <<-END > /home/"$user"/.bashrc
+#
+# ~/.bashrc
+#
+
+# If not running interactively, don't do anything
+[[ \$- != *i* ]] && return
+
 # Check /etc/bash.bashrc for more configuration
 [[ -r ~/.bash_aliases ]] && source ~/.bash_aliases
 
@@ -952,7 +954,7 @@ END
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Symlinking /home/$user/.bashrc to /root/.bashrc"
 	
-	sudo ln -s /home/"$user"/.bashrc /root/.bashrc
+	ln -s /home/"$user"/.bashrc /root/.bashrc
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /home/$user/.bash_aliases"
@@ -961,6 +963,7 @@ END
 #
 # ~/.bash_aliases
 #
+
 archer-help() { grep '^[[:alnum:]-]*()' ~/.bash_aliases | awk -F'[(]' '{print \$1}'; grep "^alias" ~/.bash_aliases | awk -F= '{sub("^alias[ \t]*", ""); print \$1}'; }
 
 alias update='paru -Syu'

@@ -153,7 +153,6 @@ kwayland-integration
 kwin
 kwrited
 milou
-ocean-sound-theme
 partitionmanager
 phonon-qt5
 phonon-qt5-vlc
