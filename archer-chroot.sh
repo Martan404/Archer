@@ -449,7 +449,7 @@ END
 	systemctl enable grub-btrfsd
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Disabling snapshot listing in grub-btrfs"
+	echo -e "Disabling snapshot listing in pacman for grub-btrfs"
 
 	sed -i '/^#GRUB_BTRFS_SHOW_SNAPSHOTS_FOUND="false"/s/^#//' /etc/default/grub-btrfs/config
 
@@ -503,7 +503,7 @@ snapper_setup() {
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Installing Snapper packages"
 
-		package_installer "snapper snap-pac snap-pac-grub snapper-support"
+		package_installer "snapper snap-pac snap-pac-grub snapper-support snapper-rollback"
 
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Creating Snapper root config"
