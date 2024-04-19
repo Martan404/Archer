@@ -44,6 +44,7 @@ if [ "$try_count" -eq "$max_tries" ]; then
 
 		case $choice in
 		[yY1])
+			try_count=0
 			choice="continiue"
 			break
 			;;
