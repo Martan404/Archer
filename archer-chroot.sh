@@ -624,20 +624,15 @@ enable_services() {
 	systemctl enable NetworkManager.service
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling firewalld service and setting up rules"
+	echo -e "Enabling firewalld service"
 
 	systemctl enable firewalld.service
-	firewall-cmd --permanent --zone=internal --change-interface=lo
-	firewall-cmd --permanent --zone=libvirt --change-interface=virbr0
-	firewall-cmd --permanent --zone=trusted --change-interface=waydroid0
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling avahi networking and setting up hostname resolution"
 
 	systemctl enable avahi-daemon.service
 	sudo sed -i '/^hosts: mymachines/ s/resolve/mdns_minimal [NOTFOUND=return] resolve/' /etc/nsswitch.conf
-	firewall-cmd --zone=home --add-port 5353/udp
-	firewall-cmd --zone=trusted --add-port 5353/udp
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling openssh daemon and disable root login"
@@ -685,6 +680,40 @@ clean_orphans() {
 
 	# shellcheck disable=SC2046
 	pacman -Rns --noconfirm $(pacman -Qtdq)
+}
+
+firewall_config() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating Firewalld config script"
+
+	cat <<-END > /usr/bin/firewalld-config-rules
+#!/bin/bash
+firewall-cmd --permanent --zone=internal --change-interface=lo
+firewall-cmd --permanent --zone=libvirt --change-interface=virbr0
+firewall-cmd --permanent --zone=trusted --change-interface=waydroid0
+firewall-cmd --zone=home --add-port 5353/udp
+firewall-cmd --zone=trusted --add-port 5353/udp
+
+systemctl disable --now firewalld-config-rules.service
+rm -f /etc/systemd/system/firewalld-config-rules.service
+rm -f \${BASH_SOURCE[0]}
+END
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating Firewalld config service"
+
+cat <<-END > /etc/systemd/system/firewalld-config-rules.service
+[Unit]
+Description=Firewalld config script
+ 
+[Service]
+ExecStart=/usr/bin/firewalld-config-rules
+ 
+[Install]
+WantedBy=multi-user.target
+END
+	
+	systemctl enable firewalld-config-rules.service
 }
 
 system_config() {
@@ -820,7 +849,7 @@ bash_config() {
 
 	sudo -u "$user" mkdir -p /home/"$user"/.config/fastfetch/
 	cat /Archer-main/quiver/fastfetch-config.jsonc > /home/"$user"/.config/fastfetch/config.jsonc
-	cat /Archer-main/quiver/fastfetch-archer.jsonc > /home/"$user"/.config/fastfetch/config-small.jsonc
+	cat /Archer-main/quiver/fastfetch-config-small.jsonc > /home/"$user"/.config/fastfetch/config-small.jsonc
 
 	chown "$user":"$user" /home/"$user"/.config/fastfetch/config.jsonc
 	chown "$user":"$user" /home/"$user"/.config/fastfetch/config-small.jsonc
@@ -921,6 +950,7 @@ enable_services
 pacman_hooks
 clean_orphans
 
+firewall_config
 system_config
 user_config
 bash_config
