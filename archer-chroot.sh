@@ -848,7 +848,7 @@ EOF
 	cat /Archer-main/quiver/flatpak-setup >> /home/"$user"/System/scripts/flatpak-setup
 	chmod a+x /home/"$user"/System/scripts/flatpak-setup
 
-	sed -i "s/UNIX_USER/$user/g; s/PACKAGES/$packages/g" /home/"$user"/System/scripts/flatpak-setup
+	sed -i "s/UNIX_USER/$user/g; s/PACKAGE_LIST/$packages/g" /home/"$user"/System/scripts/flatpak-setup
 }
 
 snapshot_rollback() {
@@ -868,7 +868,8 @@ snapshot_rollback() {
 	cat /Archer-main/quiver/rollback > /usr/local/bin/rollback
 	chmod a+x /usr/local/bin/rollback
 	
-	sed -i "s/SNAPSHOT_PATH/$snapshot_path/g" /usr/local/bin/rollback
+	sed -i "s/SNAPSHOT_LAYOUT/$snapshot_layout/g" /usr/local/bin/rollback
+	sed -i "s/SNAP_MANAGER/$snap_manager/g" /usr/local/bin/rollback
 }
 
 set_password() {
