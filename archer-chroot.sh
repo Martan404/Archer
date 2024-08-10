@@ -2,7 +2,7 @@
 # shellcheck disable=SC2002,SC2164
 
 # Import variables from first script
-archer_logo=${1}
+archer_logo=${1//$/\\$}
 user=${2}
 hostname=${3}
 snapshot_layout=${4}
@@ -29,8 +29,9 @@ package_installer() {
 	    try_count=$((try_count+1))
 		
 		# shellcheck disable=SC2086
-		if [ $pkg_manager = "pacman" ]; then
+		if [ "$pkg_manager" = "pacman" ]; then
 			pacman -S --needed --noconfirm $packages && break
+		
 		else
 			sudo -u "$user" paru -S --needed --noconfirm $packages && break
 		fi
