@@ -195,7 +195,7 @@ install_packages() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing desktop environment"
 
-	sed -n '/# DESKTOP/{:a;n;/# DESKTOP/b;p;ba}' "/Archer-main/quiver/packages.txt" > "Archer-main/quiver//desktop.txt"
+	sed -n '/# DESKTOP/{:a;n;/# DESKTOP/b;p;ba}' "/Archer-main/quiver/packages.txt" > "Archer-main/quiver/desktop.txt"
 	package_installer "Archer-main/quiver/desktop.txt"
 
 	echo -e "-------------------------------------------------------------------------"
