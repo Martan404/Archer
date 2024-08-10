@@ -12,7 +12,7 @@ if [[ $snapshot_layout == "snapper" ]]; then
 		snapshot_path="$snaphot_number"
 fi
 
-echo -ne "
+echo -e "
 -------------------------------------------------------------------------
 $(tput setaf 4)
              █████╗ ██████╗  ██████╗██╗  ██╗███████╗██████╗
@@ -25,8 +25,6 @@ $(tput sgr0)
 -------------------------------------------------------------------------
                         Snapshot rollback script
 -------------------------------------------------------------------------"
-
-sudo echo "" > /dev/null
 
 root_disk=$(cat /proc/cmdline | awk '{sub("root=UUID=", "", $2); print $2}')
 snaphot_number=$(cat /proc/cmdline | awk -F '/' '{print $3}')
