@@ -652,7 +652,7 @@ pacman_hooks() {
 
 system_config() {
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Adding ~/.local/bin PATH in /etc/profile.d/custom-path.sh"
+	echo -e "Adding ~/.local/bin PATH to /etc/profile.d/custom-path.sh"
 
 	echo "export PATH=\$PATH:\$HOME/.local/bin" >> /etc/profile.d/custom-path.sh
 
@@ -702,6 +702,7 @@ END
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating windows-boot script"
+	
 	cat <<-END >> /usr/local/bin/windows-boot
 #!/bin/bash
 # Set Windows Boot Manager as NextBoot and reboots
@@ -774,12 +775,12 @@ bash_config() {
 	sed -i '/PS1/,+1d' /etc/bash.bashrc
 	sed -i '/bash_completion/d' /etc/bash.bashrc && sed -i '/fi/d' /etc/bash.bashrc
 
-	cat /Archer-main/quiver/bash.bashrc >> /etc/bash.bashrc
+	echo /Archer-main/quiver/bash.bashrc >> /etc/bash.bashrc
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /etc/bash.bash_aliases"
 
-	cat /Archer-main/quiver/bash.bash_aliases >> /etc/bash.bash_aliases
+	echo /Archer-main/quiver/bash.bash_aliases > /etc/bash.bash_aliases
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /home/$user/.bashrc"
@@ -787,7 +788,7 @@ bash_config() {
 	sed -i '/PS1/d' /home/"$user"/.bashrc
 	sed -i '/alias/d' /home/"$user"/.bashrc
 	
-	cat /Archer-main/quiver/user.bashrc >> /home/"$user"/.bashrc
+	echo /Archer-main/quiver/user.bashrc >> /home/"$user"/.bashrc
 	chown "$user":"$user" /home/"$user"/.bashrc
 	
 	echo -e "-------------------------------------------------------------------------"
@@ -798,14 +799,14 @@ bash_config() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /home/$user/.bash_aliases"
 
-	cat /Archer-main/quiver/user.bash_aliases >> /home/"$user"/.bash_aliases
+	echo /Archer-main/quiver/user.bash_aliases >> /home/"$user"/.bash_aliases
 	chown "$user":"$user" /home/"$user"/.bash_aliases
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring fastfetch config"
 
 	sudo -u "$user" mkdir -p /home/"$user"/.config/fastfetch/
-	cat /Archer-main/quiver/fastfetch-config.jsonc > /home/"$user"/.config/fastfetch/archer.jsonc
+	echo /Archer-main/quiver/fastfetch-config.jsonc > /home/"$user"/.config/fastfetch/archer.jsonc
 	chown "$user":"$user" /home/"$user"/.config/fastfetch/archer.jsonc
 }
 
@@ -846,7 +847,7 @@ EOF
 	# shellcheck disable=SC2002
 	packages=$(cat "/Archer-main/quiver/flatpak.txt" | tr '\n' ' ')
 	
-	cat /Archer-main/quiver/flatpak-setup >> /home/"$user"/System/scripts/flatpak-setup
+	echo /Archer-main/quiver/flatpak-setup > /home/"$user"/System/scripts/flatpak-setup
 	chmod a+x /home/"$user"/System/scripts/flatpak-setup
 
 	sed -i "s/UNIX_USER/$user/g; s/PACKAGE_LIST/$packages/g" /home/"$user"/System/scripts/flatpak-setup
@@ -856,17 +857,7 @@ snapshot_rollback() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Writing Snapshot rollback script"
 
-	if [[ $snapshot_layout == "snapper" ]]; then
-		snapshot_path="\$snaphot_number/snapshot"
-
-	elif [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "snapper" ]]; then
-		snapshot_path="\$snaphot_number/snapshot"
-
-	elif [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "yabsnap" ]]; then
-		snapshot_path="\$snaphot_number"
-	fi
-
-	cat /Archer-main/quiver/rollback > /usr/local/bin/rollback
+	echo /Archer-main/quiver/rollback > /usr/local/bin/rollback
 	chmod a+x /usr/local/bin/rollback
 	
 	sed -i "s/SNAPSHOT_LAYOUT/$snapshot_layout/g" /usr/local/bin/rollback
