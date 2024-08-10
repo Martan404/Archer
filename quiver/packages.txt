@@ -150,6 +150,7 @@ plasma-pa
 plasma-systemmonitor
 plasma-thunderbolt
 plasma-vault
+plasma-welcome
 plasma-workspace
 plasma-workspace-wallpapers
 polkit-kde-agent
