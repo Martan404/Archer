@@ -23,7 +23,7 @@ From initial prompt run these commands:
 loadkeys sv-latin1
 bash <(curl -L tinyurl.com/archersh)
 ```
-*Replace sv-latin1 with whatever keymap you want*
+*Replace sv-latin1 with whatever keymap you want. Do note that the script defaults to Swedish settings during install. This needs to be manually edited in the script*
 
 ## Wifi
 
