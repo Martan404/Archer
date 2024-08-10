@@ -1,4 +1,7 @@
 #!/bin/bash
+user="UNIX_USER"
+packages="PACKAGE_LIST"
+
 show_logo() {
 	clear
 	echo -ne "
@@ -23,7 +26,7 @@ install_flatpak() {
 	done
 
     while true; do
-		flatpak install flathub -y --noninteractive PACKAGES && break
+		flatpak install flathub -y --noninteractive $packages && break
     	echo "$(tput setaf 9)Package installation failed. Retrying...$(tput sgr0)"
 	done
 
@@ -31,7 +34,7 @@ install_flatpak() {
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Setting Adwaita color to match Breeze Dark"
 
-		mkdir -p "/home/UNIX_USER/.var/app/com.github.GradienceTeam.Gradience/config/presets/curated"
+		mkdir -p "/home/$user/.var/app/com.github.GradienceTeam.Gradience/config/presets/curated"
 
 		flatpak run --command=gradience-cli com.github.GradienceTeam.Gradience download -n "Breeze Dark"
 		flatpak run --command=gradience-cli com.github.GradienceTeam.Gradience apply -n "Breeze Dark" --gtk both
@@ -48,18 +51,18 @@ install_flatpak() {
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Moving Betterfox user.js to Firefox"
 
-		cd /home/UNIX_USER/.var/app/org.mozilla.firefox/.mozilla/firefox/*default-release/
-		mv /home/UNIX_USER/.user.js ./user.js
+		cd /home/$user/.var/app/org.mozilla.firefox/.mozilla/firefox/*default-release/
+		mv /home/$user/.user.js ./user.js
 		cd /
 		
 	else
-		rm -f /home/UNIX_USER/.user.js
+		rm -f /home/$user/.user.js
 	fi
 
 	echo -e "-------------------------------------------------------------------------"
 	read -r -t 5 -p "Rebooting in 5 seconds..."
 
-	rm -f /home/UNIX_USER/.config/autostart/flatpak-setup.desktop
+	rm -f /home/$user/.config/autostart/flatpak-setup.desktop
 	rm -f ${BASH_SOURCE[0]}
 	reboot
 }

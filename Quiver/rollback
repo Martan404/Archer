@@ -1,4 +1,17 @@
 #!/usr/bin/env bash
+snapshot_layout="SNAPSHOT_LAYOUT"
+snap_manager="SNAP_MANAGER"
+
+if [[ $snapshot_layout == "snapper" ]]; then
+		snapshot_path="$snaphot_number/snapshot"
+
+	elif [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "snapper" ]]; then
+		snapshot_path="$snaphot_number/snapshot"
+
+	elif [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "yabsnap" ]]; then
+		snapshot_path="$snaphot_number"
+fi
+
 echo -ne "
 -------------------------------------------------------------------------
 $(tput setaf 4)
@@ -30,7 +43,7 @@ sudo mv /mnt/@ /mnt/@broken
 echo -e "-------------------------------------------------------------------------"
 echo -e "Setting snapshot as root"
 
-sudo btrfs subvolume snapshot /mnt/@snapshots/SNAPSHOT_PATH /mnt/@ && success="yes"
+sudo btrfs subvolume snapshot /mnt/@snapshots/$snapshot_path /mnt/@ && success="yes"
 
 echo -e "-------------------------------------------------------------------------"
 echo -e "Removing broken root"
