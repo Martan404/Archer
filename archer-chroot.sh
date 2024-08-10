@@ -559,46 +559,6 @@ snapshot_rollback() {
 	sed -i "s/SNAP_MANAGER/$snap_manager/g" /usr/local/bin/rollback
 }
 
-setup_flatpak() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling Flatpak theming"
-
-	flatpak override --filesystem=xdg-config/{Kvantum,gtkrc,gtkrc-2.0,gtk-3.0,gtk-4.0}
-	flatpak override --filesystem={~/.themes,~/.icons,~/.fonts,~/.local/share/themes}
-	flatpak override --env=GTK_THEME=Breeze
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting Lutris Flatpak theming"
-		
-	flatpak override net.lutris.Lutris --env=GTK_THEME=Breeze
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Writing flatpak-setup desktop entry"
-
-	sudo -u "$user" mkdir -p /home/"$user"/.config/autostart/
-	sudo -u "$user" touch /home/"$user"/.config/autostart/flatpak-setup.desktop
-	
-	cat <<EOF >> /home/"$user"/.config/autostart/flatpak-setup.desktop
-[Desktop Entry]
-Exec=konsole -e /home/$user/System/scripts/flatpak-setup
-Icon=/usr/share/pixmaps/archlinux-logo.png
-StartupNotify=true
-Type=Application
-EOF
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Writing Flatpak install script"
-
-	sed -n '/# FLATPAK/{:a;n;/# FLATPAK/b;p;ba}' "/Archer-main/quiver/packages.txt" > "/Archer-main/quiver/flatpak.txt"
-	# shellcheck disable=SC2002
-	packages=$(cat "/Archer-main/quiver/flatpak.txt" | tr '\n' ' ')
-	
-	cat /Archer-main/quiver/flatpak-setup > /home/"$user"/System/scripts/flatpak-setup
-	chmod a+x /home/"$user"/System/scripts/flatpak-setup
-
-	sed -i "s/UNIX_USER/$user/g; s/PACKAGE_LIST/$packages/g" /home/"$user"/System/scripts/flatpak-setup
-}
-
 package_config() {
 	# If fail2ban in installed then configure jail
 	if pacman -Qs fail2ban > /dev/null; then
@@ -873,6 +833,46 @@ bash_config() {
 	chown "$user":"$user" /home/"$user"/.config/fastfetch/config-small.jsonc
 }
 
+setup_flatpak() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling Flatpak theming"
+
+	flatpak override --filesystem=xdg-config/{Kvantum,gtkrc,gtkrc-2.0,gtk-3.0,gtk-4.0}
+	flatpak override --filesystem={~/.themes,~/.icons,~/.fonts,~/.local/share/themes}
+	flatpak override --env=GTK_THEME=Breeze
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting Lutris Flatpak theming"
+		
+	flatpak override net.lutris.Lutris --env=GTK_THEME=Breeze
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Writing flatpak-setup desktop entry"
+
+	sudo -u "$user" mkdir -p /home/"$user"/.config/autostart/
+	sudo -u "$user" touch /home/"$user"/.config/autostart/flatpak-setup.desktop
+	
+	cat <<EOF >> /home/"$user"/.config/autostart/flatpak-setup.desktop
+[Desktop Entry]
+Exec=konsole -e /home/$user/System/scripts/flatpak-setup
+Icon=/usr/share/pixmaps/archlinux-logo.png
+StartupNotify=true
+Type=Application
+EOF
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Writing Flatpak install script"
+
+	sed -n '/# FLATPAK/{:a;n;/# FLATPAK/b;p;ba}' "/Archer-main/quiver/packages.txt" > "/Archer-main/quiver/flatpak.txt"
+	# shellcheck disable=SC2002
+	packages=$(cat "/Archer-main/quiver/flatpak.txt" | tr '\n' ' ')
+	
+	cat /Archer-main/quiver/flatpak-setup > /home/"$user"/System/scripts/flatpak-setup
+	chmod a+x /home/"$user"/System/scripts/flatpak-setup
+
+	sed -i "s/UNIX_USER/$user/g; s/PACKAGE_LIST/$packages/g" /home/"$user"/System/scripts/flatpak-setup
+}
+
 boot_setup() {
 	cat /Archer-main/archer-boot.sh > /usr/bin/archer-boot.sh
 
@@ -934,7 +934,6 @@ backup_kernel
 [[ $snapshot_layout == "snapper" ]] && snapper_setup
 snapshot_rollback
 
-pacman -Q flatpak &>/dev/null && setup_flatpak
 package_config
 enable_services
 pacman_hooks
@@ -944,6 +943,7 @@ system_config
 user_config
 bash_config
 
+setup_flatpak
 boot_setup
 set_password
 exit
