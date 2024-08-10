@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+echo -ne "
+-------------------------------------------------------------------------
+$(tput setaf 4)
+             █████╗ ██████╗  ██████╗██╗  ██╗███████╗██████╗
+            ██╔══██╗██╔══██╗██╔════╝██║  ██║██╔════╝██╔══██╗
+            ███████║██████╔╝██║     ███████║█████╗  ██████╔╝
+            ██╔══██║██╔══██╗██║     ██╔══██║██╔══╝  ██╔══██╗
+            ██║  ██║██║  ██║╚██████╗██║  ██║███████╗██║  ██║
+            ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+$(tput sgr0)
+-------------------------------------------------------------------------
+		                   Plasma setup script
+-------------------------------------------------------------------------"
+echo -e "Importing and applying konsave settings"
+
+export PATH=\$PATH:/home/UNIX_USER/.local/bin
+
+sudo -u UNIX_USER konsave -i /home/UNIX_USER/archer.knsv
+sleep 1
+sudo -u UNIX_USER konsave -a archer
+
+
+#echo -e "-------------------------------------------------------------------------"
+#echo -e "Setting Dolphin state"
+
+#sudo -u UNIX_USER mkdir -p /home/UNIX_USER/.local/share/dolphin
+#sudo -u UNIX_USER touch /home/UNIX_USER/.local/share/dolphin/dolphinstaterc
+
+#cat <<-EOF > /home/UNIX_USER/.local/share/dolphin/dolphinstaterc
+#[State]
+#State=AAAA/wAAAAD9AAAAAwAAAAAAAACmAAAB0/wCAAAAAvsAAAAWAGYAbwBsAGQAZQByAHMARABvAGMAawAAAAAuAAAA7AAAAAoBAAAD+wAAABQAcABsAGEAYwBlAHMARABvAGMAawEAAAAuAAAB0wAAAF0BAAADAAAAAQAAALgAAAHn/AIAAAAB+wAAABAAaQBuAGYAbwBEAG8AYwBrAAAAAC4AAAHnAAAACgEAAAMAAAADAAAC+AAAAL78AQAAAAH7AAAAGAB0AGUAcgBtAGkAbgBhAGwARABvAGMAawAAAAAAAAAC+AAAAAoBAAADAAACkwAAAdMAAAAEAAAABAAAAAgAAAAI/AAAAAEAAAACAAAAAQAAABYAbQBhAGkAbgBUAG8AbwBsAEIAYQByAQAAAAD/////AAAAAAAAAAA=
+#EOF
+
+rm -f /home/UNIX_USER/archer.knsv
+rm -f ${BASH_SOURCE[0]}
