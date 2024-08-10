@@ -14,7 +14,7 @@ snap_manager=${9}
 
 package_installer() {
 	input_packages=$1
-	pkgmanager=$2
+	pkg_manager=$2
 	max_tries=3
 	try_count=0
 
@@ -25,13 +25,17 @@ package_installer() {
 		packages=$input_packages
 	fi
 
-	# Set package manager to paru if not specified to use pacman
-	[[ "$pkgmanager" != "pacman" ]] && pkgmanager="paru"
-
 	while [ "$try_count" -lt "$max_tries" ]; do
 	    try_count=$((try_count+1))
+		
 		# shellcheck disable=SC2086
-    	sudo -u "$user" $pkgmanager -S --needed --noconfirm $packages && break
+		if "$pkg_manager" != "pacman"; then
+			sudo -u "$user" paru -S --needed --noconfirm $packages && break
+		
+		else
+			pacman -S --needed --noconfirm $packages && break
+		fi
+
     	echo "$(tput setaf 9)Package installation failed. Retrying... ($try_count/$max_tries)$(tput sgr0)"
 	done
 
