@@ -804,6 +804,7 @@ bash_config() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring fastfetch config"
 
+	sudo -u "$user" mkdir -p /home/"$user"/.config/fastfetch/
 	cat /Archer-main/quiver/fastfetch-config.jsonc > /home/"$user"/.config/fastfetch/archer.jsonc
 	chown "$user":"$user" /home/"$user"/.config/fastfetch/archer.jsonc
 }
