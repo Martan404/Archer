@@ -632,9 +632,9 @@ enable_services() {
 	systemctl enable bluetooth.service
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling uncomplicated firewall"
+	echo -e "Enabling firewalld service"
 
-	systemctl enable ufw.service
+	systemctl firewalld.service
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Rebuilding GRUB configs"
