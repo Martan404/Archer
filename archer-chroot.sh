@@ -29,11 +29,10 @@ package_installer() {
 	    try_count=$((try_count+1))
 		
 		# shellcheck disable=SC2086
-		if "$pkg_manager" != "pacman"; then
-			sudo -u "$user" paru -S --needed --noconfirm $packages && break
-		
-		else
+		if [ $pkg_manager = "pacman" ]; then
 			pacman -S --needed --noconfirm $packages && break
+		else
+			sudo -u "$user" paru -S --needed --noconfirm $packages && break
 		fi
 
     	echo "$(tput setaf 9)Package installation failed. Retrying... ($try_count/$max_tries)$(tput sgr0)"
