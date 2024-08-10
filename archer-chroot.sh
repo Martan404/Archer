@@ -350,14 +350,6 @@ echo -e "-----------------------------------------------------------------------
 	pacman -Rs --noconfirm laptop-detect
 }
 
-remove_orphans() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Removing orphaned packages"
-
-	# shellcheck disable=SC2046
-	pacman -Rns --noconfirm $(pacman -Qtdq)
-}
-
 setup_grub() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing Grub packages"
@@ -453,7 +445,7 @@ tweak_kernel() {
 
 backup_kernel() {
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing rsync"
+	echo -e "Installing rsync for kernel backup"
 
 	package_installer "rsync"
 
@@ -634,7 +626,7 @@ enable_services() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling firewalld service"
 
-	systemctl firewalld.service
+	systemctl enable firewalld.service
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Rebuilding GRUB configs"
@@ -648,6 +640,14 @@ pacman_hooks() {
 
 	mv -v /Archer-main/quiver/hooks/* /etc/pacman.d/hooks/
 	chown -R :wheel /etc/pacman.d/hooks/*
+}
+
+clean_orphans() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Removing orphaned packages"
+
+	# shellcheck disable=SC2046
+	pacman -Rns --noconfirm $(pacman -Qtdq)
 }
 
 system_config() {
@@ -775,12 +775,12 @@ bash_config() {
 	sed -i '/PS1/,+1d' /etc/bash.bashrc
 	sed -i '/bash_completion/d' /etc/bash.bashrc && sed -i '/fi/d' /etc/bash.bashrc
 
-	echo /Archer-main/quiver/bash.bashrc >> /etc/bash.bashrc
+	cat /Archer-main/quiver/bash.bashrc >> /etc/bash.bashrc
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /etc/bash.bash_aliases"
 
-	echo /Archer-main/quiver/bash.bash_aliases > /etc/bash.bash_aliases
+	cat /Archer-main/quiver/bash.bash_aliases > /etc/bash.bash_aliases
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /home/$user/.bashrc"
@@ -788,7 +788,7 @@ bash_config() {
 	sed -i '/PS1/d' /home/"$user"/.bashrc
 	sed -i '/alias/d' /home/"$user"/.bashrc
 	
-	echo /Archer-main/quiver/user.bashrc >> /home/"$user"/.bashrc
+	cat /Archer-main/quiver/user.bashrc >> /home/"$user"/.bashrc
 	chown "$user":"$user" /home/"$user"/.bashrc
 	
 	echo -e "-------------------------------------------------------------------------"
@@ -799,14 +799,14 @@ bash_config() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /home/$user/.bash_aliases"
 
-	echo /Archer-main/quiver/user.bash_aliases >> /home/"$user"/.bash_aliases
+	cat /Archer-main/quiver/user.bash_aliases >> /home/"$user"/.bash_aliases
 	chown "$user":"$user" /home/"$user"/.bash_aliases
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring fastfetch config"
 
 	sudo -u "$user" mkdir -p /home/"$user"/.config/fastfetch/
-	echo /Archer-main/quiver/fastfetch-config.jsonc > /home/"$user"/.config/fastfetch/archer.jsonc
+	cat /Archer-main/quiver/fastfetch-config.jsonc > /home/"$user"/.config/fastfetch/archer.jsonc
 	chown "$user":"$user" /home/"$user"/.config/fastfetch/archer.jsonc
 }
 
@@ -847,7 +847,7 @@ EOF
 	# shellcheck disable=SC2002
 	packages=$(cat "/Archer-main/quiver/flatpak.txt" | tr '\n' ' ')
 	
-	echo /Archer-main/quiver/flatpak-setup > /home/"$user"/System/scripts/flatpak-setup
+	cat /Archer-main/quiver/flatpak-setup > /home/"$user"/System/scripts/flatpak-setup
 	chmod a+x /home/"$user"/System/scripts/flatpak-setup
 
 	sed -i "s/UNIX_USER/$user/g; s/PACKAGE_LIST/$packages/g" /home/"$user"/System/scripts/flatpak-setup
@@ -857,7 +857,7 @@ snapshot_rollback() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Writing Snapshot rollback script"
 
-	echo /Archer-main/quiver/rollback > /usr/local/bin/rollback
+	cat /Archer-main/quiver/rollback > /usr/local/bin/rollback
 	chmod a+x /usr/local/bin/rollback
 	
 	sed -i "s/SNAPSHOT_LAYOUT/$snapshot_layout/g" /usr/local/bin/rollback
@@ -897,7 +897,6 @@ install_packages
 config_packages
 setup_plasma
 setup_laptop
-remove_orphans
 
 setup_grub
 tweak_kernel
@@ -907,6 +906,7 @@ backup_kernel
 [[ $snapshot_layout == "snapper" ]] && snapper_setup
 enable_services
 pacman_hooks
+clean_orphans
 
 system_config
 user_config
