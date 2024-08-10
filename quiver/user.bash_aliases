@@ -9,7 +9,7 @@ alias package-cache-cleanup='paru -Scd'
 alias sudo-password-unlock='faillock --user $USER --reset'
 alias pacman-refresh-mirrors='sudo reflector --age 48 --country "$(curl ifconfig.co/country-iso)" --fastest 5 --latest 20 --sort rate --save /etc/pacman.d/mirrorlist'
 alias pacman-db-unlock='sudo rm /var/lib/pacman/db.lck'
-alias pacman-remove-orphans='sudo pacman -Rns $(pacman -Qtdq)'
+alias pacman-clean-orphans='sudo pacman -Rns $(pacman -Qtdq)'
 
 alias last-boot-log='journalctl -b -1 -r'
 alias windows-boot='sudo windows-boot'
@@ -52,11 +52,11 @@ echo -e "Refreshing pacman mirrors"
 sudo reflector --age 48 --country "$(curl ifconfig.co/country-iso)" --fastest 5 --latest 20 --sort rate --save /etc/pacman.d/mirrorlist
 echo -e "Updating system"
 sudo pacman -Syu
-echo -e "Removing orphaned packages"
+echo -e "Cleaning orphaned packages"
 sudo pacman -Rns $(pacman -Qtdq)
-echo -e "Removing cached packages"
+echo -e "Cleaning cached packages"
 paccache -rvuk0
-echo -e "Removing cached AUR packages"
+echo -e "Cleaning cached AUR packages"
 paru --clean
 echo -e "Cleaning ~/.cache"
 rm -rf $HOME/.cache/*
