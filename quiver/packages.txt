@@ -27,6 +27,7 @@ steam
 # DRIVERS #
 avahi
 networkmanager
+firewalld
 nss-mdns
 bluez-utils
 cups
@@ -92,7 +93,6 @@ reflector
 shellcheck
 spectacle
 texinfo
-firewalld
 vivid
 # SYSTEM #
 
