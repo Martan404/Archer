@@ -644,7 +644,7 @@ pacman_hooks() {
 
 clean_orphans() {
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Removing orphaned packages"
+	echo -e "Cleaning orphaned packages"
 
 	# shellcheck disable=SC2046
 	pacman -Rns --noconfirm $(pacman -Qtdq)
