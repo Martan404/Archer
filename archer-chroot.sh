@@ -18,7 +18,7 @@ package_installer() {
 	max_tries=3
 	try_count=0
 
-	# Check if argument is .txt file and combine each line then remove the .txt
+	# Check if argument is .txt file and combine each line
     if [[ "$input_packages" == *.txt ]]; then
 		packages=$(cat "$input_packages" | tr '\n' ' ')
 	else
