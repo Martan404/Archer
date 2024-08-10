@@ -222,68 +222,6 @@ install_packages() {
 	fi
 }
 
-config_packages() {
-	# If Steam is not installed then install steam-devices package for controller support in Steam flatpak
-	if ! pacman -Qs steam > /dev/null; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Installing steam-devices package for Steam Flatpak"
-	
-		package_installer "steam-devices" 
-	fi
-
-	# If Firefox is installed then start it once and add the user.js
-	if pacman -Qs firefox > /dev/null; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Generating Firefox profiles"
-
-		sudo -u "$user" firefox -headless &
-		read -r -t 1
-
-		# shellcheck disable=SC2009
-		for pid in $(ps -ef | grep "firefox -headless" | awk '{print $2}'); do kill -9 "$pid"; done
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Importing Betterfox user.js"
-
-		cd /home/"$user"/.mozilla/firefox/*default-release/
-		mv /Archer-main/quiver/betterfox-user.js ./user.js
-		chown "$user":"$user" ./user.js
-		cd /
-	# Else prepare user.js for Flatpak version
-	else
-		mv /Archer-main/quiver/betterfox-user.js /home/"$user"/.user.js
-		chown "$user":"$user" /home/"$user"/.user.js
-	fi
-
-	# If Discord is installed then apply fixes 
-	if pacman -Qs discord > /dev/null; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Setting Discord to use local login credentials"
-
-		sed -i 's/Exec=\/usr\/bin\/discord/Exec=\/usr\/bin\/discord --password-store=basic/' /opt/discord/discord.desktop
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Removing Discord internal update check"
-
-		sudo -u "$user" mkdir -p /home/"$user"/.config/discord
-		sudo -u "$user" touch /home/"$user"/.config/discord/settings.json
-
-		cat <<-END > /home/"$user"/.config/discord/settings.json
-{
-  "IS_MAXIMIZED": false,
-  "IS_MINIMIZED": false,
-  "SKIP_HOST_UPDATE": true,
-  "WINDOW_BOUNDS": {
-    "x": 40,
-    "y": 40,
-    "width": 940,
-    "height": 570
-  }
-}
-END
-	fi
-}
-
 setup_plasma() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling automatic D-Bus activation for KWallet"
@@ -307,12 +245,21 @@ END
 	echo -e "Setting up Plasma setup script"
 
 	sudo -u "$user" mkdir -p /home/"$user"/.config/plasma-workspace/env
-    mv /Archer-main/quiver/plasma-setup /home/"$user"/.config/plasma-workspace/env/plasma-setup
+    mv /Archer-main/quiver/plasma-setup /home/"$user"/.config/plasma-workspace/env/plasma-setup.sh
 	
-	chmod a+x /home/"$user"/.config/plasma-workspace/env/plasma-setup
-	chown "$user":"$user" /home/"$user"/.config/plasma-workspace/env/plasma-setup
+	chmod a+x /home/"$user"/.config/plasma-workspace/env/plasma-setup.sh
+	chown "$user":"$user" /home/"$user"/.config/plasma-workspace/env/plasma-setup.sh
 	
-	sed -i "s/UNIX_USER/$user/g" /home/"$user"/.config/plasma-workspace/env/plasma-setup
+	sed -i "s/UNIX_USER/$user/g" /home/"$user"/.config/plasma-workspace/env/plasma-setup.sh
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting SDDM theme"
+
+	mkdir -p /etc/sddm.conf.d/
+	cat <<-END > /etc/sddm.conf.d/kde_settings.conf
+[Theme]
+Current=breeze
+END
 }
 
 setup_laptop() {
@@ -385,8 +332,6 @@ END
 	mv /Archer-main/quiver/arch-silence /boot/grub/themes/arch-silence
 	sed -i '/^[#]*GRUB_THEME=/c\GRUB_THEME="\/boot\/grub\/themes\/arch-silence\/theme.txt"' /etc/default/grub
 
-
-
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling GRUB-btrfsd snapshot daemon"
 
@@ -397,6 +342,21 @@ END
 
 	sed -i '/^[#]*GRUB_BTRFS_SHOW_SNAPSHOTS_FOUND=/s/true/false/' /etc/default/grub-btrfs/config
 	sed -i '/^#GRUB_BTRFS_SHOW_SNAPSHOTS_FOUND/s/^#//' /etc/default/grub-btrfs/config
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating windows-boot script"
+	
+	cat <<-END >> /usr/local/bin/windows-boot
+#!/bin/bash
+# Set Windows Boot Manager as NextBoot and reboots
+efibootmgr -n \$(efibootmgr | awk '/Windows Boot Manager/ {gsub(/^Boot/, "", \$1); gsub(/\*/, "", \$1); print \$1}') && reboot
+END
+	chmod +x /usr/local/bin/windows-boot
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Adding sudo password exception to windows-boot script"
+
+	echo "%wheel ALL=(ALL) NOPASSWD: /usr/local/bin/windows-boot" >> /etc/sudoers
 }
 
 tweak_kernel() {
@@ -587,6 +547,76 @@ yabsnap_setup() {
 	systemctl enable yabsnap.timer
 }
 
+package_config() {
+	# If fail2ban in installed then configure jail
+	if pacman -Qs fail2ban > /dev/null; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Configuring fail2ban jail"
+		
+		cat /Archer-main/quiver/fail2ban-jail.local > /etc/fail2ban/jail.local
+	fi
+
+	# If Steam is not installed then install steam-devices package for controller support in Steam flatpak
+	if ! pacman -Qs steam > /dev/null; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Installing steam-devices package for Steam Flatpak"
+	
+		package_installer "steam-devices" 
+	fi
+
+	# If Firefox is installed then start it once and add the user.js
+	if pacman -Qs firefox > /dev/null; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Generating Firefox profiles"
+
+		sudo -u "$user" firefox -headless &
+		read -r -t 1
+
+		# shellcheck disable=SC2009
+		for pid in $(ps -ef | grep "firefox -headless" | awk '{print $2}'); do kill -9 "$pid"; done
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Importing Betterfox user.js"
+
+		cd /home/"$user"/.mozilla/firefox/*default-release/
+		mv /Archer-main/quiver/betterfox-user.js ./user.js
+		chown "$user":"$user" ./user.js
+		cd /
+	# Else prepare user.js for Flatpak version
+	else
+		mv /Archer-main/quiver/betterfox-user.js /home/"$user"/.user.js
+		chown "$user":"$user" /home/"$user"/.user.js
+	fi
+
+	# If Discord is installed then apply fixes 
+	if pacman -Qs discord > /dev/null; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Setting Discord to use local login credentials"
+
+		sed -i 's/Exec=\/usr\/bin\/discord/Exec=\/usr\/bin\/discord --password-store=basic/' /opt/discord/discord.desktop
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Removing Discord internal update check"
+
+		sudo -u "$user" mkdir -p /home/"$user"/.config/discord
+		sudo -u "$user" touch /home/"$user"/.config/discord/settings.json
+
+		cat <<-END > /home/"$user"/.config/discord/settings.json
+{
+  "IS_MAXIMIZED": false,
+  "IS_MINIMIZED": false,
+  "SKIP_HOST_UPDATE": true,
+  "WINDOW_BOUNDS": {
+    "x": 40,
+    "y": 40,
+    "width": 940,
+    "height": 570
+  }
+}
+END
+	fi
+}
+
 enable_services() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling networkmanager service"
@@ -594,9 +624,26 @@ enable_services() {
 	systemctl enable NetworkManager.service
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling avahi networking"
+	echo -e "Enabling firewalld service and setting up rules"
+
+	systemctl enable firewalld.service
+	firewall-cmd --permanent --zone=internal --change-interface=lo
+	firewall-cmd --permanent --zone=libvirt --change-interface=virbr0
+	firewall-cmd --permanent --zone=trusted --change-interface=waydroid0
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling avahi networking and setting up hostname resolution"
 
 	systemctl enable avahi-daemon.service
+	sudo sed -i '/^hosts: mymachines/ s/resolve/mdns_minimal [NOTFOUND=return] resolve/' /etc/nsswitch.conf
+	firewall-cmd --zone=home --add-port 5353/udp
+	firewall-cmd --zone=trusted --add-port 5353/udp
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling openssh daemon and disable root login"
+
+	systemctl enable sshd.service
+	echo "PermitRootLogin no" > /etc/ssh/sshd_config.d/20-deny_root.conf
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling fstrim service"
@@ -609,11 +656,6 @@ enable_services() {
 	systemctl enable paccache.timer
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling openssh daemon"
-
-	systemctl enable sshd.service
-
-	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling sddm display manager"
 
 	systemctl enable sddm.service
@@ -622,11 +664,6 @@ enable_services() {
 	echo -e "Enabling bluetooth driver"
 
 	systemctl enable bluetooth.service
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling firewalld service"
-
-	systemctl enable firewalld.service
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Rebuilding GRUB configs"
@@ -692,30 +729,6 @@ ENDSection
 END
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting SDDM theme"
-
-	mkdir -p /etc/sddm.conf.d/
-	cat <<-END > /etc/sddm.conf.d/kde_settings.conf
-[Theme]
-Current=breeze
-END
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating windows-boot script"
-	
-	cat <<-END >> /usr/local/bin/windows-boot
-#!/bin/bash
-# Set Windows Boot Manager as NextBoot and reboots
-efibootmgr -n \$(efibootmgr | awk '/Windows Boot Manager/ {gsub(/^Boot/, "", \$1); gsub(/\*/, "", \$1); print \$1}') && reboot
-END
-	chmod +x /usr/local/bin/windows-boot
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Adding sudo password exception to windows-boot script"
-
-	echo "%wheel ALL=(ALL) NOPASSWD: /usr/local/bin/windows-boot" >> /etc/sudoers
-
-	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up XDG user directories"
 
 	xdg-user-dirs-update
@@ -738,7 +751,7 @@ user_config() {
 	sudo -u "$user" xdg-user-dirs-update --force
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating System sub-directory for $user"
+	echo -e "Creating home/System sub-directories for $user"
 
 	sudo -u "$user" mkdir -p /home/"$user"/System/{icons,scripts}
 
@@ -803,23 +816,23 @@ bash_config() {
 	chown "$user":"$user" /home/"$user"/.bash_aliases
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Configuring fastfetch config"
+	echo -e "Configuring fastfetch"
 
 	sudo -u "$user" mkdir -p /home/"$user"/.config/fastfetch/
-	cat /Archer-main/quiver/fastfetch-config.jsonc > /home/"$user"/.config/fastfetch/archer.jsonc
-	chown "$user":"$user" /home/"$user"/.config/fastfetch/archer.jsonc
+	cat /Archer-main/quiver/fastfetch-config.jsonc > /home/"$user"/.config/fastfetch/config.jsonc
+	cat /Archer-main/quiver/fastfetch-archer.jsonc > /home/"$user"/.config/fastfetch/config-small.jsonc
+
+	chown "$user":"$user" /home/"$user"/.config/fastfetch/config.jsonc
+	chown "$user":"$user" /home/"$user"/.config/fastfetch/config-small.jsonc
 }
 
 setup_flatpak() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling Flatpak theming"
 
-	if pacman -Qs flatpak > /dev/null; then
-
-		flatpak override --filesystem=xdg-config/{Kvantum,gtkrc,gtkrc-2.0,gtk-3.0,gtk-4.0}
-		flatpak override --filesystem={~/.themes,~/.icons,~/.fonts,~/.local/share/themes}
-		flatpak override --env=GTK_THEME=Breeze
-	fi
+	flatpak override --filesystem=xdg-config/{Kvantum,gtkrc,gtkrc-2.0,gtk-3.0,gtk-4.0}
+	flatpak override --filesystem={~/.themes,~/.icons,~/.fonts,~/.local/share/themes}
+	flatpak override --env=GTK_THEME=Breeze
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting Lutris Flatpak theming"
@@ -894,7 +907,6 @@ config_system
 
 setup_paru_pipx
 install_packages
-config_packages
 setup_plasma
 setup_laptop
 
@@ -904,6 +916,7 @@ backup_kernel
 [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "snapper" ]] && snapper_setup
 [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "yabsnap" ]] && yabsnap_setup
 [[ $snapshot_layout == "snapper" ]] && snapper_setup
+package_config
 enable_services
 pacman_hooks
 clean_orphans
