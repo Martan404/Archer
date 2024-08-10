@@ -1,4 +1,5 @@
-#!/usr/bin/env bash
+#!/bin/bash
+# shellcheck disable=SC2002,SC2162,SC2086
 snapshot_layout="SNAPSHOT_LAYOUT"
 snap_manager="SNAP_MANAGER"
 

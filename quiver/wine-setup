@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC2086
 show_logo() {
 	clear
 	echo -e "
