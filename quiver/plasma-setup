@@ -16,7 +16,7 @@ $(tput sgr0)
 -------------------------------------------------------------------------"
 echo -e "Importing and applying konsave settings"
 
-export PATH=\$PATH:/home/$user/.local/bin
+export PATH=$PATH:/home/$user/.local/bin
 
 sudo -u $user konsave -i /home/$user/archer.knsv
 sleep 1
