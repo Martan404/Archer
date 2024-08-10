@@ -14,21 +14,24 @@ snap_manager=${9}
 
 package_installer() {
 	input_packages=$1
+	pkgmanager=$2
 	max_tries=3
 	try_count=0
 
-	# Check if argument is .txt file and combine each line
+	# Check if argument is .txt file and combine each line then remove the .txt
     if [[ "$input_packages" == *.txt ]]; then
 		packages=$(cat "$input_packages" | tr '\n' ' ')
-		rm "$input_packages"
 	else
 		packages=$input_packages
 	fi
 
+	# Set package manager to paru if not specified to use pacman
+	[[ "$pkgmanager" != "pacman" ]] && pkgmanager="paru"
+
 	while [ "$try_count" -lt "$max_tries" ]; do
 	    try_count=$((try_count+1))
 		# shellcheck disable=SC2086
-    	sudo -u "$user" paru -S --needed --noconfirm $packages && break
+    	sudo -u "$user" $pkgmanager -S --needed --noconfirm $packages && break
     	echo "$(tput setaf 9)Package installation failed. Retrying... ($try_count/$max_tries)$(tput sgr0)"
 	done
 
@@ -125,7 +128,7 @@ config_system() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /etc/hosts"
 	{
-		echo "127.0.0.1		localhost		$hostname"
+		echo "127.0.0.1		localhost"
 		echo "::1			localhost ip6-localhost ip6-loopback"
 		echo "ff02::1       ip6-allnodes"
 		echo "ff02::2       ip6-allrouters"
@@ -162,11 +165,7 @@ setup_paru_pipx() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing Paru AUR helper"
 
-	while true; do
-        # shellcheck disable=SC2086
-        pacman -S --needed --noconfirm git rust cmake && break
-    	echo "$(tput setaf 9)Package installation failed. Retrying...$(tput sgr0)"
-	done
+        package_installer "git rust cmake" pacman
 	
 	cd /home/"$user"/
 	sudo -u "$user" git clone https://aur.archlinux.org/paru-bin.git
@@ -174,7 +173,6 @@ setup_paru_pipx() {
 
 	while true; do
 		sudo -u "$user" makepkg -si --needed --noconfirm && break
-
     	echo "$(tput setaf 9)Paru installation failed. Retrying...$(tput sgr0)"
 	done
 	
@@ -191,22 +189,26 @@ install_packages() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing driver packages"
 
-	package_installer "/drivers.txt"
+	sed -n '/# DRIVERS/{:a;n;/# DRIVERS/b;p;ba}' "/Archer-main/quiver/packages.txt" > "Archer-main/quiver/drivers.txt"
+	package_installer "Archer-main/quiver/drivers.txt"
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing KDE Plasma desktop environment"
+	echo -e "Installing desktop environment"
 
-	package_installer "/kde.txt"
+	sed -n '/# DESKTOP/{:a;n;/# DESKTOP/b;p;ba}' "/Archer-main/quiver/packages.txt" > "Archer-main/quiver//desktop.txt"
+	package_installer "Archer-main/quiver/desktop.txt"
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing system packages"
 
-	package_installer "/system.txt"
+	sed -n '/# SYSTEM #/{:a;n;/# SYSTEM #/b;p;ba}' "/Archer-main/quiver/packages.txt" > "Archer-main/quiver/system.txt"
+	package_installer "Archer-main/quiver/system.txt"
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing pacman packages"
 
-	package_installer "/pacman.txt"
+	sed -n '/# PACMAN/{:a;n;/# PACMAN/b;p;ba}' "/Archer-main/quiver/packages.txt" > "Archer-main/quiver/pacman.txt"
+	package_installer "Archer-main/quiver/pacman.txt"
 
 	if [[ $cpu_manufacturer == "intel" ]]; then
 		echo -e "-------------------------------------------------------------------------"
@@ -218,6 +220,7 @@ install_packages() {
 }
 
 config_packages() {
+	# If Steam is not installed then install steam-devices package for controller support in Steam flatpak
 	if ! pacman -Qs steam > /dev/null; then
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Installing steam-devices package for Steam Flatpak"
@@ -225,6 +228,7 @@ config_packages() {
 		package_installer "steam-devices" 
 	fi
 
+	# If Firefox is installed then start it once and add the user.js
 	if pacman -Qs firefox > /dev/null; then
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Generating Firefox profiles"
@@ -242,16 +246,21 @@ config_packages() {
 		mv /Archer-main/quiver/betterfox-user.js ./user.js
 		chown "$user":"$user" ./user.js
 		cd /
+	# Else prepare user.js for Flatpak version
+	else
+		mv /Archer-main/quiver/betterfox-user.js /home/"$user"/.user.js
+		chown "$user":"$user" /home/"$user"/.user.js
 	fi
 
+	# If Discord is installed then apply fixes 
 	if pacman -Qs discord > /dev/null; then
 		echo -e "-------------------------------------------------------------------------"
-		echo -e "Set Discord to use local credentials"
+		echo -e "Setting Discord to use local login credentials"
 
 		sed -i 's/Exec=\/usr\/bin\/discord/Exec=\/usr\/bin\/discord --password-store=basic/' /opt/discord/discord.desktop
 
 		echo -e "-------------------------------------------------------------------------"
-		echo -e "Removing Discord update check"
+		echo -e "Removing Discord internal update check"
 
 		sudo -u "$user" mkdir -p /home/"$user"/.config/discord
 		sudo -u "$user" touch /home/"$user"/.config/discord/settings.json
@@ -279,7 +288,7 @@ setup_plasma() {
 	cat <<-END >> /usr/share/dbus-1/services/org.freedesktop.secrets.service
 [D-BUS Service]
 Name=org.freedesktop.secrets
-Exec=/usr/bin/kwalletd5
+Exec=/usr/bin/kwalletd6
 END
 
 	echo -e "-------------------------------------------------------------------------"
@@ -292,41 +301,15 @@ END
 	mv /Archer-main/quiver/archer.knsv /home/"$user"/archer.knsv
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Writing Plasma setup script"
+	echo -e "Setting up Plasma setup script"
 
 	sudo -u "$user" mkdir -p /home/"$user"/.config/plasma-workspace/env
-	sudo -u "$user" touch /home/"$user"/.config/plasma-workspace/env/setup_plasma.sh
-
-	cat <<-END >> /home/"$user"/.config/plasma-workspace/env/setup_plasma.sh
-#!/usr/bin/env bash
-echo -ne "$archer_logo"
-echo -e "
-		                   Plasma setup script
--------------------------------------------------------------------------"
-echo -e "Importing and applying konsave settings"
-
-export PATH=\$PATH:/home/$user/.local/bin
-
-sudo -u $user konsave -i /home/$user/archer.knsv
-sleep 1
-sudo -u $user konsave -a archer
-
-
-echo -e "-------------------------------------------------------------------------"
-echo -e "Setting Dolphin state"
-
-sudo -u $user mkdir -p /home/$user/.local/share/dolphin
-sudo -u $user touch /home/$user/.local/share/dolphin/dolphinstaterc
-
-cat <<-EOF > /home/$user/.local/share/dolphin/dolphinstaterc
-[State]
-State=AAAA/wAAAAD9AAAAAwAAAAAAAACmAAAB0/wCAAAAAvsAAAAWAGYAbwBsAGQAZQByAHMARABvAGMAawAAAAAuAAAA7AAAAAoBAAAD+wAAABQAcABsAGEAYwBlAHMARABvAGMAawEAAAAuAAAB0wAAAF0BAAADAAAAAQAAALgAAAHn/AIAAAAB+wAAABAAaQBuAGYAbwBEAG8AYwBrAAAAAC4AAAHnAAAACgEAAAMAAAADAAAC+AAAAL78AQAAAAH7AAAAGAB0AGUAcgBtAGkAbgBhAGwARABvAGMAawAAAAAAAAAC+AAAAAoBAAADAAACkwAAAdMAAAAEAAAABAAAAAgAAAAI/AAAAAEAAAACAAAAAQAAABYAbQBhAGkAbgBUAG8AbwBsAEIAYQByAQAAAAD/////AAAAAAAAAAA=
-EOF
-
-rm -f /home/$user/archer.knsv
-rm -f /home/$user/.config/plasma-workspace/env/setup_plasma.sh
-END
-	chmod a+x /home/"$user"/.config/plasma-workspace/env/setup_plasma.sh
+    mv /Archer-main/quiver/plasma-setup /home/"$user"/.config/plasma-workspace/env/plasma-setup
+	
+	chmod a+x /home/"$user"/.config/plasma-workspace/env/plasma-setup
+	chown "$user":"$user" /home/"$user"/.config/plasma-workspace/env/plasma-setup
+	
+	sed -i "s/#ARCHER_LOGO#/$archer_logo/g; s/#UNIX_USER#/$user/g" /home/"$user"/.config/plasma-workspace/env/plasma-setup
 }
 
 setup_laptop() {
@@ -360,6 +343,7 @@ echo -e "-----------------------------------------------------------------------
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Uninstalling laptop-detect package"
+	
 	pacman -Rs --noconfirm laptop-detect
 }
 
@@ -392,16 +376,39 @@ END
 	grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck
 	grub-mkconfig -o /boot/grub/grub.cfg
 
+	if pacman -Qs os-prober > /dev/null; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Enabling Grub OS prober"
+
+		sed -i '/^[#]*GRUB_DISABLE_OS_PROBER=/s/true/false/' /etc/default/grub
+		sed -i '/^#GRUB_DISABLE_OS_PROBER/s/^#//' /etc/default/grub
+	fi
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling Grub OS prober"
+	echo -e "Installing Grub theme"
 
-	sed -i 's/^#GRUB_DISABLE_OS_PROBER=false/GRUB_DISABLE_OS_PROBER=false/' /etc/default/grub
+	mv /Archer-main/quiver/arch-silence /boot/grub/themes/arch-silence
+	sed -i '/^[#]*GRUB_THEME=/c\GRUB_THEME="\/boot\/grub\/themes\/arch-silence\/theme.txt"' /etc/default/grub
 
+
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling GRUB-btrfsd snapshot daemon"
+
+	systemctl enable grub-btrfsd
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Disabling snapshot listing in pacman for grub-btrfs"
+
+	sed -i '/^[#]*GRUB_BTRFS_SHOW_SNAPSHOTS_FOUND=/s/true/false/' /etc/default/grub-btrfs/config
+	sed -i '/^#GRUB_BTRFS_SHOW_SNAPSHOTS_FOUND/s/^#//' /etc/default/grub-btrfs/config
+}
+
+tweak_kernel() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Removing 'quiet' kernel parameter"
 
-	sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet"/GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3"/' /etc/default/grub
+	sed -i '/GRUB_CMDLINE_LINUX_DEFAULT/s/ quiet//g' /etc/default/grub
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting kernel boot parameters for CPU"
@@ -411,8 +418,9 @@ END
 
 	elif [ "$gpu_manufacturer" = "intel" ]; then
 		kernel_parameters="intel_iommu=on iommu=pt"
+	fi
 	
-	fi; sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"loglevel=3\)\(.*\)\"/\1 $kernel_parameters\2\"/" /etc/default/grub
+	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $kernel_parameters\"/" /etc/default/grub
 	
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting kernel boot parameters for GPU"
@@ -435,25 +443,9 @@ END
 
 	elif [ "$gpu_manufacturer" = "vm" ]; then
 		kernel_parameters=""
-
-	fi; sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"loglevel=3\)\(.*\)\"/\1 $kernel_parameters\2\"/" /etc/default/grub
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing Grub theme"
-
-	mv /Archer-main/quiver/arch-silence /boot/grub/themes/arch-silence
-	sed -i 's/#GRUB_THEME="\/path\/to\/gfxtheme"/GRUB_THEME="\/boot\/grub\/themes\/arch-silence\/theme.txt"/' /etc/default/grub
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling GRUB-btrfsd snapshot daemon"
-
-	systemctl enable grub-btrfsd
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Disabling snapshot listing in pacman for grub-btrfs"
-
-	sed -i '/^#GRUB_BTRFS_SHOW_SNAPSHOTS_FOUND="false"/s/^#//' /etc/default/grub-btrfs/config
-
+	fi
+	
+	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $kernel_parameters\"/" /etc/default/grub
 }
 
 backup_kernel() {
@@ -463,7 +455,7 @@ backup_kernel() {
 	package_installer "rsync"
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Adding pacman hooks for kernel backup"
+	echo -e "Creating pacman hooks for kernel backup"
 
 	mkdir /etc/pacman.d/hooks
 	mkdir -p /.bootbackup/{preupdate,postupdate}
@@ -550,9 +542,9 @@ snapper_setup() {
 	echo -e "Configuring timeline cleanup"
 
 	sed -i 's/^NUMBER_LIMIT="50"/NUMBER_LIMIT="10"/' /etc/snapper/configs/root
-	sed -i 's/^TIMELINE_LIMIT_HOURLY="10"/TIMELINE_LIMIT_HOURLY="5"/' /etc/snapper/configs/root
+	sed -i 's/^TIMELINE_LIMIT_HOURLY="10"/TIMELINE_LIMIT_HOURLY="0"/' /etc/snapper/configs/root
 	sed -i 's/^TIMELINE_LIMIT_DAILY="10"/TIMELINE_LIMIT_DAILY="7"/' /etc/snapper/configs/root
-	sed -i 's/^TIMELINE_LIMIT_WEEKLY="10"/TIMELINE_LIMIT_WEEKLY="0"/' /etc/snapper/configs/root
+	sed -i 's/^TIMELINE_LIMIT_WEEKLY="10"/TIMELINE_LIMIT_WEEKLY="3"/' /etc/snapper/configs/root
 	sed -i 's/^TIMELINE_LIMIT_MONTHLY="10"/TIMELINE_LIMIT_MONTHLY="0"/' /etc/snapper/configs/root
 	sed -i 's/^TIMELINE_LIMIT_YEARLY="10"/TIMELINE_LIMIT_YEARLY="0"/' /etc/snapper/configs/root
 
@@ -649,95 +641,15 @@ enable_services() {
 
 pacman_hooks() {
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating Package cache cleaner hook"
+	echo -e "Moving pacman hooks"
 
-	cat <<-END > /etc/pacman.d/hooks/91-paccache.hook
-[Trigger]
-Operation = Install
-Operation = Upgrade
-Operation = Remove
-Type = Package
-Target = *
-
-[Action]
-Description = Cleaning pacman cache...
-When = PostTransaction
-Exec = /usr/bin/paccache -rvk2
-Depends = pacman-contrib
-END
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating Orphaned package notification hook"
-
-	cat <<-END > /etc/pacman.d/hooks/92-orphans.hook
-[Trigger]
-Operation = Install
-Operation = Upgrade
-Operation = Remove
-Type = Package
-Target = *
-
-[Action]
-Description = Checking for orphaned packages...
-Depends = pacman
-When = PostTransaction
-Exec = /usr/bin/bash -c 'orphans=\$(pacman -Qtdq); if [[ -n "\$orphans" ]]; then echo -e "\\e[1mOrphan packages found:\\e[0m\\n\$orphans\\n\\e[1mPlease check and remove any no longer needed\\e[0m"; fi'
-END
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating .pacnew and .pacsave notification hook"
-
-	cat <<-END > /etc/pacman.d/hooks/93-pacfiles.hook
-[Trigger]
-Operation = Install
-Operation = Upgrade
-Operation = Remove
-Type = Package
-Target = *
-
-[Action]
-Description = Checking for .pacnew and .pacsave files...
-When = PostTransaction
-Exec = /usr/bin/bash -c 'pacfiles=\$(pacdiff -o); if [[ -n "\$pacfiles" ]]; then echo -e "\\e[1m.pac* files found:\\e[0m\\n\$pacfiles\\n\\e[1mPlease check and merge\\e[0m"; fi'
-Depends = pacman-contrib
-END
-
-	cat <<-END > /etc/pacman.d/hooks/zz-kernelupdate.hook
-[Trigger]
-Operation = Install
-Operation = Upgrade
-Operation = Remove
-Type = Path
-Target = usr/lib/modules/*/vmlinuz
-
-[Action]
-Description = The kernel has been updated
-When = PostTransaction
-Exec = /usr/bin/echo -e "\e[1mPlease\e[34m reboot\e[0m\e[1m to complete the installation\e[0m"
-END
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating Grub update hook"
-
-	cat <<-END > /etc/pacman.d/hooks/zz-grubupdate.hook
-[Trigger]
-Operation = Install
-Operation = Upgrade
-Operation = Remove
-Type = Package
-Target = grub
-
-[Action]
-Description = Grub has been updated
-Depends = grub
-When = PostTransaction
-Exec = /usr/bin/echo -e "\e[1mRun\e[34m grub-update\e[0m\e[1m to complete the installation\e[0m"
-END
+	mv -v /Archer-main/quiver/hooks/* /etc/pacman.d/hooks/
+	chown -R :wheel /etc/pacman.d/hooks/*
 }
 
 system_config() {
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Adding custom PATH to /etc/profile.d/custom-path.sh"
+	echo -e "Adding ~/.local/bin PATH in /etc/profile.d/custom-path.sh"
 
 	echo "export PATH=\$PATH:\$HOME/.local/bin" >> /etc/profile.d/custom-path.sh
 
@@ -786,16 +698,16 @@ Current=breeze
 END
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating Windows boot script"
+	echo -e "Creating windows-boot script"
 	cat <<-END >> /usr/local/bin/windows-boot
-#! /bin/bash
+#!/bin/bash
 # Set Windows Boot Manager as NextBoot and reboots
 efibootmgr -n \$(efibootmgr | awk '/Windows Boot Manager/ {gsub(/^Boot/, "", \$1); gsub(/\*/, "", \$1); print \$1}') && reboot
 END
 	chmod +x /usr/local/bin/windows-boot
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Adding sudo password exception to Windows boot script"
+	echo -e "Adding sudo password exception to windows-boot script"
 
 	echo "%wheel ALL=(ALL) NOPASSWD: /usr/local/bin/windows-boot" >> /etc/sudoers
 
@@ -804,7 +716,7 @@ END
 
 	xdg-user-dirs-update
 
-	sed -i '/TEMPLATES/s/^/#/' /etc/xdg/user-dirs.defaults
+	#sed -i '/TEMPLATES/s/^/#/' /etc/xdg/user-dirs.defaults
 	sed -i '/PUBLICSHARE/s/^/#/' /etc/xdg/user-dirs.defaults
 
 	cat <<-END >> /etc/xdg/user-dirs.defaults
@@ -859,78 +771,12 @@ bash_config() {
 	sed -i '/PS1/,+1d' /etc/bash.bashrc
 	sed -i '/bash_completion/d' /etc/bash.bashrc && sed -i '/fi/d' /etc/bash.bashrc
 
-	cat <<-END >> /etc/bash.bashrc
-[ -f /etc/bash.bash_aliases ] && source /etc/bash.bash_aliases
-
-# Prompt style - generated from https://bash-prompt-generator.org/
-PS1='[\[\e[38;5;39m\]\u\[\e[38;5;245m\]@\[\e[38;5;33m\]\h\[\e[0m\] \[\e[38;5;64m\]\W\[\e[0m\]]\$ '
-
-# Color style - https://github.com/sharkdp/vivid
-export LS_COLORS=\$(vivid generate solarized-dark)
-
-# Bash completion
-[[ -r /usr/share/bash-completion/bash_completion ]] && source /usr/share/bash-completion/bash_completion
-
-# Cycle in autocomplete
-bind 'set completion-ignore-case on'
-bind 'set show-all-if-ambiguous on'
-bind 'TAB:menu-complete'
-
-# Partially search in history
-bind '"\e[A": history-search-backward'
-bind '"\e[B": history-search-forward'
-
-# Autojump
-[[ -r /etc/profile.d/autojump.sh ]] && source /etc/profile.d/autojump.sh
-
-# Add pipx to PATH
-eval "\$(register-python-argcomplete pipx)"
-
-# Enter directory by only typing the name
-shopt -s autocd
-
-# Automatically do an ls after each cd
-cd() { builtin cd "\${1:-~}" && ls; }
-
-# Check why a package is installed
-why() { pacman -Qi \$1; }
-
-END
+	cat /Archer-main/quiver/bash.bashrc >> /etc/bash.bashrc
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /etc/bash.bash_aliases"
 
-	cat <<-END >> /etc/bash.bash_aliases
-#
-# /etc/bash.bash_aliases
-#
-
-# Repair GRUB
-grub-update() { grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; grub-mkconfig -o /boot/grub/grub.cfg; }
-grub-repair() { pacman --noconfirm -S grub efibootmgr; grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; grub-mkconfig -o /boot/grub/grub.cfg; }
-alias grub-rescue='grub-repair'
-
-# Shortcuts
-alias home='cd ~'
-alias cd..='cd ..'
-alias ..='cd ..'
-alias ...='cd ../..'
-alias ....='cd ../../..'
-alias .....='cd ../../../..'
-
-# Color
-alias neofetch='neofetch --colors 4 7 4 4 7 7 --ascii_colors 4 4'
-alias ls='ls --color=auto'
-alias ll='ls -ahlF --color=auto'
-alias la='ls -A --color=auto'
-alias dir='dir --color=auto'
-alias egrep='grep -E --color=auto'
-alias fgrep='grep -F --color=auto'
-alias grep='grep --color=auto'
-alias vdir='vdir --color=auto'
-alias wget='wget -c'
-
-END
+	cat /Archer-main/quiver/bash.bash_aliases >> /etc/bash.bash_aliases
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /home/$user/.bashrc"
@@ -938,19 +784,7 @@ END
 	sed -i '/PS1/d' /home/"$user"/.bashrc
 	sed -i '/alias/d' /home/"$user"/.bashrc
 	
-	cat <<-END >> /home/"$user"/.bashrc
-# Check /etc/bash.bashrc for more configuration
-[[ -r ~/.bash_aliases ]] && source ~/.bash_aliases
-
-# Add ~/System/scripts to PATH
-[[ -d "\$HOME/System/scripts" ]] && export PATH=\$PATH:\$HOME/System/scripts
-
-# Display system information
-neofetch --ascii_distro arch_small --colors 4 7 4 4 7 7 --ascii_colors 4 4 --disable title underline distro shell resolution de wm wm_theme theme icons term term_font
-
-# ble.sh
-[[ -r /usr/share/blesh/ble.sh ]] && [[ \$- == *i* ]] && source /usr/share/blesh/ble.sh
-END
+	cat /Archer-main/quiver/user.bashrc >> /home/"$user"/.bashrc
 	chown "$user":"$user" /home/"$user"/.bashrc
 	
 	echo -e "-------------------------------------------------------------------------"
@@ -961,78 +795,14 @@ END
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /home/$user/.bash_aliases"
 
-	cat <<-END >> /home/"$user"/.bash_aliases
-#
-# ~/.bash_aliases
-#
+	cat /Archer-main/quiver/user.bash_aliases >> /home/"$user"/.bash_aliases
+	chown "$user":"$user" /home/"$user"/.bash_aliases
 
-archer-help() { grep '^[[:alnum:]-]*()' ~/.bash_aliases | awk -F'[(]' '{print \$1}'; grep "^alias" ~/.bash_aliases | awk -F= '{sub("^alias[ \t]*", ""); print \$1}'; }
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Configuring fastfetch config"
 
-alias update='paru -Syu'
-alias package-cache-cleanup='paru -Scd'
-alias sudo-password-unlock='faillock --user \$USER --reset'
-alias pacman-refresh-mirrors='sudo reflector --age 48 --country "\$(curl ifconfig.co/country-iso)" --fastest 5 --latest 20 --sort rate --save /etc/pacman.d/mirrorlist'
-alias pacman-db-unlock='sudo rm /var/lib/pacman/db.lck'
-alias pacman-remove-orphans='sudo pacman -Rns \$(pacman -Qtdq)'
-
-alias last-boot-log='journalctl -b -1 -r'
-alias windows-boot='sudo windows-boot'
-alias logout="shopt -q login_shell && logout || qdbus org.kde.ksmserver /KSMServer logout 0 0 1"
-
-alias neofetch='neofetch --colors 4 7 4 4 7 7 --ascii_colors 4 4'
-
-# Fix unmountable ntfs partitions
-ntfs-fix-partition() { sudo ntfsfix -d \$1; }
-
-grub-update() { sudo grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; sudo grub-mkconfig -o /boot/grub/grub.cfg; }
-grub-rebuild() { sudo grub-mkconfig -o /boot/grub/grub.cfg; }
-grub-repair() { sudo pacman --noconfirm -S grub efibootmgr; sudo grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; sudo grub-mkconfig -o /boot/grub/grub.cfg; }
-alias grub-rescue="grub-repair"
-
-pacman-fix-keys() {
-echo -e "Refresh keys"
-sudo pacman-key --refresh-keys
-echo -e "Updating archlinux-keyring"
-sudo pacman -Sy archlinux-keyring
-echo -e "Initialize pacman keys"
-sudo pacman-key --init
-echo -e "Populating keyring"
-sudo pacman-key --populate
-echo -e "Updating pacman databases"
-sudo pacman -Sy
-echo -e "Refreshing mirror list"
-sudo reflector --age 48 --country "\$(curl ifconfig.co/country-iso)" --fastest 5 --latest 20 --sort rate --save /etc/pacman.d/mirrorlist
-echo -e "Updating system"
-sudo pacman -Syu
-}; export -f pacman-fix-keys
-
-arch-maintain() {
-sudo echo "" > /dev/null
-echo -e "Checking for failed systemd services"
-systemctl --failed
-echo -e "Checking log files"
-sudo timeout 3s journalctl -p 3 -xb -f
-echo -e "Cleaning log files"
-sudo journalctl --vacuum-time=1day
-sudo journalctl --flush --rotate
-echo -e "Refreshing pacman mirrors"
-sudo reflector --age 48 --country "\$(curl ifconfig.co/country-iso)" --fastest 5 --latest 20 --sort rate --save /etc/pacman.d/mirrorlist
-echo -e "Updating system"
-sudo pacman -Syu
-echo -e "Removing orphaned packages"
-sudo pacman -Rns \$(pacman -Qtdq)
-echo -e "Removing cached packages"
-paccache -rvuk0
-echo -e "Removing cached AUR packages"
-paru --clean
-echo -e "Cleaning ~/.cache"
-rm -rf \$HOME/.cache/*
-echo -e "Checking ~/.config/ size"
-du -sh \$HOME/.config/
-}; export -f arch-maintain
-
-END
-chown "$user":"$user" /home/"$user"/.bash_aliases
+	cat /Archer-main/quiver/fastfetch-config.jsonc > /home/"$user"/.config/fastfetch/archer.jsonc
+	chown "$user":"$user" /home/"$user"/.config/fastfetch/archer.jsonc
 }
 
 setup_flatpak() {
@@ -1043,6 +813,7 @@ setup_flatpak() {
 
 		flatpak override --filesystem=xdg-config/{Kvantum,gtkrc,gtkrc-2.0,gtk-3.0,gtk-4.0}
 		flatpak override --filesystem={~/.themes,~/.icons,~/.fonts,~/.local/share/themes}
+		flatpak override --env=GTK_THEME=Breeze
 	fi
 
 	echo -e "-------------------------------------------------------------------------"
@@ -1051,13 +822,7 @@ setup_flatpak() {
 	flatpak override net.lutris.Lutris --env=GTK_THEME=Breeze
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Moving Betterfox user.js"
-
-	chown "$user":"$user" /Archer-main/quiver/betterfox-user.js
-	mv /Archer-main/quiver/betterfox-user.js /home/"$user"/.user.js
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Writing Flatpak install desktop entry"
+	echo -e "Writing flatpak-setup desktop entry"
 
 	sudo -u "$user" mkdir -p /home/"$user"/.config/autostart/
 	sudo -u "$user" touch /home/"$user"/.config/autostart/flatpak-setup.desktop
@@ -1073,72 +838,14 @@ EOF
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Writing Flatpak install script"
 
+	sed -n '/# FLATPAK/{:a;n;/# FLATPAK/b;p;ba}' "/Archer-main/quiver/packages.txt" > "/Archer-main/quiver/flatpak.txt"
 	# shellcheck disable=SC2002
-	packages=$(cat "/flatpak.txt" | tr '\n' ' ') && rm /flatpak.txt
+	packages=$(cat "/Archer-main/quiver/flatpak.txt" | tr '\n' ' ')
 	
-	sudo -u "$user" touch /home/"$user"/System/scripts/flatpak-setup
-	cat <<EOF >> /home/"$user"/System/scripts/flatpak-setup
-#!/bin/bash
-show_logo() {
-	clear
-	echo -ne "$archer_logo"
-	echo -e "
-                         Flatpak install script
--------------------------------------------------------------------------"
-}
-
-install_flatpak() {
-	while ! ping -q -c 1 -W 1 archlinux.org > /dev/null 2>&1; do
-    	echo "Waiting for internet connection..."
-		sleep 10
-	done
-
-    while true; do
-		flatpak install flathub -y --noninteractive $packages && break
-    	echo "\$(tput setaf 9)Package installation failed. Retrying...\$(tput sgr0)"
-	done
-
-	if [[ \$(flatpak list) == *"com.github.GradienceTeam.Gradience"* ]]; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Setting Adwaita color to match Breeze Dark"
-
-		mkdir -p "/home/$user/.var/app/com.github.GradienceTeam.Gradience/config/presets/curated"
-
-		flatpak run --command=gradience-cli com.github.GradienceTeam.Gradience download -n "Breeze Dark"
-		flatpak run --command=gradience-cli com.github.GradienceTeam.Gradience apply -n "Breeze Dark" --gtk both
-	
-		flatpak remove -y --noninteractive com.github.GradienceTeam.Gradience
-	fi
-
-	if [[ \$(flatpak list) == *"org.mozilla.firefox"* ]]; then
-		
-		flatpak run org.mozilla.firefox --headless &
-		read -r -t 1
-		flatpak kill org.mozilla.firefox
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Moving Betterfox user.js to Firefox"
-
-		cd /home/$user/.var/app/org.mozilla.firefox/.mozilla/firefox/*default-release/
-		mv /home/$user/.user.js ./user.js
-		cd /
-		
-	else
-		rm -f /home/$user/.user.js
-	fi
-
-	echo -e "-------------------------------------------------------------------------"
-	read -r -t 5 -p "Rebooting in 5 seconds..."
-
-	rm -f /home/$user/.config/autostart/flatpak-setup.desktop
-	rm -f \${BASH_SOURCE[0]}
-	reboot
-}
-
-show_logo
-install_flatpak
-EOF
+	cat /Archer-main/quiver/flatpak-setup >> /home/"$user"/System/scripts/flatpak-setup
 	chmod a+x /home/"$user"/System/scripts/flatpak-setup
+
+	sed -i "s/#ARCHER_LOGO#/$archer_logo/g; s/#UNIX_USER#/$user/g; s/#PACKAGES#/$packages/g" /home/"$user"/System/scripts/flatpak-setup
 }
 
 snapshot_rollback() {
@@ -1155,54 +862,10 @@ snapshot_rollback() {
 		snapshot_path="\$snaphot_number"
 	fi
 
-	cat <<EOF > /usr/local/bin/rollback
-#!/usr/bin/env bash
-echo -ne "$archer_logo"
-echo -e "
-                        Snapshot rollback script
--------------------------------------------------------------------------"
-
-sudo echo "" > /dev/null
-
-root_disk=\$(cat /proc/cmdline | awk '{sub("root=UUID=", "", \$2); print \$2}')
-snaphot_number=\$(cat /proc/cmdline | awk -F '/' '{print \$3}')
-
-echo -e "Mounting root on /mnt"
-
-sudo mount "/dev/disk/by-uuid/\$root_disk" /mnt
-
-echo -e "-------------------------------------------------------------------------"
-echo -e "Moving broken root"
-
-sudo mv /mnt/@ /mnt/@broken
-
-echo -e "-------------------------------------------------------------------------"
-echo -e "Setting snapshot as root"
-
-sudo btrfs subvolume snapshot /mnt/@snapshots/$snapshot_path /mnt/@ && success="yes"
-
-echo -e "-------------------------------------------------------------------------"
-echo -e "Removing broken root"
-
-[[ \$success == "yes" ]] && sudo rm -rf /mnt/@broken
-
-if [ -e "/mnt/@/var/lib/pacman/db.lck" ]; then
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Removing pacman db.lck"
-
-	sudo rm /mnt/@/var/lib/pacman/db.lck
-fi
-
-echo -e "-------------------------------------------------------------------------"
-echo -e "Unmounting /mnt"
-
-sudo umount -R /mnt
-
-read -p "Press any key to reboot..."
-reboot
-EOF
+	cat /Archer-main/quiver/rollback > /usr/local/bin/rollback
 	chmod a+x /usr/local/bin/rollback
+	
+	sed -i "s/#ARCHER_LOGO#/$archer_logo/g; s/#SNAPSHOT_PATH#/$snapshot_path/g" /usr/local/bin/rollback
 }
 
 set_password() {
@@ -1241,6 +904,7 @@ setup_laptop
 remove_orphans
 
 setup_grub
+tweak_kernel
 backup_kernel
 [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "snapper" ]] && snapper_setup
 [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "yabsnap" ]] && yabsnap_setup
@@ -1252,7 +916,7 @@ system_config
 user_config
 bash_config
 
-setup_flatpak
+pacman -Q flatpak &>/dev/null && setup_flatpak
 snapshot_rollback
 
 set_password

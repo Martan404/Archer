@@ -17,175 +17,7 @@ $(tput sgr0)
                            Arch install script 
 -------------------------------------------------------------------------"
 }
-# You can pick the repository which to download a package from like this: pacman -S chaotic-aur/dxvk-mingw-git
-# Some AUR helpers support it too, e.g: paru -S aur/firefox-hg
-create_package_lists() {
-	cat <<EOF > /mnt/flatpak.txt
-com.bitwarden.desktop
-com.discordapp.Discord
-com.github.GradienceTeam.Gradience
-com.github.Matoking.protontricks
-com.github.zocker_160.SyncThingy
-com.spotify.Client
-com.usebottles.bottles
-com.vysp3r.ProtonPlus
-net.lutris.Lutris
-org.gtk.Gtk3theme.Breeze
-org.kde.kdenlive
-org.kde.krita
-org.kde.ktorrent
-org.kde.okular
-org.mozilla.firefox
-EOF
-	cat <<EOF > /mnt/pacman.txt
-bleachbit
-steam
-EOF
-	cat <<EOF > /mnt/drivers.txt
-networkmanager
-nss-mdns
-bluez-utils
-cups
-cups-pdf
-print-manager
-gst-plugin-pipewire
-pipewire-alsa
-pipewire-audio
-pipewire-ffado
-pipewire-jack
-pipewire-jack
-pipewire-pulse
-pipewire-roc
-pipewire-v4l2
-pipewire-x11-bell
-pipewire-zeroconf
-wireplumber
-gsfonts
-noto-fonts
-noto-fonts-cjk
-noto-fonts-emoji
-noto-fonts-extra
-ttf-bitstream-vera
-ttf-dejavu
-ttf-liberation
-ttf-ms-fonts
-ttf-nerd-fonts-symbols
-ttf-nerd-fonts-symbols-common
-ttf-nerd-fonts-symbols-mono
-EOF
-	cat <<EOF > /mnt/system.txt
-ark
-p7zip
-unrar
-autojump
-bash-completion
-bash-language-server
-blesh
-btop
-btrfs-assistant
-btrfsmaintenance
-code
-dialog
-filelight
-fwupd
-gamemode
-gamescope
-gwenview
-lib32-gamemode
-man-db
-man-pages
-micro
-neofetch
-openssh
-pacman-contrib
-protobuf
-python-protobuf
-reflector
-shellcheck
-spectacle
-texinfo
-ufw
-vivid
-EOF
-	cat <<EOF > /mnt/kde.txt
-bluedevil
-breeze
-breeze-gtk
-cronie
-discover
-dolphin
-dolphin-plugins
-drkonqi
-ffmpegthumbs
-flatpak
-flatpak-kcm
-glfw
-gnome-settings-daemon
-gsettings-desktop-schemas
-gsettings-qt
-kactivitymanagerd
-kcron
-kde-cli-tools
-kde-gtk-config
-kde-inotify-survey
-kdeplasma-addons
-kdecoration
-kdegraphics-thumbnailers
-kdialog
-kfind
-kgamma
-khelpcenter
-kinfocenter
-kjournald
-kmenuedit
-kompare
-konsole
-kpipewire
-krename
-kscreen
-kscreenlocker
-ksshaskpass
-ksystemlog
-ksystemstats
-kwallet-pam
-kwalletmanager
-kwayland-integration
-kwin
-kwrited
-milou
-partitionmanager
-phonon-qt5
-phonon-qt5-vlc
-plasma-browser-integration
-plasma-desktop
-plasma-disks
-plasma-firewall
-plasma-integration
-plasma-nm
-plasma-pa
-plasma-systemmonitor
-plasma-thunderbolt
-plasma-vault
-plasma-wayland-protocols
-plasma-workspace
-plasma-workspace-wallpapers
-polkit-kde-agent
-power-profiles-daemon
-powerdevil
-qt5-wayland
-qt6-wayland
-sddm
-sddm-kcm
-systemsettings
-wayland
-wayland-protocols
-xdg-desktop-portal
-xdg-desktop-portal-kde
-xorg-xlsclients
-xorg-xwayland
-xsettingsd
-EOF
-}
+
 
 # If the script is run for a second time then we need to make sure everything is unmounted
 [[ -e "archer-check" ]] && swapoff /mnt/swap/swapfile > /dev/null 2>&1
@@ -575,7 +407,7 @@ arch_chroot() {
 	cd /mnt && curl -L https://github.com/Martan404/Archer/archive/master.tar.gz | tar -xz Archer-main && cd /
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Entering arch-chroot"
+	echo -e "Entering archer-chroot"
 
 	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot.sh "$archer_logo" "$user" "$hostname" "$snapshot_layout" "$cpu_manufacturer" "$gpu_manufacturer" "$snapshot_subvol" "$root_partition" "$snap_manager"
 	rm -rf /mnt/Archer-main
@@ -605,6 +437,5 @@ format_drive
 setup_drive
 [[ ! -e "archer-check" ]] && setup_environment
 install_system
-create_package_lists
 arch_chroot
 exit_install
