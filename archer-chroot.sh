@@ -2,15 +2,14 @@
 # shellcheck disable=SC2002,SC2164
 
 # Import variables from first script
-archer_logo=${1//$/\\$}
-user=${2}
-hostname=${3}
-snapshot_layout=${4}
-cpu_manufacturer=${5}
-gpu_manufacturer=${6}
-snapshot_subvol=${7}
-root_partition=${8}
-snap_manager=${9}
+user=${1}
+hostname=${2}
+snapshot_layout=${3}
+cpu_manufacturer=${4}
+gpu_manufacturer=${5}
+snapshot_subvol=${6}
+root_partition=${7}
+snap_manager=${8}
 
 package_installer() {
 	input_packages=$1
@@ -313,7 +312,7 @@ END
 	chmod a+x /home/"$user"/.config/plasma-workspace/env/plasma-setup
 	chown "$user":"$user" /home/"$user"/.config/plasma-workspace/env/plasma-setup
 	
-	sed -i "s/#ARCHER_LOGO#/$archer_logo/g; s/#UNIX_USER#/$user/g" /home/"$user"/.config/plasma-workspace/env/plasma-setup
+	sed -i "s/UNIX_USER/$user/g" /home/"$user"/.config/plasma-workspace/env/plasma-setup
 }
 
 setup_laptop() {
@@ -849,7 +848,7 @@ EOF
 	cat /Archer-main/quiver/flatpak-setup >> /home/"$user"/System/scripts/flatpak-setup
 	chmod a+x /home/"$user"/System/scripts/flatpak-setup
 
-	sed -i "s/#ARCHER_LOGO#/$archer_logo/g; s/#UNIX_USER#/$user/g; s/#PACKAGES#/$packages/g" /home/"$user"/System/scripts/flatpak-setup
+	sed -i "s/UNIX_USER/$user/g; s/PACKAGES/$packages/g" /home/"$user"/System/scripts/flatpak-setup
 }
 
 snapshot_rollback() {
@@ -869,7 +868,7 @@ snapshot_rollback() {
 	cat /Archer-main/quiver/rollback > /usr/local/bin/rollback
 	chmod a+x /usr/local/bin/rollback
 	
-	sed -i "s/#ARCHER_LOGO#/$archer_logo/g; s/#SNAPSHOT_PATH#/$snapshot_path/g" /usr/local/bin/rollback
+	sed -i "s/SNAPSHOT_PATH/$snapshot_path/g" /usr/local/bin/rollback
 }
 
 set_password() {

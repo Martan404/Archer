@@ -409,7 +409,7 @@ arch_chroot() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Entering archer-chroot"
 
-	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot.sh "$archer_logo" "$user" "$hostname" "$snapshot_layout" "$cpu_manufacturer" "$gpu_manufacturer" "$snapshot_subvol" "$root_partition" "$snap_manager"
+	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot.sh "$user" "$hostname" "$snapshot_layout" "$cpu_manufacturer" "$gpu_manufacturer" "$snapshot_subvol" "$root_partition" "$snap_manager"
 	rm -rf /mnt/Archer-main
 }
 
