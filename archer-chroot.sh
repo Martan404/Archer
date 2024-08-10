@@ -1,4 +1,5 @@
-#!/usr/bin/env bash
+#!/bin/bash
+# Main script 2/3
 # shellcheck disable=SC2002,SC2164
 
 # Import variables from first script
@@ -873,24 +874,7 @@ bash_config() {
 }
 
 boot_setup() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating boot setup script"
-
-	cat <<-END > /usr/bin/archer-boot
-#!/bin/bash
-
-echo -e "-------------------------------------------------------------------------"
-echo -e "Setting up Firewalld rules"
-firewall-cmd --permanent --zone=internal --change-interface=lo
-firewall-cmd --permanent --zone=libvirt --change-interface=virbr0
-firewall-cmd --permanent --zone=trusted --change-interface=waydroid0
-firewall-cmd --zone=home --add-port 5353/udp
-firewall-cmd --zone=trusted --add-port 5353/udp
-
-systemctl disable --now archer-boot.service
-rm -f /etc/systemd/system/archer-boot.service
-rm -f \${BASH_SOURCE[0]}
-END
+	cat /Archer-main/archer-boot.sh > /usr/bin/archer-boot.sh
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating boot setup service"
@@ -900,7 +884,7 @@ cat <<-END > /etc/systemd/system/archer-boot.service
 Description=Archer boot setup script
  
 [Service]
-ExecStart=/usr/bin/archer-boot
+ExecStart=/usr/bin/archer-boot.sh
  
 [Install]
 WantedBy=multi-user.target

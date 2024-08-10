@@ -1,4 +1,5 @@
-#!/usr/bin/env bash
+#!/bin/bash
+# Main script 1/3
 show_logo() {
 	clear
 	archer_logo="
