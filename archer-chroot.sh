@@ -547,6 +547,57 @@ yabsnap_setup() {
 	systemctl enable yabsnap.timer
 }
 
+snapshot_rollback() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Writing Snapshot rollback script"
+
+	cat /Archer-main/quiver/rollback > /usr/local/bin/rollback
+	chmod a+x /usr/local/bin/rollback
+	
+	sed -i "s/SNAPSHOT_LAYOUT/$snapshot_layout/g" /usr/local/bin/rollback
+	sed -i "s/SNAP_MANAGER/$snap_manager/g" /usr/local/bin/rollback
+}
+
+setup_flatpak() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling Flatpak theming"
+
+	flatpak override --filesystem=xdg-config/{Kvantum,gtkrc,gtkrc-2.0,gtk-3.0,gtk-4.0}
+	flatpak override --filesystem={~/.themes,~/.icons,~/.fonts,~/.local/share/themes}
+	flatpak override --env=GTK_THEME=Breeze
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting Lutris Flatpak theming"
+		
+	flatpak override net.lutris.Lutris --env=GTK_THEME=Breeze
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Writing flatpak-setup desktop entry"
+
+	sudo -u "$user" mkdir -p /home/"$user"/.config/autostart/
+	sudo -u "$user" touch /home/"$user"/.config/autostart/flatpak-setup.desktop
+	
+	cat <<EOF >> /home/"$user"/.config/autostart/flatpak-setup.desktop
+[Desktop Entry]
+Exec=konsole -e /home/$user/System/scripts/flatpak-setup
+Icon=/usr/share/pixmaps/archlinux-logo.png
+StartupNotify=true
+Type=Application
+EOF
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Writing Flatpak install script"
+
+	sed -n '/# FLATPAK/{:a;n;/# FLATPAK/b;p;ba}' "/Archer-main/quiver/packages.txt" > "/Archer-main/quiver/flatpak.txt"
+	# shellcheck disable=SC2002
+	packages=$(cat "/Archer-main/quiver/flatpak.txt" | tr '\n' ' ')
+	
+	cat /Archer-main/quiver/flatpak-setup > /home/"$user"/System/scripts/flatpak-setup
+	chmod a+x /home/"$user"/System/scripts/flatpak-setup
+
+	sed -i "s/UNIX_USER/$user/g; s/PACKAGE_LIST/$packages/g" /home/"$user"/System/scripts/flatpak-setup
+}
+
 package_config() {
 	# If fail2ban in installed then configure jail
 	if pacman -Qs fail2ban > /dev/null; then
@@ -680,40 +731,6 @@ clean_orphans() {
 
 	# shellcheck disable=SC2046
 	pacman -Rns --noconfirm $(pacman -Qtdq)
-}
-
-firewall_config() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating Firewalld config script"
-
-	cat <<-END > /usr/bin/firewalld-config-rules
-#!/bin/bash
-firewall-cmd --permanent --zone=internal --change-interface=lo
-firewall-cmd --permanent --zone=libvirt --change-interface=virbr0
-firewall-cmd --permanent --zone=trusted --change-interface=waydroid0
-firewall-cmd --zone=home --add-port 5353/udp
-firewall-cmd --zone=trusted --add-port 5353/udp
-
-systemctl disable --now firewalld-config-rules.service
-rm -f /etc/systemd/system/firewalld-config-rules.service
-rm -f \${BASH_SOURCE[0]}
-END
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating Firewalld config service"
-
-cat <<-END > /etc/systemd/system/firewalld-config-rules.service
-[Unit]
-Description=Firewalld config script
- 
-[Service]
-ExecStart=/usr/bin/firewalld-config-rules
- 
-[Install]
-WantedBy=multi-user.target
-END
-	
-	systemctl enable firewalld-config-rules.service
 }
 
 system_config() {
@@ -855,55 +872,41 @@ bash_config() {
 	chown "$user":"$user" /home/"$user"/.config/fastfetch/config-small.jsonc
 }
 
-setup_flatpak() {
+boot_setup() {
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling Flatpak theming"
+	echo -e "Creating boot setup script"
 
-	flatpak override --filesystem=xdg-config/{Kvantum,gtkrc,gtkrc-2.0,gtk-3.0,gtk-4.0}
-	flatpak override --filesystem={~/.themes,~/.icons,~/.fonts,~/.local/share/themes}
-	flatpak override --env=GTK_THEME=Breeze
+	cat <<-END > /usr/bin/archer-boot
+#!/bin/bash
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Setting up Firewalld rules"
+firewall-cmd --permanent --zone=internal --change-interface=lo
+firewall-cmd --permanent --zone=libvirt --change-interface=virbr0
+firewall-cmd --permanent --zone=trusted --change-interface=waydroid0
+firewall-cmd --zone=home --add-port 5353/udp
+firewall-cmd --zone=trusted --add-port 5353/udp
+
+systemctl disable --now archer-boot.service
+rm -f /etc/systemd/system/archer-boot.service
+rm -f \${BASH_SOURCE[0]}
+END
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting Lutris Flatpak theming"
-		
-	flatpak override net.lutris.Lutris --env=GTK_THEME=Breeze
+	echo -e "Creating boot setup service"
 
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Writing flatpak-setup desktop entry"
-
-	sudo -u "$user" mkdir -p /home/"$user"/.config/autostart/
-	sudo -u "$user" touch /home/"$user"/.config/autostart/flatpak-setup.desktop
+cat <<-END > /etc/systemd/system/archer-boot.service
+[Unit]
+Description=Archer boot setup script
+ 
+[Service]
+ExecStart=/usr/bin/archer-boot
+ 
+[Install]
+WantedBy=multi-user.target
+END
 	
-	cat <<EOF >> /home/"$user"/.config/autostart/flatpak-setup.desktop
-[Desktop Entry]
-Exec=konsole -e /home/$user/System/scripts/flatpak-setup
-Icon=/usr/share/pixmaps/archlinux-logo.png
-StartupNotify=true
-Type=Application
-EOF
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Writing Flatpak install script"
-
-	sed -n '/# FLATPAK/{:a;n;/# FLATPAK/b;p;ba}' "/Archer-main/quiver/packages.txt" > "/Archer-main/quiver/flatpak.txt"
-	# shellcheck disable=SC2002
-	packages=$(cat "/Archer-main/quiver/flatpak.txt" | tr '\n' ' ')
-	
-	cat /Archer-main/quiver/flatpak-setup > /home/"$user"/System/scripts/flatpak-setup
-	chmod a+x /home/"$user"/System/scripts/flatpak-setup
-
-	sed -i "s/UNIX_USER/$user/g; s/PACKAGE_LIST/$packages/g" /home/"$user"/System/scripts/flatpak-setup
-}
-
-snapshot_rollback() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Writing Snapshot rollback script"
-
-	cat /Archer-main/quiver/rollback > /usr/local/bin/rollback
-	chmod a+x /usr/local/bin/rollback
-	
-	sed -i "s/SNAPSHOT_LAYOUT/$snapshot_layout/g" /usr/local/bin/rollback
-	sed -i "s/SNAP_MANAGER/$snap_manager/g" /usr/local/bin/rollback
+	systemctl enable archer-boot.service
 }
 
 set_password() {
@@ -945,18 +948,18 @@ backup_kernel
 [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "snapper" ]] && snapper_setup
 [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "yabsnap" ]] && yabsnap_setup
 [[ $snapshot_layout == "snapper" ]] && snapper_setup
+snapshot_rollback
+
+pacman -Q flatpak &>/dev/null && setup_flatpak
 package_config
 enable_services
 pacman_hooks
 clean_orphans
 
-firewall_config
 system_config
 user_config
 bash_config
 
-pacman -Q flatpak &>/dev/null && setup_flatpak
-snapshot_rollback
-
+boot_setup
 set_password
 exit
