@@ -243,7 +243,7 @@ END
 	mv /Archer-main/quiver/archer.knsv /home/"$user"/archer.knsv
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting up Plasma setup script"
+	echo -e "Setting up Plasma config script"
 
 	sudo -u "$user" mkdir -p /home/"$user"/.config/plasma-workspace/env
     mv /Archer-main/quiver/plasma-setup /home/"$user"/.config/plasma-workspace/env/plasma-setup.sh
@@ -874,11 +874,11 @@ bash_config() {
 }
 
 boot_setup() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting up boot script"
+
 	cat /Archer-main/archer-boot.sh > /usr/bin/archer-boot.sh
 	chmod a+x /usr/bin/archer-boot.sh
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating boot setup service"
 
 cat <<-END > /etc/systemd/system/archer-boot.service
 [Unit]

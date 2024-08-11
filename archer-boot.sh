@@ -16,12 +16,15 @@ $(tput sgr0)
 
 echo -e "-------------------------------------------------------------------------"
 echo -e "Setting up Firewalld rules"
-
+# Interal loopback device
 firewall-cmd --permanent --zone=internal --change-interface=lo
-firewall-cmd --permanent --zone=libvirt --change-interface=virbr0
+# libvirt interface
+firewall-cmd --permanent --zone=trusted --change-interface=virbr0
+# Waydroid interface
 firewall-cmd --permanent --zone=trusted --change-interface=waydroid0
-firewall-cmd --zone=home --add-port 5353/udp
-firewall-cmd --zone=trusted --add-port 5353/udp
+# Avahi ports
+firewall-cmd --permanent --zone=home --add-port 5353/udp
+firewall-cmd --permanent --zone=trusted --add-port 5353/udp
 
 echo -e "-------------------------------------------------------------------------"
 echo -e "Cleaning up script"

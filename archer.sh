@@ -44,7 +44,7 @@ set_variables() {
 
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Do you want to use the Arch standard or Snapper layout BTRFS layout?"
+	echo -e "Do you want to use the Arch standard or Snapper BTRFS layout?"
 	echo -e "1. Arch"
 	echo -e "2. Snapper"
 
@@ -117,7 +117,7 @@ set_disk() {
 
 set_efi() {
 		echo -e "-------------------------------------------------------------------------"
-		echo -e "Set size for EFI partition"
+		echo -e "Select size for EFI partition"
 		echo -e "1. 256MB"
 		echo -e "2. 512MB"
 		echo -e "3. 1GB"
