@@ -113,16 +113,12 @@ setup_system() {
 	systemctl enable systemd-timesyncd.service
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling English(US) locale"
+	echo -e "Setting English locale and $keyboard_keymap keymap"
 
 	sed -i '/^#en_US.UTF-8/s/^#//' /etc/locale.gen
-	
-	locale-gen
 	echo "LANG=en_US.UTF-8" >> /etc/locale.conf
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting console keymap to $keyboard_keymap"
 	echo "KEYMAP=$keyboard_keymap" >> /etc/vconsole.conf
+	locale-gen
 
 	# If Swedish keymap is set then create en_SE locale
 	if [ "$keyboard_keymap" = "sv-latin1" ]; then
@@ -131,9 +127,10 @@ setup_system() {
 
 		sed -i '/^#sv_SE.UTF-8/s/^#//' /etc/locale.gen
 		mv /Archer-main/quiver/en_SE /usr/share/i18n/locales/en_SE && sed -i '/en_US\.UTF-8/i\en_SE\.UTF-8 UTF-8' /etc/locale.gen
+		sed -i 's/^LANG=.*/LANG=en_SE.UTF-8/' /etc/locale.conf || echo "LANG=en_SE.UTF-8" >> /etc/locale.conf
 
 		locale-gen
-		echo "LANG=en_SE.UTF-8" >> /etc/locale.conf
+		
 	fi
 
 #	echo -e "-------------------------------------------------------------------------"
@@ -490,6 +487,8 @@ END
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Disabling snapshot listing in pacman for grub-btrfs"
+
+
 
 	sed -i '/^[#]*GRUB_BTRFS_SHOW_SNAPSHOTS_FOUND=/s/true/false/' /etc/default/grub-btrfs/config
 	sed -i '/^#GRUB_BTRFS_SHOW_SNAPSHOTS_FOUND/s/^#//' /etc/default/grub-btrfs/config
