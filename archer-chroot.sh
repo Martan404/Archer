@@ -860,7 +860,7 @@ bash_config() {
 	cat /Archer-main/quiver/fastfetch-config-small.jsonc > /home/"$user"/.config/fastfetch/config-small.jsonc
 
 	chown "$user":"$user" /home/"$user"/.config/fastfetch/config.jsonc
-	chown "$user":"$user" /home/"$user"/.config/fastfetch/config-small.json
+	chown "$user":"$user" /home/"$user"/.config/fastfetch/config-small.jsonc
 }
 
 boot_setup() {
