@@ -130,7 +130,6 @@ setup_system() {
 		sed -i 's/^LANG=.*/LANG=en_SE.UTF-8/' /etc/locale.conf || echo "LANG=en_SE.UTF-8" >> /etc/locale.conf
 
 		locale-gen
-		
 	fi
 
 #	echo -e "-------------------------------------------------------------------------"
@@ -487,8 +486,6 @@ END
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Disabling snapshot listing in pacman for grub-btrfs"
-
-
 
 	sed -i '/^[#]*GRUB_BTRFS_SHOW_SNAPSHOTS_FOUND=/s/true/false/' /etc/default/grub-btrfs/config
 	sed -i '/^#GRUB_BTRFS_SHOW_SNAPSHOTS_FOUND/s/^#//' /etc/default/grub-btrfs/config
