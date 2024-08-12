@@ -239,7 +239,7 @@ set_drivers() {
 		export gpu_manufacturer="nvidia"
 
 	elif [[ ${lspci_output} =~ (Virtio|QEMU) ]] || [[ ${lspci_output_full} =~ (Virtio|QEMU) ]]; then
-		echo "Found VM GPU"
+		echo "Found QEMU GPU"
 		gpu_driver="qemu-guest-agent vulkan-virtio lib32-vulkan-virtio"
 		export gpu_manufacturer="qemu"
 	
