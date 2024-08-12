@@ -20,10 +20,11 @@ bash <(curl -L tinyurl.com/archersh)
 
 From initial prompt run these commands: 
 ```
-loadkeys sv-latin1
+localectl list-keymaps
+localectl set-keymap sv-latin1
 bash <(curl -L tinyurl.com/archersh)
 ```
-*Replace sv-latin1 with whatever keymap you want. Do note that the script defaults to Swedish settings during install. This needs to be manually edited in the script*
+*Replace sv-latin1 with whatever keymap you want*
 
 ## Wifi
 

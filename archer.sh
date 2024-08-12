@@ -42,7 +42,6 @@ set_variables() {
 	done
 	echo "Setting user name to $user"
 
-
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Do you want to use the Arch standard or Snapper BTRFS layout?"
 	echo -e "1. Arch"
@@ -84,6 +83,48 @@ set_variables() {
 
 	else
 		snap_manager="none"
+	fi
+}
+
+set_keymap() {
+	current_keymap=$(localectl status | grep 'VC Keymap' | awk '{print $3}')
+
+	if [ "$current_keymap" != "" ]; then
+		while true; do
+			echo -e "-------------------------------------------------------------------------"
+			echo -e "$current_keymap is currently used keymap. Set it as default? (Y/n) " yn
+
+			case $yn in
+			[yY1]) 
+				keyboard_keymap=$current_keymap
+				break ;;
+			[nN2]) break ;;
+			esac
+		done
+	fi
+	
+	if [ "$keyboard_keymap" = "" ]; then
+		local status=1
+		while [ $status -ne 0 ]; do
+			echo -e "-------------------------------------------------------------------------"
+			echo -e "Listing available keyboard keymaps"
+
+			localectl list-keymaps | awk '{printf "%s  ", $0} END {print ""}'
+
+			echo -e "Enter keymap to use for console and X11"
+			read -r -p "Name: " keyboard_keymap
+		done
+
+		while true; do
+			read -r -p "Is $keyboard_keymap correct? (Y/n) " yn
+
+			case $yn in
+			[yY1]) break ;;
+			[nN2])
+				set_keymap
+				break ;;
+			esac
+		done
 	fi
 }
 
@@ -358,7 +399,7 @@ setup_drive() {
 
 setup_environment() {
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling Network Time Sync"
+	echo -e "Enabling network time syncronization"
 
 	timedatectl set-ntp true
 
@@ -410,7 +451,7 @@ arch_chroot() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Entering archer-chroot"
 
-	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot.sh "$user" "$hostname" "$snapshot_layout" "$cpu_manufacturer" "$gpu_manufacturer" "$snapshot_subvol" "$root_partition" "$snap_manager"
+	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot.sh "$user" "$hostname" "$snapshot_layout" "$cpu_manufacturer" "$gpu_manufacturer" "$snapshot_subvol" "$root_partition" "$snap_manager" "$keyboard_keymap"
 	rm -rf /mnt/Archer-main
 }
 
@@ -428,6 +469,7 @@ exit_install() {
 show_logo
 
 set_variables
+set_keymap
 set_disk
 set_efi
 set_kernel

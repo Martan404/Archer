@@ -11,6 +11,7 @@ gpu_manufacturer=${5}
 snapshot_subvol=${6}
 root_partition=${7}
 snap_manager=${8}
+keyboard_keymap=${9}
 
 package_installer() {
 	input_packages=$1
@@ -107,43 +108,49 @@ setup_system() {
 	hwclock --systohc
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling English and Swedish locale"
+	echo -e "Enabling network time syncronization"
+
+	systemctl enable systemd-timesyncd.service
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling English locale"
 
 	sed -i 's/^#en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
-	sed -i 's/^#sv_SE.UTF-8/sv_SE.UTF-8/' /etc/locale.gen
 	locale-gen
+	localectl set-locale en_US.UTF-8
+
+	# If Swedish keymap is set then create en_SE locale
+	if [ "$keyboard_keymap" = "sv-latin1" ]; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Enabling en_SE locale"	
+
+		sed -i 's/^#sv_SE.UTF-8/sv_SE.UTF-8/' /etc/locale.gen
+
+		mv /Archer-main/quiver/en_SE /usr/share/i18n/locales/en_SE &&
+		sed -i '/en_US\.UTF-8/i\en_SE\.UTF-8 UTF-8' /etc/locale.gen &&
+
+		locale-gen
+		localectl set-locale en_SE.UTF-8
+	fi
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling en_SE locale"	
+	echo -e "Setting keyboard layout to $keyboard_keymap"
+	
+	localectl set-keymap "$keyboard_keymap"
+	localectl status
+#	echo "KEYMAP=sv-latin1" >> /etc/vconsole.conf
 
-	mv /Archer-main/quiver/en_SE /usr/share/i18n/locales/en_SE &&
-	sed -i '/en_US\.UTF-8/i\en_SE\.UTF-8 UTF-8' /etc/locale.gen &&
-	echo "LANG=en_SE.UTF-8" > /etc/locale.conf
-	locale-gen
+#	echo -e "-------------------------------------------------------------------------"
+#	echo -e "Setting X11 keyboard layout to Swedish"
 
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting system locale"
-	{
-		echo "LANG=sv_SE.UTF-8"
-		echo "LC_MESSAGES=en_US.UTF-8"
-	} >> /etc/locale.conf
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting default console keyboard layout to Swedish"
-
-	echo "KEYMAP=sv-latin1" >> /etc/vconsole.conf
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting X11 keyboard layout to Swedish"
-
-	mkdir -p /etc/X11/xorg.conf.d/
-	cat <<-END > /etc/X11/xorg.conf.d/00-keyboard.conf
-Section "InputClass"
-			Identifier "system-keyboard"
-			MatchIsKeyboard "on"
-			Option "XkbLayout" "se"
-ENDSection
-END
+#	mkdir -p /etc/X11/xorg.conf.d/
+#	cat <<-END > /etc/X11/xorg.conf.d/00-keyboard.conf
+#Section "InputClass"
+#			Identifier "system-keyboard"
+#			MatchIsKeyboard "on"
+#			Option "XkbLayout" "se"
+#ENDSection
+#END
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting hostname to $hostname"
@@ -152,12 +159,13 @@ END
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /etc/hosts"
-	{
-		echo "127.0.0.1		localhost"
-		echo "::1			localhost ip6-localhost ip6-loopback"
-		echo "ff02::1       ip6-allnodes"
-		echo "ff02::2       ip6-allrouters"
-	} >> /etc/hosts
+
+	cat <<-END >> /etc/hosts
+127.0.0.1		localhost
+::1				localhost ip6-localhost ip6-loopback
+ff02::1      	ip6-allnodes
+ff02::2      	ip6-allrouters
+END
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling btrfs module in mkinitcpio.conf"
@@ -345,7 +353,7 @@ echo -e "-----------------------------------------------------------------------
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Installing laptop packages"
 
-		package_installer "auto-cpufreq wireless-regdb"
+		package_installer "auto-cpufreq"
 
 		systemctl mask power-profiles-daemon.service
 		systemctl enable auto-cpufreq.service
@@ -565,7 +573,6 @@ backup_kernel() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating pacman hooks for kernel backup"
 
-	mkdir /etc/pacman.d/hooks
 	mkdir -p /.bootbackup/{preupdate,postupdate}
 
 	cat <<-END > /etc/pacman.d/hooks/00-bootbackup-preupdate.hook
