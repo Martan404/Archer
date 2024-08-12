@@ -115,7 +115,6 @@ setup_system() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling English(US) locale"
 
-	sed -i 's/^#en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
 	sed -i '/^#en_US.UTF-8/s/^#//' /etc/locale.gen
 	
 	locale-gen
