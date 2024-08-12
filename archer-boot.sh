@@ -16,6 +16,7 @@ $(tput sgr0)
 
 echo -e "-------------------------------------------------------------------------"
 echo -e "Setting up Firewalld rules"
+firewall-cmd
 # libvirt interface
 firewall-cmd --permanent --zone=trusted --change-interface=virbr0
 # Waydroid interface
