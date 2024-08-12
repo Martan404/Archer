@@ -251,7 +251,7 @@ set_drivers() {
 			case $yN in
 			[yY1])
 				echo "Installing QEMU drivers"
-				gpu_driver="qemu-guest-agent vulkan-virtio lib32-vulkan-virtio vulkan-mesa-layers"
+				gpu_driver="qemu-guest-agent vulkan-virtio lib32-vulkan-virtio"
 				export gpu_manufacturer="qemu"
 				break
 				;;
