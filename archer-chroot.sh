@@ -82,6 +82,7 @@ setup_pacman() {
 	echo -e "Enabling pacman hooks"
 
 	sed -i 's/^#HookDir/HookDir/' /etc/pacman.conf
+	mkdir -p /etc/pacman.d/hooks/
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Adding candy to pacman"
@@ -241,6 +242,11 @@ echo -e "-----------------------------------------------------------------------
 	echo -e "Enabling wireless network daemon"
 
 	systemctl enable iwd.service
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling cups printer socket"
+
+	systemctl enable cups.socket
 }
 
 install_desktop_pkgs() {
@@ -298,12 +304,6 @@ install_system_pkgs() {
 	echo -e "Enabling pacman cache cleaner service"
 
 	systemctl enable paccache.timer
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Moving pacman hooks"
-
-	mv -v /Archer-main/quiver/hooks/* /etc/pacman.d/hooks/
-	chown -R :wheel /etc/pacman.d/hooks/*
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Adding sudo password exception to udisk2/mount"
@@ -522,7 +522,7 @@ setup_drivers() {
 		kernel_parameters="intel_iommu=on iommu=pt"
 
 		echo -e "-------------------------------------------------------------------------"
-		echo -e "Installing and enabling thermald service for Intel CPU"
+		echo -e "Installing and enabling thermald service"
 
 		package_installer "thermald"
 		systemctl enable thermald.service
@@ -882,6 +882,12 @@ WantedBy=multi-user.target
 END
 	
 	systemctl enable archer-boot.service
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Moving pacman hooks"
+
+	mv -v /Archer-main/quiver/hooks/* /etc/pacman.d/hooks/
+	chown -R :wheel /etc/pacman.d/hooks/*
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Cleaning orphaned packages"
