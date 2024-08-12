@@ -92,6 +92,18 @@ setup_pacman() {
 	echo -e "Updating pacman databases"
 
 	pacman -Syu --noconfirm
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling pacman cache cleaner service"
+
+	systemctl enable paccache.timer
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Moving pacman hooks"
+
+	mv -v /Archer-main/quiver/hooks/* /etc/pacman.d/hooks/
+	chown -R :wheel /etc/pacman.d/hooks/*
+
 }
 
 setup_system() {
@@ -149,6 +161,11 @@ setup_system() {
 	mkinitcpio -P
 
 	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling fstrim service"
+
+	systemctl enable fstrim.timer
+
+	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up sudo permissions for wheel group"
 
 	sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
@@ -163,6 +180,48 @@ setup_system() {
 
 	groupadd -f git
 	useradd -m -G sys,wheel,rfkill,git -s /bin/bash "$user"
+}
+
+config_system() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Adding ~/.local/bin PATH to /etc/profile.d/custom-path.sh"
+
+	echo "export PATH=\$PATH:\$HOME/.local/bin" >> /etc/profile.d/custom-path.sh
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Adding sudo password exception to udisk2/mount"
+
+	cat <<-END > /etc/polkit-1/rules.d/10-udisks2.rules
+// Allow udisks2 to mount devices without authentication
+// for users in the "wheel" group.
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.udisks2.filesystem-mount-system" ||
+         action.id == "org.freedesktop.udisks2.filesystem-mount") &&
+        subject.isInGroup("wheel")) {
+        return polkit.Result.YES;
+    }
+});
+END
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling en_SE locale"	
+
+	mv /Archer-main/quiver/en_SE /usr/share/i18n/locales/en_SE &&
+	sed -i '/en_US\.UTF-8/i\en_SE\.UTF-8 UTF-8' /etc/locale.gen &&
+	echo "LANG=en_SE.UTF-8" > /etc/locale.conf
+
+	locale-gen
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting X11 keyboard layout"
+
+	cat <<-END > /etc/X11/xorg.conf.d/00-keyboard.conf
+Section "InputClass"
+			Identifier "system-keyboard"
+			MatchIsKeyboard "on"
+			Option "XkbLayout" "se"
+ENDSection
+END
 }
 
 setup_paru_pipx() {
@@ -189,19 +248,31 @@ setup_paru_pipx() {
 	package_installer "python-pipx"
 }
 
-install_packages() {
-	echo -e "-------------------------------------------------------------------------"
+install_driver_pkgs() {
+echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing driver packages"
 
 	sed -n '/# DRIVERS/{:a;n;/# DRIVERS/b;p;ba}' "/Archer-main/quiver/packages.txt" > "Archer-main/quiver/drivers.txt"
 	package_installer "Archer-main/quiver/drivers.txt"
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing desktop environment"
+	echo -e "Enabling networkmanager service"
 
-	sed -n '/# DESKTOP/{:a;n;/# DESKTOP/b;p;ba}' "/Archer-main/quiver/packages.txt" > "Archer-main/quiver/desktop.txt"
-	package_installer "Archer-main/quiver/desktop.txt"
+	systemctl enable NetworkManager.service
 
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling firewalld service"
+
+	systemctl enable firewalld.service
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling avahi networking and setting up hostname resolution"
+
+	systemctl enable avahi-daemon.service
+	sudo sed -i '/^hosts: mymachines/ s/resolve/mdns_minimal [NOTFOUND=return] resolve/' /etc/nsswitch.conf
+}
+
+install_system_pkgs() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing system packages"
 
@@ -209,10 +280,86 @@ install_packages() {
 	package_installer "Archer-main/quiver/system.txt"
 
 	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling openssh daemon and disable root login"
+
+	systemctl enable sshd.service
+	echo "PermitRootLogin no" > /etc/ssh/sshd_config.d/20-deny_root.conf
+}
+
+install_desktop_pkgs() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing desktop environment"
+
+	sed -n '/# DESKTOP/{:a;n;/# DESKTOP/b;p;ba}' "/Archer-main/quiver/packages.txt" > "Archer-main/quiver/desktop.txt"
+	package_installer "Archer-main/quiver/desktop.txt"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling sddm display manager"
+
+	systemctl enable sddm.service
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling bluetooth driver"
+
+	systemctl enable bluetooth.service
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting up XDG user directories"
+
+	xdg-user-dirs-update
+
+	#sed -i '/TEMPLATES/s/^/#/' /etc/xdg/user-dirs.defaults
+	sed -i '/PUBLICSHARE/s/^/#/' /etc/xdg/user-dirs.defaults
+
+	cat <<-END >> /etc/xdg/user-dirs.defaults
+APPLICATIONS=Applications
+GAMES=Games
+PROJECTS=Projects
+SYNC=Sync
+END
+}
+
+install_pacman_pkgs() {
+	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing pacman packages"
 
 	sed -n '/# PACMAN/{:a;n;/# PACMAN/b;p;ba}' "/Archer-main/quiver/packages.txt" > "Archer-main/quiver/pacman.txt"
 	package_installer "Archer-main/quiver/pacman.txt"
+}
+
+setup_laptop() {
+echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing laptop-detect package"
+
+	package_installer "laptop-detect"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Checking if device is laptop"
+
+	laptop-detect
+	laptop_status=$?
+
+	if [ $laptop_status -eq 0 ]; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Installing laptop packages"
+
+		package_installer "auto-cpufreq wireless-regdb"
+
+		systemctl mask power-profiles-daemon.service
+		systemctl enable auto-cpufreq.service
+
+	elif [ $laptop_status -eq 1 ]; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Device not recognized as laptop"
+
+	elif [ $laptop_status -eq 2 ]; then
+		laptop-detect -v
+	fi
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Uninstalling laptop-detect package"
+	
+	pacman -Rs --noconfirm laptop-detect
 }
 
 setup_plasma() {
@@ -253,41 +400,6 @@ END
 [Theme]
 Current=breeze
 END
-}
-
-setup_laptop() {
-echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing laptop-detect package"
-
-	package_installer "laptop-detect"
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Checking if device is laptop"
-
-	laptop-detect
-	laptop_status=$?
-
-	if [ $laptop_status -eq 0 ]; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Installing laptop packages"
-
-		package_installer "auto-cpufreq wireless-regdb"
-
-		systemctl mask power-profiles-daemon.service
-		systemctl enable auto-cpufreq.service
-
-	elif [ $laptop_status -eq 1 ]; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Device not recognized as laptop"
-
-	elif [ $laptop_status -eq 2 ]; then
-		laptop-detect -v
-	fi
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Uninstalling laptop-detect package"
-	
-	pacman -Rs --noconfirm laptop-detect
 }
 
 setup_flatpak() {
@@ -667,128 +779,6 @@ END
 	fi
 }
 
-enable_services() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling networkmanager service"
-
-	systemctl enable NetworkManager.service
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling firewalld service"
-
-	systemctl enable firewalld.service
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling avahi networking and setting up hostname resolution"
-
-	systemctl enable avahi-daemon.service
-	sudo sed -i '/^hosts: mymachines/ s/resolve/mdns_minimal [NOTFOUND=return] resolve/' /etc/nsswitch.conf
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling openssh daemon and disable root login"
-
-	systemctl enable sshd.service
-	echo "PermitRootLogin no" > /etc/ssh/sshd_config.d/20-deny_root.conf
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling fstrim service"
-
-	systemctl enable fstrim.timer
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling pacman cache cleaner service"
-
-	systemctl enable paccache.timer
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling sddm display manager"
-
-	systemctl enable sddm.service
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling bluetooth driver"
-
-	systemctl enable bluetooth.service
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Rebuilding GRUB configs"
-
-	grub-mkconfig -o /boot/grub/grub.cfg
-}
-
-pacman_hooks() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Moving pacman hooks"
-
-	mv -v /Archer-main/quiver/hooks/* /etc/pacman.d/hooks/
-	chown -R :wheel /etc/pacman.d/hooks/*
-}
-
-clean_orphans() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Cleaning orphaned packages"
-
-	# shellcheck disable=SC2046
-	pacman -Rns --noconfirm $(pacman -Qtdq)
-}
-
-system_config() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Adding ~/.local/bin PATH to /etc/profile.d/custom-path.sh"
-
-	echo "export PATH=\$PATH:\$HOME/.local/bin" >> /etc/profile.d/custom-path.sh
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Adding sudo password exception to udisk2/mount"
-
-	cat <<-END > /etc/polkit-1/rules.d/10-udisks2.rules
-// Allow udisks2 to mount devices without authentication
-// for users in the "wheel" group.
-polkit.addRule(function(action, subject) {
-    if ((action.id == "org.freedesktop.udisks2.filesystem-mount-system" ||
-         action.id == "org.freedesktop.udisks2.filesystem-mount") &&
-        subject.isInGroup("wheel")) {
-        return polkit.Result.YES;
-    }
-});
-END
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling en_SE locale"	
-
-	mv /Archer-main/quiver/en_SE /usr/share/i18n/locales/en_SE &&
-	sed -i '/en_US\.UTF-8/i\en_SE\.UTF-8 UTF-8' /etc/locale.gen &&
-	echo "LANG=en_SE.UTF-8" > /etc/locale.conf
-
-	locale-gen
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting X11 keyboard layout"
-
-	cat <<-END > /etc/X11/xorg.conf.d/00-keyboard.conf
-Section "InputClass"
-			Identifier "system-keyboard"
-			MatchIsKeyboard "on"
-			Option "XkbLayout" "se"
-ENDSection
-END
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting up XDG user directories"
-
-	xdg-user-dirs-update
-
-	#sed -i '/TEMPLATES/s/^/#/' /etc/xdg/user-dirs.defaults
-	sed -i '/PUBLICSHARE/s/^/#/' /etc/xdg/user-dirs.defaults
-
-	cat <<-END >> /etc/xdg/user-dirs.defaults
-APPLICATIONS=Applications
-GAMES=Games
-PROJECTS=Projects
-SYNC=Sync
-END
-}
-
 user_config() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating home sub-directories for $user"
@@ -890,6 +880,17 @@ WantedBy=multi-user.target
 END
 	
 	systemctl enable archer-boot.service
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Cleaning orphaned packages"
+
+	# shellcheck disable=SC2046
+	pacman -Rns --noconfirm $(pacman -Qtdq)
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Rebuilding GRUB configs"
+
+	grub-mkconfig -o /boot/grub/grub.cfg
 }
 
 set_password() {
@@ -919,27 +920,28 @@ set_password() {
 
 setup_pacman
 setup_system
-
+config_system
 setup_paru_pipx
-install_packages
-setup_plasma
+
+install_driver_pkgs
+install_system_pkgs
+install_desktop_pkgs
+install_pacman_pkgs
+
 setup_laptop
+setup_plasma
 setup_flatpak
 
 setup_grub
 setup_drivers
 backup_kernel
+
 [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "snapper" ]] && snapper_setup
 [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "yabsnap" ]] && yabsnap_setup
 [[ $snapshot_layout == "snapper" ]] && snapper_setup
 snapshot_rollback
 
 package_config
-enable_services
-pacman_hooks
-clean_orphans
-
-system_config
 user_config
 bash_config
 
