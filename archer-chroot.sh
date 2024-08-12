@@ -92,18 +92,6 @@ setup_pacman() {
 	echo -e "Updating pacman databases"
 
 	pacman -Syu --noconfirm
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling pacman cache cleaner service"
-
-	systemctl enable paccache.timer
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Moving pacman hooks"
-
-	mv -v /Archer-main/quiver/hooks/* /etc/pacman.d/hooks/
-	chown -R :wheel /etc/pacman.d/hooks/*
-
 }
 
 setup_system() {
@@ -125,6 +113,14 @@ setup_system() {
 	locale-gen
 
 	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling en_SE locale"	
+
+	mv /Archer-main/quiver/en_SE /usr/share/i18n/locales/en_SE &&
+	sed -i '/en_US\.UTF-8/i\en_SE\.UTF-8 UTF-8' /etc/locale.gen &&
+	echo "LANG=en_SE.UTF-8" > /etc/locale.conf
+	locale-gen
+
+	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting system locale"
 	{
 		echo "LANG=sv_SE.UTF-8"
@@ -132,9 +128,21 @@ setup_system() {
 	} >> /etc/locale.conf
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting default keyboard layout to Swedish"
+	echo -e "Setting default console keyboard layout to Swedish"
 
 	echo "KEYMAP=sv-latin1" >> /etc/vconsole.conf
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting X11 keyboard layout to Swedish"
+
+	mkdir -p /etc/X11/xorg.conf.d/
+	cat <<-END > /etc/X11/xorg.conf.d/00-keyboard.conf
+Section "InputClass"
+			Identifier "system-keyboard"
+			MatchIsKeyboard "on"
+			Option "XkbLayout" "se"
+ENDSection
+END
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting hostname to $hostname"
@@ -161,11 +169,6 @@ setup_system() {
 	mkinitcpio -P
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling fstrim service"
-
-	systemctl enable fstrim.timer
-
-	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up sudo permissions for wheel group"
 
 	sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
@@ -180,48 +183,11 @@ setup_system() {
 
 	groupadd -f git
 	useradd -m -G sys,wheel,rfkill,git -s /bin/bash "$user"
-}
 
-config_system() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Adding ~/.local/bin PATH to /etc/profile.d/custom-path.sh"
 
 	echo "export PATH=\$PATH:\$HOME/.local/bin" >> /etc/profile.d/custom-path.sh
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Adding sudo password exception to udisk2/mount"
-
-	cat <<-END > /etc/polkit-1/rules.d/10-udisks2.rules
-// Allow udisks2 to mount devices without authentication
-// for users in the "wheel" group.
-polkit.addRule(function(action, subject) {
-    if ((action.id == "org.freedesktop.udisks2.filesystem-mount-system" ||
-         action.id == "org.freedesktop.udisks2.filesystem-mount") &&
-        subject.isInGroup("wheel")) {
-        return polkit.Result.YES;
-    }
-});
-END
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling en_SE locale"	
-
-	mv /Archer-main/quiver/en_SE /usr/share/i18n/locales/en_SE &&
-	sed -i '/en_US\.UTF-8/i\en_SE\.UTF-8 UTF-8' /etc/locale.gen &&
-	echo "LANG=en_SE.UTF-8" > /etc/locale.conf
-
-	locale-gen
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting X11 keyboard layout"
-
-	cat <<-END > /etc/X11/xorg.conf.d/00-keyboard.conf
-Section "InputClass"
-			Identifier "system-keyboard"
-			MatchIsKeyboard "on"
-			Option "XkbLayout" "se"
-ENDSection
-END
 }
 
 setup_paru_pipx() {
@@ -270,20 +236,11 @@ echo -e "-----------------------------------------------------------------------
 
 	systemctl enable avahi-daemon.service
 	sudo sed -i '/^hosts: mymachines/ s/resolve/mdns_minimal [NOTFOUND=return] resolve/' /etc/nsswitch.conf
-}
-
-install_system_pkgs() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing system packages"
-
-	sed -n '/# SYSTEM #/{:a;n;/# SYSTEM #/b;p;ba}' "/Archer-main/quiver/packages.txt" > "Archer-main/quiver/system.txt"
-	package_installer "Archer-main/quiver/system.txt"
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling openssh daemon and disable root login"
+	echo -e "Enabling wireless network daemon"
 
-	systemctl enable sshd.service
-	echo "PermitRootLogin no" > /etc/ssh/sshd_config.d/20-deny_root.conf
+	systemctl enable iwd.service
 }
 
 install_desktop_pkgs() {
@@ -316,6 +273,51 @@ APPLICATIONS=Applications
 GAMES=Games
 PROJECTS=Projects
 SYNC=Sync
+END
+}
+
+install_system_pkgs() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing system packages"
+
+	sed -n '/# SYSTEM #/{:a;n;/# SYSTEM #/b;p;ba}' "/Archer-main/quiver/packages.txt" > "Archer-main/quiver/system.txt"
+	package_installer "Archer-main/quiver/system.txt"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling fstrim service"
+
+	systemctl enable fstrim.timer
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling openssh daemon and disable root login"
+
+	systemctl enable sshd.service
+	echo "PermitRootLogin no" > /etc/ssh/sshd_config.d/20-deny_root.conf
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling pacman cache cleaner service"
+
+	systemctl enable paccache.timer
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Moving pacman hooks"
+
+	mv -v /Archer-main/quiver/hooks/* /etc/pacman.d/hooks/
+	chown -R :wheel /etc/pacman.d/hooks/*
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Adding sudo password exception to udisk2/mount"
+
+	cat <<-END > /etc/polkit-1/rules.d/10-udisks2.rules
+// Allow udisks2 to mount devices without authentication
+// for users in the "wheel" group.
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.udisks2.filesystem-mount-system" ||
+         action.id == "org.freedesktop.udisks2.filesystem-mount") &&
+        subject.isInGroup("wheel")) {
+        return polkit.Result.YES;
+    }
+});
 END
 }
 
@@ -920,12 +922,11 @@ set_password() {
 
 setup_pacman
 setup_system
-config_system
 setup_paru_pipx
 
 install_driver_pkgs
-install_system_pkgs
 install_desktop_pkgs
+install_system_pkgs
 install_pacman_pkgs
 
 setup_laptop

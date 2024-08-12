@@ -251,7 +251,7 @@ set_drivers() {
 			case $yN in
 			[yY1])
 				echo "Installing QEMU drivers"
-				gpu_driver="qemu-guest-agent vulkan-virtio lib32-vulkan-virtio"
+				gpu_driver="qemu-guest-agent vulkan-virtio lib32-vulkan-virtio vulkan-mesa-layers"
 				export gpu_manufacturer="qemu"
 				break
 				;;
@@ -384,7 +384,7 @@ install_system() {
 
     while true; do
 		# shellcheck disable=SC2086
-		pacstrap -K /mnt base base-devel sudo $kernel $kernel-headers linux-firmware $cpu_ucode $gpu_driver btrfs-progs dosfstools e2fsprogs exfatprogs f2fs-tools jfsutils ntfs-3g udftools xfsprogs && break
+		pacstrap -K /mnt base base-devel sudo $kernel $kernel-headers linux-firmware $cpu_ucode $gpu_driver btrfs-progs dosfstools e2fsprogs exfatprogs f2fs-tools jfsutils ntfs-3g udftools xfsprogs iptables-nft && break
 
     	echo "$(tput setaf 9)Package installation failed. Retrying... $(tput sgr0)"
 	done
