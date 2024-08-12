@@ -113,11 +113,17 @@ setup_system() {
 	systemctl enable systemd-timesyncd.service
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling English locale"
+	echo -e "Enabling English(US) locale"
 
 	sed -i 's/^#en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
+	sed -i '/^#en_US.UTF-8/s/^#//' /etc/locale.gen
+	
 	locale-gen
-	localectl set-locale en_US.UTF-8
+	echo "LANG=en_US.UTF-8" >> /etc/locale.conf
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting console keymap to $keyboard_keymap"
+	echo "KEYMAP=$keyboard_keymap" >> /etc/vconsole.conf
 
 	# If Swedish keymap is set then create en_SE locale
 	if [ "$keyboard_keymap" = "sv-latin1" ]; then
@@ -125,20 +131,12 @@ setup_system() {
 		echo -e "Enabling en_SE locale"	
 
 		sed -i 's/^#sv_SE.UTF-8/sv_SE.UTF-8/' /etc/locale.gen
-
 		mv /Archer-main/quiver/en_SE /usr/share/i18n/locales/en_SE &&
 		sed -i '/en_US\.UTF-8/i\en_SE\.UTF-8 UTF-8' /etc/locale.gen &&
 
 		locale-gen
-		localectl set-locale en_SE.UTF-8
+		echo "LANG=en_SE.UTF-8" >> /etc/locale.conf
 	fi
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting keyboard layout to $keyboard_keymap"
-	
-	localectl set-keymap "$keyboard_keymap"
-	localectl status
-#	echo "KEYMAP=sv-latin1" >> /etc/vconsole.conf
 
 #	echo -e "-------------------------------------------------------------------------"
 #	echo -e "Setting X11 keyboard layout to Swedish"

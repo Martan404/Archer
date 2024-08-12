@@ -15,6 +15,15 @@ $(tput sgr0)
                            Arch install script"
 
 echo -e "-------------------------------------------------------------------------"
+echo -e "Setting up locale"
+
+current_keymap=$(localectl status | grep 'VC Keymap' | awk '{print $3}')
+localectl set-keymap "$current_keymap"
+
+localectl set-locale en_US.UTF-8
+[[ "$current_keymap" = "sv-latin1" ]] && localectl set-locale en_SE.UTF-8
+
+echo -e "-------------------------------------------------------------------------"
 echo -e "Setting up Firewalld rules"
 
 # Start the firewall

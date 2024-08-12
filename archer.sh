@@ -92,9 +92,8 @@ set_keymap() {
 	if [ "$current_keymap" != "" ]; then
 		while true; do
 			echo -e "-------------------------------------------------------------------------"
-			read -r -p "$current_keymap is currently used keymap. Set it as default? (Y/n) " yesNo
+			read -r -p "$current_keymap is currently used as keymap. Set it as default? (Y/n) " yesNo
 			
-
 			case $yesNo in
 			[yY1]) 
 				keyboard_keymap=$current_keymap
