@@ -65,7 +65,7 @@ if [ "$try_count" -eq "$max_tries" ]; then
 fi
 }
 
-setup_system() {
+setup_pacman() {
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling multilib repository"
@@ -94,7 +94,7 @@ setup_system() {
 	pacman -Syu --noconfirm
 }
 
-config_system() {
+setup_system() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting time zone"
 
@@ -213,14 +213,6 @@ install_packages() {
 
 	sed -n '/# PACMAN/{:a;n;/# PACMAN/b;p;ba}' "/Archer-main/quiver/packages.txt" > "Archer-main/quiver/pacman.txt"
 	package_installer "Archer-main/quiver/pacman.txt"
-
-	if [[ $cpu_manufacturer == "intel" ]]; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Installing and enabling thermald service for Intel CPU"
-
-		package_installer "thermald"
-		systemctl enable thermald.service
-	fi
 }
 
 setup_plasma() {
@@ -312,7 +304,7 @@ setup_flatpak() {
 	flatpak override net.lutris.Lutris --env=GTK_THEME=Breeze
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Writing flatpak-setup desktop entry"
+	echo -e "Creating flatpak-setup desktop entry"
 
 	sudo -u "$user" mkdir -p /home/"$user"/.config/autostart/
 	sudo -u "$user" touch /home/"$user"/.config/autostart/flatpak-setup.desktop
@@ -326,7 +318,7 @@ Type=Application
 EOF
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Writing Flatpak install script"
+	echo -e "Setting up Flatpak install script"
 
 	sed -n '/# FLATPAK/{:a;n;/# FLATPAK/b;p;ba}' "/Archer-main/quiver/packages.txt" > "/Archer-main/quiver/flatpak.txt"
 	# shellcheck disable=SC2002
@@ -400,26 +392,32 @@ END
 	echo "%wheel ALL=(ALL) NOPASSWD: /usr/local/bin/windows-boot" >> /etc/sudoers
 }
 
-tweak_kernel() {
+setup_drivers() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Removing 'quiet' kernel parameter"
 
 	sed -i '/GRUB_CMDLINE_LINUX_DEFAULT/s/ quiet//g' /etc/default/grub
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting kernel boot parameters for CPU"
+	echo -e "Setting kernel boot parameters for $cpu_manufacturer CPU"
 
 	if [ "$cpu_manufacturer" = "amd" ]; then
 		kernel_parameters=""
 
-	elif [ "$gpu_manufacturer" = "intel" ]; then
+	elif [ "$cpu_manufacturer" = "intel" ]; then
 		kernel_parameters="intel_iommu=on iommu=pt"
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Installing and enabling thermald service for Intel CPU"
+
+		package_installer "thermald"
+		systemctl enable thermald.service
 	fi
 	
 	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $kernel_parameters\"/" /etc/default/grub
 	
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting kernel boot parameters for GPU"
+	echo -e "Setting kernel boot parameters for $gpu_manufacturer GPU"
 
 	if [ "$gpu_manufacturer" = "amd" ]; then
 		kernel_parameters=""
@@ -437,7 +435,7 @@ tweak_kernel() {
 		systemctl enable nvidia-hibernate.service
 		systemctl enable nvidia-resume.service
 
-	elif [ "$gpu_manufacturer" = "vm" ]; then
+	elif [ "$gpu_manufacturer" = "qemu" ]; then
 		kernel_parameters=""
 	fi
 	
@@ -446,7 +444,7 @@ tweak_kernel() {
 
 backup_kernel() {
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing rsync for kernel backup"
+	echo -e "Installing rsync"
 
 	package_installer "rsync"
 
@@ -590,7 +588,7 @@ yabsnap_setup() {
 
 snapshot_rollback() {
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Writing Snapshot rollback script"
+	echo -e "Setting up Snapshot rollback script"
 
 	cat /Archer-main/quiver/rollback > /usr/local/bin/rollback
 	chmod a+x /usr/local/bin/rollback
@@ -870,7 +868,7 @@ bash_config() {
 	cat /Archer-main/quiver/fastfetch-config-small.jsonc > /home/"$user"/.config/fastfetch/config-small.jsonc
 
 	chown "$user":"$user" /home/"$user"/.config/fastfetch/config.jsonc
-	chown "$user":"$user" /home/"$user"/.config/fastfetch/config-small.jsonc
+	chown "$user":"$user" /home/"$user"/.config/fastfetch/config-small.json
 }
 
 boot_setup() {
@@ -919,8 +917,8 @@ set_password() {
 	done
 }
 
+setup_pacman
 setup_system
-config_system
 
 setup_paru_pipx
 install_packages
@@ -929,7 +927,7 @@ setup_laptop
 setup_flatpak
 
 setup_grub
-tweak_kernel
+setup_drivers
 backup_kernel
 [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "snapper" ]] && snapper_setup
 [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "yabsnap" ]] && yabsnap_setup
