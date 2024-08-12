@@ -92,9 +92,10 @@ set_keymap() {
 	if [ "$current_keymap" != "" ]; then
 		while true; do
 			echo -e "-------------------------------------------------------------------------"
-			read -r -p "$current_keymap is currently used keymap. Set it as default? (Y/n) " yn
+			read -r -p "$current_keymap is currently used keymap. Set it as default? (Y/n) " yesNo
+			
 
-			case $yn in
+			case $yesNo in
 			[yY1]) 
 				keyboard_keymap=$current_keymap
 				break ;;
@@ -116,9 +117,9 @@ set_keymap() {
 		done
 
 		while true; do
-			read -r -p "Is $keyboard_keymap correct? (Y/n) " yn
+			read -r -p "Is $keyboard_keymap correct? (Y/n) " yesNo
 
-			case $yn in
+			case $yesNo in
 			[yY1]) break ;;
 			[nN2])
 				set_keymap
@@ -145,9 +146,9 @@ set_disk() {
 	done
 
 	while true; do
-		read -r -p "Is the disk $disk correct? (Y/n) " yn
+		read -r -p "Is the disk $disk correct? (Y/n) " yesNo
 
-		case $yn in
+		case $yesNo in
 		[yY1]) break ;;
 		[nN2])
 			set_disk
