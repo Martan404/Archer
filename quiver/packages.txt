@@ -37,9 +37,9 @@ nss-mdns
 bluez-utils
 cups
 cups-pdf
-foomatic-db
+foomatic-db-ppds
 foomatic-db-engine
-foomatic-db-nonfree
+foomatic-db-nonfree-ppds
 gst-plugin-pipewire
 pipewire-alsa
 pipewire-audio
@@ -99,6 +99,7 @@ reflector
 shellcheck
 spectacle
 texinfo
+usbutils
 vivid
 vulkan-mesa-layers
 lib32-vulkan-mesa-layers
@@ -167,6 +168,7 @@ powerdevil
 print-manager
 sddm
 sddm-kcm
+system-config-printer
 systemsettings
 xdg-desktop-portal
 xdg-desktop-portal-kde
