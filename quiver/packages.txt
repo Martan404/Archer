@@ -24,8 +24,14 @@ steam
 # PACMAN #
 
 # DRIVERS #
+wayland
+wayland-protocols
+xorg-xwayland
+xwaylandvideobridge
 avahi
 networkmanager
+iwd
+wireless-regdb
 firewalld
 nss-mdns
 bluez-utils
@@ -73,6 +79,7 @@ blesh
 btop
 btrfs-assistant
 btrfsmaintenance
+udisks2-btrfs
 code
 dialog
 filelight
@@ -93,6 +100,8 @@ shellcheck
 spectacle
 texinfo
 vivid
+vulkan-mesa-layers
+lib32-vulkan-mesa-layers
 # SYSTEM #
 
 # DESKTOP #
@@ -159,10 +168,6 @@ print-manager
 sddm
 sddm-kcm
 systemsettings
-wayland
-wayland-protocols
 xdg-desktop-portal
 xdg-desktop-portal-kde
-xorg-xwayland
-xwaylandvideobridge
 # DESKTOP #
