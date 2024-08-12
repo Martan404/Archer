@@ -241,18 +241,18 @@ set_drivers() {
 	elif [[ ${lspci_output} =~ (Virtio|QEMU) ]] || [[ ${lspci_output_full} =~ (Virtio|QEMU) ]]; then
 		echo "Found VM GPU"
 		gpu_driver="qemu-guest-agent vulkan-virtio lib32-vulkan-virtio"
-		export gpu_manufacturer="vm"
+		export gpu_manufacturer="qemu"
 	
 	else
 		echo "GPU could not be detected"
 		while true; do
-			read -r -p "Do you want to install VirtIO VM drivers? (y/N) " yN
+			read -r -p "Do you want to install QEMU virtual machine drivers? (y/N) " yN
 
 			case $yN in
 			[yY1])
-				echo "Installing VM drivers"
+				echo "Installing QEMU drivers"
 				gpu_driver="qemu-guest-agent vulkan-virtio lib32-vulkan-virtio"
-				export gpu_manufacturer="vm"
+				export gpu_manufacturer="qemu"
 				break
 				;;
 			[nN2])
