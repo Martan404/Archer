@@ -86,8 +86,9 @@ set_variables() {
 	fi
 }
 
+current_keymap=$(localectl status | grep 'VC Keymap' | awk '{print $3}')
+
 set_keymap() {
-	current_keymap=$(localectl status | grep 'VC Keymap' | awk '{print $3}')
 
 	if [ "$current_keymap" != "(unset)" ] && [ "$current_keymap" != "" ]; then
 		while true; do
@@ -98,7 +99,9 @@ set_keymap() {
 			[yY1]) 
 				keyboard_keymap=$current_keymap
 				break ;;
-			[nN2]) break ;;
+			[nN2]) 
+				current_keymap=""
+				break ;;
 			esac
 		done
 	fi
@@ -119,8 +122,8 @@ set_keymap() {
 			case $yesNo in
 				[yY1]) break ;;
 				[nN2])
-				set_keymap
-				break ;;
+					set_keymap
+					break ;;
 			esac
 		done
 	fi
