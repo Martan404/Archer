@@ -1,0 +1,10 @@
+[DEFAULT]
+banaction = nftables
+banaction_allports = nftables[type=allports]
+bantime=-1
+maxretry=5
+
+[sshd]
+enabled = true
+backend=systemd
+ignoreip = 127.0.0.0/8 ::1 217.208.23.233 192.168.1.*
