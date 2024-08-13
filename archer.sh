@@ -91,7 +91,10 @@ set_variables() {
 check_keymap() {
 current_keymap=$(localectl status | grep 'VC Keymap' | awk '{print $3}')
 
-if [ "$current_keymap" != "(unset)" ] && [ "$current_keymap" != "" ]; then
+if [ "$current_keymap" = "(unset)" ] || [ "$current_keymap" = "" ]; then
+	set_keymap
+
+else
 	while true; do
 		echo -e "-------------------------------------------------------------------------"
 		read -r -p "$current_keymap is currently used as keymap. Set it as default? (Y/n) " yesNo
@@ -105,8 +108,6 @@ if [ "$current_keymap" != "(unset)" ] && [ "$current_keymap" != "" ]; then
 				break ;;
 		esac
 	done
-else
-set_keymap
 fi
 }
 
