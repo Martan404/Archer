@@ -122,10 +122,10 @@ set_keymap() {
 		read -r -p "Is $keyboard_keymap correct? (Y/n) " yesNo
 
 		case $yesNo in
-			[yY1]) 
-				break ;;
+			[yY1]) break ;;
 			[nN2])
-				set_keymap ;;
+				set_keymap 
+				break ;;
 		esac
 	done
 }
@@ -471,9 +471,8 @@ exit_install() {
 show_logo
 
 set_variables
-set_keymap
+check_keymap
 set_disk
-set_keymap
 set_efi
 set_kernel
 set_swap
