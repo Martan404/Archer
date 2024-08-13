@@ -96,12 +96,13 @@ set_keymap() {
 			read -r -p "$current_keymap is currently used as keymap. Set it as default? (Y/n) " yesNo
 			
 			case $yesNo in
-			[yY1]) 
-				keyboard_keymap=$current_keymap
-				break ;;
-			[nN2]) 
-				current_keymap=""
-				break ;;
+				[yY1]) 
+					keyboard_keymap=$current_keymap
+					break ;;
+				[nN2]) 
+					current_keymap=""
+					keyboard_keymap=""
+					break ;;
 			esac
 		done
 	fi
@@ -472,6 +473,7 @@ show_logo
 set_variables
 set_keymap
 set_disk
+set_keymap
 set_efi
 set_kernel
 set_swap
