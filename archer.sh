@@ -117,8 +117,8 @@ set_keymap() {
 			read -r -p "Is $keyboard_keymap correct? (Y/n) " yesNo
 
 			case $yesNo in
-			[yY1]) break ;;
-			[nN2])
+				[yY1]) break ;;
+				[nN2])
 				set_keymap
 				break ;;
 			esac
