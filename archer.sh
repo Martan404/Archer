@@ -89,7 +89,7 @@ set_variables() {
 set_keymap() {
 	current_keymap=$(localectl status | grep 'VC Keymap' | awk '{print $3}')
 
-	if [ "$current_keymap" != "" ]; then
+	if [ "$current_keymap" != "(unset)" ] && [ "$current_keymap" != "" ]; then
 		while true; do
 			echo -e "-------------------------------------------------------------------------"
 			read -r -p "$current_keymap is currently used as keymap. Set it as default? (Y/n) " yesNo
@@ -111,6 +111,7 @@ set_keymap() {
 
 			localectl list-keymaps | awk '{printf "%s  ", $0} END {print ""}'
 
+			echo -e "-------------------------------------------------------------------------"
 			echo -e "Enter keymap to use for console and X11"
 			read -r -p "Name: " keyboard_keymap
 		done
