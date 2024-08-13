@@ -124,7 +124,7 @@ setup_system() {
 		echo -e "Enabling en_SE locale"	
 
 		sed -i '/^#sv_SE.UTF-8/s/^#//' /etc/locale.gen
-		mv /Archer-main/quiver/en_SE /usr/share/i18n/locales/en_SE && sed -i '/en_US\.UTF-8/i\en_SE\.UTF-8 UTF-8' /etc/locale.gen
+		mv /Archer-main/quiver/config/en_SE /usr/share/i18n/locales/en_SE && sed -i '/en_US\.UTF-8/i\en_SE\.UTF-8 UTF-8' /etc/locale.gen
 		sed -i 's/^LANG=.*/LANG=en_SE.UTF-8/' /etc/locale.conf || echo "LANG=en_SE.UTF-8" >> /etc/locale.conf
 
 		locale-gen
@@ -217,44 +217,44 @@ install_driver_pkgs() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing driver packages"
 
-	sed -n '/# DRIVERS/{:a;n;/# DRIVERS/b;p;ba}' "/Archer-main/quiver/packages.txt" > "Archer-main/quiver/drivers.txt"
+	sed -n '/# DRIVERS/{:a;n;/# DRIVERS/b;p;ba}' "/Archer-main/quiver/package_list.txt" > "Archer-main/quiver/drivers.txt"
 	package_installer "Archer-main/quiver/drivers.txt"
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling networkmanager service"
 
-	source /Archer-main/quiver/package-config/networkmanager.conf
+	source /Archer-main/quiver/package-setup/networkmanager.conf
 	#systemctl enable NetworkManager.service
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling firewalld service"
 
-	source /Archer-main/quiver/package-config/firewalld.conf
+	source /Archer-main/quiver/package-setup/firewalld.conf
 	#systemctl enable firewalld.service
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling avahi networking and setting up hostname resolution"
 
-	source /Archer-main/quiver/package-config/avahi.conf
+	source /Archer-main/quiver/package-setup/avahi.conf
 	#systemctl enable avahi-daemon.service
 	#sudo sed -i '/^hosts: mymachines/ s/resolve/mdns_minimal [NOTFOUND=return] resolve/' /etc/nsswitch.conf
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling wireless network daemon"
 
-	source /Archer-main/quiver/package-config/iwd.conf
+	source /Archer-main/quiver/package-setup/iwd.conf
 	#systemctl enable iwd.service
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling cups printer socket"
 
-	source /Archer-main/quiver/package-config/cups.conf
+	source /Archer-main/quiver/package-setup/cups.conf
 	#systemctl enable cups.socket
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling bluetooth driver"
 
-	source /Archer-main/quiver/package-config/bluez.conf
+	source /Archer-main/quiver/package-setup/bluez.conf
 	#systemctl enable bluetooth.service
 }
 
@@ -262,7 +262,7 @@ install_desktop_pkgs() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing desktop environment"
 
-	sed -n '/# DESKTOP/{:a;n;/# DESKTOP/b;p;ba}' "/Archer-main/quiver/packages.txt" > "Archer-main/quiver/desktop.txt"
+	sed -n '/# DESKTOP/{:a;n;/# DESKTOP/b;p;ba}' "/Archer-main/quiver/package_list.txt" > "Archer-main/quiver/desktop.txt"
 	package_installer "Archer-main/quiver/desktop.txt"
 
 	echo -e "-------------------------------------------------------------------------"
@@ -290,7 +290,7 @@ install_system_pkgs() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing system packages"
 
-	sed -n '/# SYSTEM #/{:a;n;/# SYSTEM #/b;p;ba}' "/Archer-main/quiver/packages.txt" > "Archer-main/quiver/system.txt"
+	sed -n '/# SYSTEM #/{:a;n;/# SYSTEM #/b;p;ba}' "/Archer-main/quiver/package_list.txt" > "Archer-main/quiver/system.txt"
 	package_installer "Archer-main/quiver/system.txt"
 
 	echo -e "-------------------------------------------------------------------------"
@@ -329,7 +329,7 @@ install_pacman_pkgs() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing pacman packages"
 
-	sed -n '/# PACMAN/{:a;n;/# PACMAN/b;p;ba}' "/Archer-main/quiver/packages.txt" > "Archer-main/quiver/pacman.txt"
+	sed -n '/# PACMAN/{:a;n;/# PACMAN/b;p;ba}' "/Archer-main/quiver/package_list.txt" > "Archer-main/quiver/pacman.txt"
 	package_installer "Archer-main/quiver/pacman.txt"
 }
 
@@ -385,13 +385,13 @@ END
 
 	sudo -u "$user" pipx install konsave
 
-	mv /Archer-main/quiver/archer.knsv /home/"$user"/archer.knsv
+	mv /Archer-main/quiver/config/archer.knsv /home/"$user"/archer.knsv
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up Plasma config script"
 
 	sudo -u "$user" mkdir -p /home/"$user"/.config/plasma-workspace/env
-    mv /Archer-main/quiver/plasma-setup /home/"$user"/.config/plasma-workspace/env/plasma-setup.sh
+    mv /Archer-main/quiver/scripts/plasma-setup /home/"$user"/.config/plasma-workspace/env/plasma-setup.sh
 	
 	chmod a+x /home/"$user"/.config/plasma-workspace/env/plasma-setup.sh
 	chown "$user":"$user" /home/"$user"/.config/plasma-workspace/env/plasma-setup.sh
@@ -438,11 +438,11 @@ EOF
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up Flatpak install script"
 
-	sed -n '/# FLATPAK/{:a;n;/# FLATPAK/b;p;ba}' "/Archer-main/quiver/packages.txt" > "/Archer-main/quiver/flatpak.txt"
+	sed -n '/# FLATPAK/{:a;n;/# FLATPAK/b;p;ba}' "/Archer-main/quiver/package_list.txt" > "/Archer-main/quiver/flatpak.txt"
 	# shellcheck disable=SC2002
 	packages=$(cat "/Archer-main/quiver/flatpak.txt" | tr '\n' ' ')
 	
-	cat /Archer-main/quiver/flatpak-setup > /usr/bin/flatpak-setup
+	cat /Archer-main/quiver/scripts/flatpak-setup > /usr/bin/flatpak-setup
 	chmod a+x /usr/bin/flatpak-setup
 
 	sed -i "s/UNIX_USER/$user/g; s/PACKAGE_LIST/$packages/g" /usr/bin/flatpak-setup
@@ -480,7 +480,7 @@ END
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing Grub theme"
 
-	mv /Archer-main/quiver/arch-silence /boot/grub/themes/arch-silence
+	mv /Archer-main/quiver/themes/arch-silence /boot/grub/themes/arch-silence
 	sed -i '/^[#]*GRUB_THEME=/c\GRUB_THEME="\/boot\/grub\/themes\/arch-silence\/theme.txt"' /etc/default/grub
 
 	echo -e "-------------------------------------------------------------------------"
@@ -707,7 +707,7 @@ snapshot_rollback() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up Snapshot rollback script"
 
-	cat /Archer-main/quiver/rollback > /usr/local/bin/rollback
+	cat /Archer-main/quiver/scripts/rollback > /usr/local/bin/rollback
 	chmod a+x /usr/local/bin/rollback
 	
 	sed -i "s/SNAPSHOT_LAYOUT/$snapshot_layout/g" /usr/local/bin/rollback
@@ -720,7 +720,7 @@ package_config() {
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Configuring fail2ban jail"
 		
-		cat /Archer-main/quiver/fail2ban-jail.local > /etc/fail2ban/jail.local
+		cat /Archer-main/quiver/config/fail2ban-jail.local > /etc/fail2ban/jail.local
 	fi
 
 	# If Steam is not installed then install steam-devices package for controller support in Steam flatpak
@@ -746,12 +746,12 @@ package_config() {
 		echo -e "Importing Betterfox user.js"
 
 		cd /home/"$user"/.mozilla/firefox/*default-release/
-		mv /Archer-main/quiver/betterfox-user.js ./user.js
+		mv /Archer-main/quiver/config/betterfox-user.js ./user.js
 		chown "$user":"$user" ./user.js
 		cd /
 	# Else prepare user.js for Flatpak version
 	else
-		mv /Archer-main/quiver/betterfox-user.js /home/"$user"/.user.js
+		mv /Archer-main/quiver//config/betterfox-user.js /home/"$user"/.user.js
 		chown "$user":"$user" /home/"$user"/.user.js
 	fi
 
@@ -828,12 +828,12 @@ bash_config() {
 	sed -i '/PS1/,+1d' /etc/bash.bashrc
 	sed -i '/bash_completion/d' /etc/bash.bashrc && sed -i '/fi/d' /etc/bash.bashrc
 
-	cat /Archer-main/quiver/bash.bashrc >> /etc/bash.bashrc
+	cat /Archer-main/quiver/bashrc/bash.bashrc >> /etc/bash.bashrc
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /etc/bash.bash_aliases"
 
-	cat /Archer-main/quiver/bash.bash_aliases > /etc/bash.bash_aliases
+	cat /Archer-main/quiver/bashrc/bash.bash_aliases > /etc/bash.bash_aliases
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /home/$user/.bashrc"
@@ -841,7 +841,7 @@ bash_config() {
 	sed -i '/PS1/d' /home/"$user"/.bashrc
 	sed -i '/alias/d' /home/"$user"/.bashrc
 	
-	cat /Archer-main/quiver/user.bashrc >> /home/"$user"/.bashrc
+	cat /Archer-main/quiver/bashrc/user.bashrc >> /home/"$user"/.bashrc
 	chown "$user":"$user" /home/"$user"/.bashrc
 	
 	echo -e "-------------------------------------------------------------------------"
@@ -852,15 +852,15 @@ bash_config() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /home/$user/.bash_aliases"
 
-	cat /Archer-main/quiver/user.bash_aliases >> /home/"$user"/.bash_aliases
+	cat /Archer-main/quiver/bashrc/user.bash_aliases >> /home/"$user"/.bash_aliases
 	chown "$user":"$user" /home/"$user"/.bash_aliases
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring fastfetch"
 
 	sudo -u "$user" mkdir -p /home/"$user"/.config/fastfetch/
-	cat /Archer-main/quiver/fastfetch-config.jsonc > /home/"$user"/.config/fastfetch/config.jsonc
-	cat /Archer-main/quiver/fastfetch-config-small.jsonc > /home/"$user"/.config/fastfetch/config-small.jsonc
+	cat /Archer-main/quiver/config/fastfetch-config.jsonc > /home/"$user"/.config/fastfetch/config.jsonc
+	cat /Archer-main/quiver/config/fastfetch-config-small.jsonc > /home/"$user"/.config/fastfetch/config-small.jsonc
 
 	chown "$user":"$user" /home/"$user"/.config/fastfetch/config.jsonc
 	chown "$user":"$user" /home/"$user"/.config/fastfetch/config-small.jsonc
