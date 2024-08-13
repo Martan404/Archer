@@ -245,7 +245,8 @@ install_pacman_pkgs() {
 }
 
 install_packages() {
-	get_packages=$(grep -v '^#' /Archer-main/quiver/package_list.txt | grep -v '^$')
+	get_packages=$(grep -v '^#' /Archer-main/quiver/package_list.txt | grep -v '^$' | grep -v '\.')
+	
 	package_installer "$get_packages"
 }
 
