@@ -86,11 +86,12 @@ set_variables() {
 	fi
 }
 
+
+
+check_keymap() {
 current_keymap=$(localectl status | grep 'VC Keymap' | awk '{print $3}')
 
-set_keymap() {
-
-	if [ "$current_keymap" != "(unset)" ] && [ "$current_keymap" != "" ]; then
+if [ "$current_keymap" != "(unset)" ] && [ "$current_keymap" != "" ]; then
 		while true; do
 			echo -e "-------------------------------------------------------------------------"
 			read -r -p "$current_keymap is currently used as keymap. Set it as default? (Y/n) " yesNo
@@ -100,34 +101,33 @@ set_keymap() {
 					keyboard_keymap=$current_keymap
 					break ;;
 				[nN2]) 
-					current_keymap=""
-					keyboard_keymap=""
+					set_keymap
 					break ;;
 			esac
 		done
 	fi
-	
-	if [ "$keyboard_keymap" = "" ]; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Listing available keyboard keymaps"
+}
 
-		localectl list-keymaps | awk '{printf "%s  ", $0} END {print ""}'
+set_keymap() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Listing available keyboard keymaps"
 
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Enter keymap to use for console and X11"
-		read -r -p "Name: " keyboard_keymap
+	localectl list-keymaps | awk '{printf "%s  ", $0} END {print ""}'
 
-		while true; do
-			read -r -p "Is $keyboard_keymap correct? (Y/n) " yesNo
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enter keymap to use for console and X11"
+	read -r -p "Name: " keyboard_keymap
 
-			case $yesNo in
-				[yY1]) 
-					break ;;
-				[nN2])
-					set_keymap ;;
-			esac
-		done
-	fi
+	while true; do
+		read -r -p "Is $keyboard_keymap correct? (Y/n) " yesNo
+
+		case $yesNo in
+			[yY1]) 
+				break ;;
+			[nN2])
+				set_keymap ;;
+		esac
+	done
 }
 
 set_disk() {
