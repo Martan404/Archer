@@ -43,8 +43,8 @@ package_installer() {
 if [ "$try_count" -eq "$max_tries" ]; then
     echo "$(tput setaf 9)Package installation failed after $try_count attempts$(tput sgr0)"
 
-	echo -e "Should we keep installing or exit?"
-	echo -e "1. Continiue"
+	echo -e "Choose option"
+	echo -e "1. Try again"
 	echo -e "2. Exit"
 
 	while true; do
@@ -53,11 +53,9 @@ if [ "$try_count" -eq "$max_tries" ]; then
 		case $choice in
 		[yY1])
 			try_count=0
-			choice="continiue"
-			break
-			;;
+			package_installer "$input_packages" "$pkg_manager"
+			break ;;
 		[nN2])
-			choice="exit"
 			echo "$(tput setaf 9)Exiting...$(tput sgr0)"
 			exit
 			;;
@@ -216,7 +214,7 @@ setup_paru_pipx() {
 }
 
 install_driver_pkgs() {
-echo -e "-------------------------------------------------------------------------"
+	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing driver packages"
 
 	sed -n '/# DRIVERS/{:a;n;/# DRIVERS/b;p;ba}' "/Archer-main/quiver/packages.txt" > "Archer-main/quiver/drivers.txt"
@@ -225,28 +223,39 @@ echo -e "-----------------------------------------------------------------------
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling networkmanager service"
 
-	systemctl enable NetworkManager.service
+	source /Archer-main/quiver/package-config/networkmanager.conf
+	#systemctl enable NetworkManager.service
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling firewalld service"
 
-	systemctl enable firewalld.service
+	source /Archer-main/quiver/package-config/firewalld.conf
+	#systemctl enable firewalld.service
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling avahi networking and setting up hostname resolution"
 
-	systemctl enable avahi-daemon.service
-	sudo sed -i '/^hosts: mymachines/ s/resolve/mdns_minimal [NOTFOUND=return] resolve/' /etc/nsswitch.conf
+	source /Archer-main/quiver/package-config/avahi.conf
+	#systemctl enable avahi-daemon.service
+	#sudo sed -i '/^hosts: mymachines/ s/resolve/mdns_minimal [NOTFOUND=return] resolve/' /etc/nsswitch.conf
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling wireless network daemon"
 
-	systemctl enable iwd.service
+	source /Archer-main/quiver/package-config/iwd.conf
+	#systemctl enable iwd.service
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling cups printer socket"
 
-	systemctl enable cups.socket
+	source /Archer-main/quiver/package-config/cups.conf
+	#systemctl enable cups.socket
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling bluetooth driver"
+
+	source /Archer-main/quiver/package-config/bluez.conf
+	#systemctl enable bluetooth.service
 }
 
 install_desktop_pkgs() {
@@ -260,11 +269,6 @@ install_desktop_pkgs() {
 	echo -e "Enabling sddm display manager"
 
 	systemctl enable sddm.service
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling bluetooth driver"
-
-	systemctl enable bluetooth.service
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up XDG user directories"
