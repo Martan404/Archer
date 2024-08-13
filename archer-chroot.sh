@@ -84,9 +84,20 @@ setup_pacman() {
 	mkdir -p /etc/pacman.d/hooks/
 
 	echo -e "-------------------------------------------------------------------------"
+	echo -e "Moving pacman hooks"
+
+	mv -v /Archer-main/quiver/hooks/* /etc/pacman.d/hooks/
+	chown -R :wheel /etc/pacman.d/hooks/*
+
+	echo -e "-------------------------------------------------------------------------"
 	echo -e "Adding candy to pacman"
 
 	sed -i '/^ParallelDownloads = .*/a ILoveCandy' /etc/pacman.conf
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling pacman cache cleaner service"
+
+	systemctl enable paccache.timer
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Updating pacman databases"
@@ -129,18 +140,6 @@ setup_system() {
 
 		locale-gen
 	fi
-
-#	echo -e "-------------------------------------------------------------------------"
-#	echo -e "Setting X11 keyboard layout to Swedish"
-
-#	mkdir -p /etc/X11/xorg.conf.d/
-#	cat <<-END > /etc/X11/xorg.conf.d/00-keyboard.conf
-#Section "InputClass"
-#			Identifier "system-keyboard"
-#			MatchIsKeyboard "on"
-#			Option "XkbLayout" "se"
-#ENDSection
-#END
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting hostname to $hostname"
@@ -219,43 +218,6 @@ install_driver_pkgs() {
 
 	sed -n '/# DRIVERS/{:a;n;/# DRIVERS/b;p;ba}' "/Archer-main/quiver/package_list.txt" > "Archer-main/quiver/drivers.txt"
 	package_installer "Archer-main/quiver/drivers.txt"
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling networkmanager service"
-
-	source /Archer-main/quiver/package-setup/networkmanager.conf
-	#systemctl enable NetworkManager.service
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling firewalld service"
-
-	source /Archer-main/quiver/package-setup/firewalld.conf
-	#systemctl enable firewalld.service
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling avahi networking and setting up hostname resolution"
-
-	source /Archer-main/quiver/package-setup/avahi.conf
-	#systemctl enable avahi-daemon.service
-	#sudo sed -i '/^hosts: mymachines/ s/resolve/mdns_minimal [NOTFOUND=return] resolve/' /etc/nsswitch.conf
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling wireless network daemon"
-
-	source /Archer-main/quiver/package-setup/iwd.conf
-	#systemctl enable iwd.service
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling cups printer socket"
-
-	source /Archer-main/quiver/package-setup/cups.conf
-	#systemctl enable cups.socket
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling bluetooth driver"
-
-	source /Archer-main/quiver/package-setup/bluez.conf
-	#systemctl enable bluetooth.service
 }
 
 install_desktop_pkgs() {
@@ -264,26 +226,6 @@ install_desktop_pkgs() {
 
 	sed -n '/# DESKTOP/{:a;n;/# DESKTOP/b;p;ba}' "/Archer-main/quiver/package_list.txt" > "Archer-main/quiver/desktop.txt"
 	package_installer "Archer-main/quiver/desktop.txt"
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling sddm display manager"
-
-	systemctl enable sddm.service
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting up XDG user directories"
-
-	xdg-user-dirs-update
-
-	#sed -i '/TEMPLATES/s/^/#/' /etc/xdg/user-dirs.defaults
-	sed -i '/PUBLICSHARE/s/^/#/' /etc/xdg/user-dirs.defaults
-
-	cat <<-END >> /etc/xdg/user-dirs.defaults
-APPLICATIONS=Applications
-GAMES=Games
-PROJECTS=Projects
-SYNC=Sync
-END
 }
 
 install_system_pkgs() {
@@ -292,37 +234,6 @@ install_system_pkgs() {
 
 	sed -n '/# SYSTEM #/{:a;n;/# SYSTEM #/b;p;ba}' "/Archer-main/quiver/package_list.txt" > "Archer-main/quiver/system.txt"
 	package_installer "Archer-main/quiver/system.txt"
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling fstrim service"
-
-	systemctl enable fstrim.timer
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling openssh daemon and disable root login"
-
-	systemctl enable sshd.service
-	echo "PermitRootLogin no" > /etc/ssh/sshd_config.d/20-deny_root.conf
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling pacman cache cleaner service"
-
-	systemctl enable paccache.timer
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Adding sudo password exception to udisk2/mount"
-
-	cat <<-END > /etc/polkit-1/rules.d/10-udisks2.rules
-// Allow udisks2 to mount devices without authentication
-// for users in the "wheel" group.
-polkit.addRule(function(action, subject) {
-    if ((action.id == "org.freedesktop.udisks2.filesystem-mount-system" ||
-         action.id == "org.freedesktop.udisks2.filesystem-mount") &&
-        subject.isInGroup("wheel")) {
-        return polkit.Result.YES;
-    }
-});
-END
 }
 
 install_pacman_pkgs() {
@@ -331,6 +242,11 @@ install_pacman_pkgs() {
 
 	sed -n '/# PACMAN/{:a;n;/# PACMAN/b;p;ba}' "/Archer-main/quiver/package_list.txt" > "Archer-main/quiver/pacman.txt"
 	package_installer "Archer-main/quiver/pacman.txt"
+}
+
+install_packages() {
+	get_packages=$(grep -v '^#' package_list.txt | grep -v '^$')
+	package_installer "$get_packages"
 }
 
 setup_laptop() {
@@ -369,15 +285,6 @@ echo -e "-----------------------------------------------------------------------
 }
 
 setup_plasma() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling automatic D-Bus activation for KWallet"
-
-	cat <<-END >> /usr/share/dbus-1/services/org.freedesktop.secrets.service
-[D-BUS Service]
-Name=org.freedesktop.secrets
-Exec=/usr/bin/kwalletd6
-END
-
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing konsave"
 
@@ -714,79 +621,6 @@ snapshot_rollback() {
 	sed -i "s/SNAP_MANAGER/$snap_manager/g" /usr/local/bin/rollback
 }
 
-package_config() {
-	# If fail2ban in installed then configure jail
-	if pacman -Qs fail2ban > /dev/null; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Configuring fail2ban jail"
-		
-		cat /Archer-main/quiver/configs/fail2ban-jail.local > /etc/fail2ban/jail.local
-	fi
-
-	# If Steam is not installed then install steam-devices package for controller support in Steam flatpak
-	if ! pacman -Qs steam > /dev/null; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Installing steam-devices package for Steam Flatpak"
-	
-		package_installer "steam-devices" 
-	fi
-
-	# If Firefox is installed then start it once and add the user.js
-	if pacman -Qs firefox > /dev/null; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Generating Firefox profiles"
-
-		sudo -u "$user" firefox -headless &
-		read -r -t 1
-
-		# shellcheck disable=SC2009
-		for pid in $(ps -ef | grep "firefox -headless" | awk '{print $2}'); do kill -9 "$pid"; done
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Importing Betterfox user.js"
-
-		cd /home/"$user"/.mozilla/firefox/*default-release/
-		mv /Archer-main/quiver/configs/betterfox-userjs ./user.js
-		chown "$user":"$user" ./user.js
-		cd /
-	# Else prepare user.js for Flatpak version
-	else
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Preparing Betterfox user.js for flatpak version"
-
-		mv /Archer-main/quiver/config/betterfox-userjs /home/"$user"/.user.js
-		chown "$user":"$user" /home/"$user"/.user.js
-	fi
-
-	# If Discord is installed then apply fixes 
-	if pacman -Qs discord > /dev/null; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Setting Discord to use local login credentials"
-
-		sed -i 's/Exec=\/usr\/bin\/discord/Exec=\/usr\/bin\/discord --password-store=basic/' /opt/discord/discord.desktop
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Removing Discord internal update check"
-
-		sudo -u "$user" mkdir -p /home/"$user"/.config/discord
-		sudo -u "$user" touch /home/"$user"/.config/discord/settings.json
-
-		cat <<-END > /home/"$user"/.config/discord/settings.json
-{
-  "IS_MAXIMIZED": false,
-  "IS_MINIMIZED": false,
-  "SKIP_HOST_UPDATE": true,
-  "WINDOW_BOUNDS": {
-    "x": 40,
-    "y": 40,
-    "width": 940,
-    "height": 570
-  }
-}
-END
-	fi
-}
-
 user_config() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating home sub-directories for $user"
@@ -857,16 +691,37 @@ bash_config() {
 
 	cat /Archer-main/quiver/bashrc/user.bash_aliases >> /home/"$user"/.bash_aliases
 	chown "$user":"$user" /home/"$user"/.bash_aliases
+}
+
+config_packages() {
+	installed_packages=$(pacman -Q)
+
+	while IFS= read -r line; do
+
+		package_name=$(echo "$line" | awk '{print $1}')
+
+		if [[ -f "/Archer/quiver/package-setup/$package_name" ]]; then
+			echo "Found $package_name config"
+			# shellcheck disable=SC1090
+			source "/Archer/quiver/package-setup/$package_name"
+		fi
+	done <<< "$installed_packages"
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Configuring fastfetch"
+	echo -e "Configuring not-installed"
+	# shellcheck disable=SC1091
+	source "/Archer/quiver/package-setup/not-installed" 
 
-	sudo -u "$user" mkdir -p /home/"$user"/.config/fastfetch/
-	cat /Archer-main/quiver/configs/fastfetch-config.jsonc > /home/"$user"/.config/fastfetch/config.jsonc
-	cat /Archer-main/quiver/configs/fastfetch-config-small.jsonc > /home/"$user"/.config/fastfetch/config-small.jsonc
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Cleaning orphaned packages"
 
-	chown "$user":"$user" /home/"$user"/.config/fastfetch/config.jsonc
-	chown "$user":"$user" /home/"$user"/.config/fastfetch/config-small.jsonc
+	# shellcheck disable=SC2046
+	pacman -Rns --noconfirm $(pacman -Qtdq)
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Rebuilding GRUB configs"
+
+	grub-mkconfig -o /boot/grub/grub.cfg
 }
 
 boot_setup() {
@@ -888,23 +743,6 @@ WantedBy=multi-user.target
 END
 	
 	systemctl enable archer-boot.service
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Moving pacman hooks"
-
-	mv -v /Archer-main/quiver/hooks/* /etc/pacman.d/hooks/
-	chown -R :wheel /etc/pacman.d/hooks/*
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Cleaning orphaned packages"
-
-	# shellcheck disable=SC2046
-	pacman -Rns --noconfirm $(pacman -Qtdq)
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Rebuilding GRUB configs"
-
-	grub-mkconfig -o /boot/grub/grub.cfg
 }
 
 set_password() {
@@ -936,10 +774,11 @@ setup_pacman
 setup_system
 setup_paru_pipx
 
-install_driver_pkgs
-install_desktop_pkgs
-install_system_pkgs
-install_pacman_pkgs
+#install_driver_pkgs
+#install_desktop_pkgs
+#install_system_pkgs
+#install_pacman_pkgs
+install_packages
 
 setup_laptop
 setup_plasma
@@ -957,6 +796,7 @@ snapshot_rollback
 package_config
 user_config
 bash_config
+config_packages
 
 boot_setup
 set_password
