@@ -104,17 +104,14 @@ set_keymap() {
 	fi
 	
 	if [ "$keyboard_keymap" = "" ]; then
-		local status=1
-		while [ $status -ne 0 ]; do
-			echo -e "-------------------------------------------------------------------------"
-			echo -e "Listing available keyboard keymaps"
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Listing available keyboard keymaps"
 
-			localectl list-keymaps | awk '{printf "%s  ", $0} END {print ""}'
+		localectl list-keymaps | awk '{printf "%s  ", $0} END {print ""}'
 
-			echo -e "-------------------------------------------------------------------------"
-			echo -e "Enter keymap to use for console and X11"
-			read -r -p "Name: " keyboard_keymap
-		done
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Enter keymap to use for console and X11"
+		read -r -p "Name: " keyboard_keymap
 
 		while true; do
 			read -r -p "Is $keyboard_keymap correct? (Y/n) " yesNo
