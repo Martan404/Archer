@@ -1,0 +1,17 @@
+#!/bin/bash
+# Archer config file
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Setting up XDG user directories"
+
+xdg-user-dirs-update
+
+#sed -i '/TEMPLATES/s/^/#/' /etc/xdg/user-dirs.defaults
+sed -i '/PUBLICSHARE/s/^/#/' /etc/xdg/user-dirs.defaults
+
+cat <<-END >> /etc/xdg/user-dirs.defaults
+APPLICATIONS=Applications
+GAMES=Games
+PROJECTS=Projects
+SYNC=Sync
+END
