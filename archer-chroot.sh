@@ -124,7 +124,7 @@ setup_system() {
 		echo -e "Enabling en_SE locale"	
 
 		sed -i '/^#sv_SE.UTF-8/s/^#//' /etc/locale.gen
-		mv /Archer-main/quiver/config/en_SE /usr/share/i18n/locales/en_SE && sed -i '/en_US\.UTF-8/i\en_SE\.UTF-8 UTF-8' /etc/locale.gen
+		mv /Archer-main/quiver/configs/en_SE /usr/share/i18n/locales/en_SE && sed -i '/en_US\.UTF-8/i\en_SE\.UTF-8 UTF-8' /etc/locale.gen
 		sed -i 's/^LANG=.*/LANG=en_SE.UTF-8/' /etc/locale.conf || echo "LANG=en_SE.UTF-8" >> /etc/locale.conf
 
 		locale-gen
@@ -385,7 +385,7 @@ END
 
 	sudo -u "$user" pipx install konsave
 
-	mv /Archer-main/quiver/config/archer.knsv /home/"$user"/archer.knsv
+	mv /Archer-main/quiver/configs/archer.knsv /home/"$user"/archer.knsv
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up Plasma config script"
@@ -720,7 +720,7 @@ package_config() {
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Configuring fail2ban jail"
 		
-		cat /Archer-main/quiver/config/fail2ban-jail.local > /etc/fail2ban/jail.local
+		cat /Archer-main/quiver/configs/fail2ban-jail.local > /etc/fail2ban/jail.local
 	fi
 
 	# If Steam is not installed then install steam-devices package for controller support in Steam flatpak
@@ -746,12 +746,15 @@ package_config() {
 		echo -e "Importing Betterfox user.js"
 
 		cd /home/"$user"/.mozilla/firefox/*default-release/
-		mv /Archer-main/quiver/config/betterfox-user.js ./user.js
+		mv /Archer-main/quiver/configs/betterfox-userjs ./user.js
 		chown "$user":"$user" ./user.js
 		cd /
 	# Else prepare user.js for Flatpak version
 	else
-		mv /Archer-main/quiver//config/betterfox-user.js /home/"$user"/.user.js
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Preparing Betterfox user.js for flatpak version"
+
+		mv /Archer-main/quiver/config/betterfox-userjs /home/"$user"/.user.js
 		chown "$user":"$user" /home/"$user"/.user.js
 	fi
 
@@ -859,8 +862,8 @@ bash_config() {
 	echo -e "Configuring fastfetch"
 
 	sudo -u "$user" mkdir -p /home/"$user"/.config/fastfetch/
-	cat /Archer-main/quiver/config/fastfetch-config.jsonc > /home/"$user"/.config/fastfetch/config.jsonc
-	cat /Archer-main/quiver/config/fastfetch-config-small.jsonc > /home/"$user"/.config/fastfetch/config-small.jsonc
+	cat /Archer-main/quiver/configs/fastfetch-config.jsonc > /home/"$user"/.config/fastfetch/config.jsonc
+	cat /Archer-main/quiver/configs/fastfetch-config-small.jsonc > /home/"$user"/.config/fastfetch/config-small.jsonc
 
 	chown "$user":"$user" /home/"$user"/.config/fastfetch/config.jsonc
 	chown "$user":"$user" /home/"$user"/.config/fastfetch/config-small.jsonc
