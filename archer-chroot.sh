@@ -693,7 +693,7 @@ bash_config() {
 	chown "$user":"$user" /home/"$user"/.bash_aliases
 }
 
-config_packages() {
+package_config() {
 	installed_packages=$(pacman -Q)
 
 	while IFS= read -r line; do
@@ -793,10 +793,9 @@ backup_kernel
 [[ $snapshot_layout == "snapper" ]] && snapper_setup
 snapshot_rollback
 
-package_config
 user_config
 bash_config
-config_packages
+package_config
 
 boot_setup
 set_password
