@@ -1,0 +1,66 @@
+#!/bin/bash
+# shellcheck disable=SC2002,SC2162,SC2086
+snapshot_layout="SNAPSHOT_LAYOUT"
+snap_manager="SNAP_MANAGER"
+
+if [[ $snapshot_layout == "snapper" ]]; then
+		snapshot_path="$snaphot_number/snapshot"
+
+	elif [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "snapper" ]]; then
+		snapshot_path="$snaphot_number/snapshot"
+
+	elif [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "yabsnap" ]]; then
+		snapshot_path="$snaphot_number"
+fi
+
+echo -e "
+-------------------------------------------------------------------------
+$(tput setaf 4)
+             █████╗ ██████╗  ██████╗██╗  ██╗███████╗██████╗
+            ██╔══██╗██╔══██╗██╔════╝██║  ██║██╔════╝██╔══██╗
+            ███████║██████╔╝██║     ███████║█████╗  ██████╔╝
+            ██╔══██║██╔══██╗██║     ██╔══██║██╔══╝  ██╔══██╗
+            ██║  ██║██║  ██║╚██████╗██║  ██║███████╗██║  ██║
+            ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+$(tput sgr0)
+-------------------------------------------------------------------------
+                        Snapshot rollback script
+-------------------------------------------------------------------------"
+
+root_disk=$(cat /proc/cmdline | awk '{sub("root=UUID=", "", $2); print $2}')
+snaphot_number=$(cat /proc/cmdline | awk -F '/' '{print $3}')
+
+echo -e "Mounting root on /mnt"
+
+sudo mount "/dev/disk/by-uuid/$root_disk" /mnt
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Moving broken root"
+
+sudo mv /mnt/@ /mnt/@broken
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Setting snapshot as root"
+
+sudo btrfs subvolume snapshot /mnt/@snapshots/$snapshot_path /mnt/@ && success="yes"
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Removing broken root"
+
+[[ $success == "yes" ]] && sudo rm -rf /mnt/@broken
+
+if [ -e "/mnt/@/var/lib/pacman/db.lck" ]; then
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Removing pacman db.lck"
+
+	sudo rm /mnt/@/var/lib/pacman/db.lck
+fi
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Unmounting /mnt"
+
+sudo umount -R /mnt
+
+read -p "Press any key to reboot..."
+reboot

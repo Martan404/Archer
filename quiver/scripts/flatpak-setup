@@ -1,0 +1,72 @@
+#!/bin/bash
+# shellcheck disable=SC2002,SC2164,SC2086
+user="UNIX_USER"
+packages="PACKAGE_LIST"
+
+show_logo() {
+	clear
+	echo -e "
+-------------------------------------------------------------------------
+$(tput setaf 4)
+             █████╗ ██████╗  ██████╗██╗  ██╗███████╗██████╗
+            ██╔══██╗██╔══██╗██╔════╝██║  ██║██╔════╝██╔══██╗
+            ███████║██████╔╝██║     ███████║█████╗  ██████╔╝
+            ██╔══██║██╔══██╗██║     ██╔══██║██╔══╝  ██╔══██╗
+            ██║  ██║██║  ██║╚██████╗██║  ██║███████╗██║  ██║
+            ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+$(tput sgr0)
+-------------------------------------------------------------------------
+                         Flatpak install script
+-------------------------------------------------------------------------"
+}
+
+install_flatpak() {
+	while ! ping -q -c 1 -W 1 archlinux.org > /dev/null 2>&1; do
+    	echo "Waiting for internet connection..."
+		sleep 10
+	done
+
+    while true; do
+		flatpak install flathub -y --noninteractive $packages && break
+    	echo "$(tput setaf 9)Package installation failed. Retrying...$(tput sgr0)"
+	done
+
+	if [[ $(flatpak list) == *"com.github.GradienceTeam.Gradience"* ]]; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Setting Adwaita color to match Breeze Dark"
+
+		mkdir -p "/home/$user/.var/app/com.github.GradienceTeam.Gradience/config/presets/curated"
+
+		flatpak run --command=gradience-cli com.github.GradienceTeam.Gradience download -n "Breeze Dark"
+		flatpak run --command=gradience-cli com.github.GradienceTeam.Gradience apply -n "Breeze Dark" --gtk both
+	
+		flatpak remove -y --noninteractive com.github.GradienceTeam.Gradience
+	fi
+
+	if [[ $(flatpak list) == *"org.mozilla.firefox"* ]]; then
+		
+		flatpak run org.mozilla.firefox --headless &
+		read -r -t 1
+		flatpak kill org.mozilla.firefox
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Moving Betterfox user.js to Firefox"
+
+		cd /home/$user/.var/app/org.mozilla.firefox/.mozilla/firefox/*default-release/
+		mv /home/$user/.user.js ./user.js
+		cd /
+		
+	else
+		rm -f /home/$user/.user.js
+	fi
+
+	echo -e "-------------------------------------------------------------------------"
+	read -r -t 5 -p "Rebooting in 5 seconds..."
+
+	rm -f /home/$user/.config/autostart/flatpak-setup.desktop
+	rm -f ${BASH_SOURCE[0]}
+	reboot
+}
+
+show_logo
+install_flatpak
