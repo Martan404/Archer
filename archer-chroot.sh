@@ -105,7 +105,7 @@ setup_system() {
 	systemctl enable systemd-timesyncd.service
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting $default_locale locale and $keyboard_keymap keymap"
+	echo -e "Setting $default_locale as locale and $keyboard_keymap as keymap"
 
 	mv /Archer-main/quiver/locale.gen /etc/locale.gen
 	locale-gen

@@ -147,7 +147,7 @@ set_locale() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Uncomment and then save the locales you want enabled"
 
-	sleep 4
+	read -r -t 4
 	nano /etc/locale.gen
 	locale-gen
 	available_locales=$(localectl list-locales | awk '{printf "%s  ", $0} END {print ""}')
@@ -311,9 +311,8 @@ set_drivers() {
 	lspci_output=$(lspci | grep VGA)
 	lspci_output_full=$(lspci)
 	read -r -t 1
-	gpu_driver=""
-	gpu_manufacturer="none"
-
+	gpu_driver="" && gpu_manufacturer="none"
+	
 	if [[ $lspci_output == *"Radeon"* ]] || [[ $lspci_output == *"AMD"* ]]; then
 		echo -e "Found AMD GPU"
 
@@ -322,8 +321,7 @@ set_drivers() {
 
 	elif [[ $lspci_output == *"Integrated Graphics Controller"* ]] || [[ $lspci_output == *"Intel Corporation HD"* ]] || [[ $lspci_output == *"Intel Corporation UHD"* ]]; then
 		echo -e "Found Intel GPU"
-
-		# QuickSync 
+		# QuickSync
 		# LEGACY intel-media-driver intel-media-sdk 
 		# TIGER LAKE(2020+) libva-intel-driver vpl-gpu-rt
 		gpu_driver=" vulkan-intel lib32-vulkan-intel mesa lib32-mesa libva-mesa-driver vulkan-mesa-layers lib32-vulkan-mesa-layers"
