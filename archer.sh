@@ -266,13 +266,13 @@ set_drivers() {
 	if [[ $lspci_output == *"Radeon"* ]] || [[ $lspci_output == *"AMD"* ]]; then
 		echo -e "Found AMD GPU"
 		
-		gpu_driver="mesa lib32-mesa vulkan-radeon lib32-vulkan-radeon"
+		gpu_driver="mesa lib32-mesa vulkan-radeon lib32-vulkan-radeon libva-mesa-driver"
 		export gpu_manufacturer="amd"
 
 	elif [[ $lspci_output == *"Integrated Graphics Controller"* ]] || [[ $lspci_output == *"Intel Corporation HD"* ]] || [[ $lspci_output == *"Intel Corporation UHD"* ]]; then
 		echo -e "Found Intel GPU"
 		
-		gpu_driver="mesa lib32-mesa vulkan-intel lib32-vulkan-intel"
+		gpu_driver="mesa lib32-mesa vulkan-intel lib32-vulkan-intel intel-media-driver libva-intel-driver"
 		export gpu_manufacturer="intel"
 
 	elif [[ $lspci_output == *"NVIDIA"* ]] || [[ $lspci_output == *"GeForce"* ]]; then
@@ -287,7 +287,7 @@ set_drivers() {
 
 		echo -e "Installing $nvidia_version package"
 		
-		gpu_driver="$nvidia_version nvidia-utils lib32-nvidia-utils nvidia-settings"
+		gpu_driver="$nvidia_version nvidia-utils lib32-nvidia-utils nvidia-settings libva-mesa-driver"
 		export gpu_manufacturer="nvidia"
 
 	elif [[ ${lspci_output} =~ (Virtio|QEMU) ]] || [[ ${lspci_output_full} =~ (Virtio|QEMU) ]]; then

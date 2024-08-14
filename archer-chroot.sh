@@ -95,11 +95,6 @@ setup_pacman() {
 	sed -i '/^ParallelDownloads = .*/a ILoveCandy' /etc/pacman.conf
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling pacman cache cleaner service"
-
-	systemctl enable paccache.timer
-
-	echo -e "-------------------------------------------------------------------------"
 	echo -e "Updating pacman databases"
 
 	pacman -Syu --noconfirm
@@ -245,6 +240,9 @@ install_pacman_pkgs() {
 }
 
 install_packages() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing system packages"
+
 	get_packages=$(grep -v '^#' /Archer-main/quiver/package_list.txt | grep -v '^$' | grep -v '\.')
 	
 	package_installer "$get_packages"
@@ -622,43 +620,6 @@ snapshot_rollback() {
 	sed -i "s/SNAP_MANAGER/$snap_manager/g" /usr/local/bin/rollback
 }
 
-user_config() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating home sub-directories for $user"
-
-	sudo -u "$user" xdg-user-dirs-update --force
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating home/System sub-directories for $user"
-
-	sudo -u "$user" mkdir -p /home/"$user"/System/{icons,scripts}
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting sub-directory icons"
-
-	sudo -u "$user" touch /home/"$user"/{Applications,Games,Projects,Sync,System}/.directory
-	{
-	echo "[Desktop Entry]"
-	echo "Icon=folder-flatpak"
-	} >> /home/"$user"/Applications/.directory
-	{
-	echo "[Desktop Entry]"
-	echo "Icon=folder-games"
-	} >> /home/"$user"/Games/.directory
-	{
-	echo "[Desktop Entry]"
-	echo "Icon=folder-script"
-	} >> /home/"$user"/Projects/.directory
-	{
-	echo "[Desktop Entry]"
-	echo "Icon=folder-cloud"
-	} >> /home/"$user"/Sync/.directory
-	{
-	echo "[Desktop Entry]"
-	echo "Icon=folder-build" 
-	} >> /home/"$user"/System/.directory
-}
-
 bash_config() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /etc/bash.bashrc"
@@ -695,23 +656,26 @@ bash_config() {
 }
 
 package_config() {
+		echo -e "-------------------------------------------------------------------------"
+	echo -e "Configuring installed"
+
 	installed_packages=$(pacman -Q)
 
 	while IFS= read -r line; do
 
 		package_name=$(echo "$line" | awk '{print $1}')
 
-		if [[ -f "/Archer/quiver/package-setup/$package_name" ]]; then
+		if [[ -f "/Archer-main/quiver/package-setup/$package_name" ]]; then
 			echo "Found $package_name config"
 			# shellcheck disable=SC1090
-			source "/Archer/quiver/package-setup/$package_name"
+			source "/Archer-main/quiver/package-setup/$package_name"
 		fi
 	done <<< "$installed_packages"
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring not-installed"
 	# shellcheck disable=SC1091
-	source "/Archer/quiver/package-setup/not-installed" 
+	source "/Archer-main/quiver/package-setup/not-installed" 
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Cleaning orphaned packages"
@@ -794,7 +758,6 @@ backup_kernel
 [[ $snapshot_layout == "snapper" ]] && snapper_setup
 snapshot_rollback
 
-user_config
 bash_config
 package_config
 
