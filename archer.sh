@@ -157,11 +157,15 @@ set_locale() {
 		echo -e "Choose default locale"
 		echo -e "Available locales: $available_locales"
 		echo -e "Optional locales: en_SE.UTF-8"
-		read -r -p "Name: " default_locale
+
+		read -r -p "Default: " default_locale
 
 		if echo "$available_locales" | grep -qw "$default_locale"; then
 			break
 		elif [ "$default_locale" = "en_SE.UTF-8" ]; then
+			break
+		elif [ "$default_locale" = "locale.gen" ]; then
+			set_locale
 			break
 		else
 			echo "Invalid locale chosen. Try again"
@@ -169,7 +173,7 @@ set_locale() {
 	done
 
 	while true; do
-		read -r -p "Are you satisfied with you current locales? (Y/n) " yesNo
+		read -r -p "Are you satisfied with you chosen locales? (Y/n) " yesNo
 
 		case $yesNo in
 		[yY1]) break ;;
@@ -283,7 +287,7 @@ set_swap() {
 
 set_drivers() {
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Checking CPU manufacturer"
+	echo -e "Checking CPU"
 
 	lscpu_output=$(lscpu)
 	read -r -t 1
@@ -302,7 +306,7 @@ set_drivers() {
 	fi
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Checking GPU manufacturer"
+	echo -e "Checking GPU"
 
 	lspci_output=$(lspci | grep VGA)
 	lspci_output_full=$(lspci)
@@ -482,7 +486,7 @@ install_system() {
 
 	while true; do
 		# shellcheck disable=SC2086
-		pacstrap -K /mnt base base-devel sudo $kernel $kernel-headers linux-firmware $cpu_ucode $gpu_driver && break
+		pacstrap -K /mnt base base-devel sudo $kernel $kernel-headers linux-firmware $cpu_ucode $gpu_driver iptables-nft && break
 
 		echo "$(tput setaf 9)Package installation failed. Retrying... $(tput sgr0)"
 	done
