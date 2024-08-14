@@ -15,27 +15,23 @@ $(tput sgr0)
                            Arch install script"
 
 echo -e "-------------------------------------------------------------------------"
-echo -e "Setting up keymap using localectl"
+echo -e "Setting keymap and locale system-wide"
 
-current_keymap=$(localectl status | grep 'VC Keymap' | awk '{print $3}')
-localectl set-keymap "$current_keymap"
+keyboard_keymap=$(localectl status | grep 'VC Keymap' | awk '{print $3}')
+localectl set-keymap "$keyboard_keymap"
 
-[[ "$current_keymap" = "sv-latin1" ]] && localectl set-locale en_SE.UTF-8
+default_locale=$(locale | awk -F= '/^LANG=/{print $2}')
+localectl set-locale $default_locale
 
 echo -e "-------------------------------------------------------------------------"
 echo -e "Setting up Firewalld rules"
 
-# Start the firewall
 firewall-cmd
-# Interal loopback device
 firewall-cmd --permanent --zone=internal --change-interface=lo
-# libvirt interface
 firewall-cmd --permanent --zone=trusted --change-interface=virbr0
-# Waydroid interface
 firewall-cmd --permanent --zone=trusted --change-interface=waydroid0
-# Avahi ports
-firewall-cmd --permanent --zone=home --add-port 5353/udp
-firewall-cmd --permanent --zone=trusted --add-port 5353/udp
+firewall-cmd --permanent --zone=home --add-port 5353/udp    # Avahi port
+firewall-cmd --permanent --zone=trusted --add-port 5353/udp # Avahi port
 
 echo -e "-------------------------------------------------------------------------"
 echo -e "Cleaning up script"

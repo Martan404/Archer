@@ -19,17 +19,16 @@ $(tput sgr0)
 -------------------------------------------------------------------------"
 }
 
-
 # If the script is run for a second time then we need to make sure everything is unmounted
-[[ -e "archer-check" ]] && swapoff /mnt/swap/swapfile > /dev/null 2>&1
-[[ -e "archer-check" ]] && umount -l /mnt > /dev/null 2>&1
+[[ -e "archer-check" ]] && swapoff /mnt/swap/swapfile >/dev/null 2>&1
+[[ -e "archer-check" ]] && umount -l /mnt >/dev/null 2>&1
 
 set_variables() {
 	echo -e "Enter hostname for System"
 
 	hostname=""
 	while [ -z "$hostname" ]; do
-    	read -r -p "Name: " hostname
+		read -r -p "Name: " hostname
 	done
 	echo -e "Setting hostname to $hostname"
 
@@ -38,7 +37,7 @@ set_variables() {
 
 	user=""
 	while [ -z "$user" ]; do
-    	read -r -p "Name: " user
+		read -r -p "Name: " user
 	done
 	echo "Setting user name to $user"
 
@@ -54,11 +53,13 @@ set_variables() {
 		1)
 			snapshot_subvol="@snapshots"
 			snapshot_layout="arch"
-			break ;;
+			break
+			;;
 		2)
 			snapshot_subvol=".snapshots"
 			snapshot_layout="snapper"
-			break ;;
+			break
+			;;
 		esac
 	done
 
@@ -74,10 +75,12 @@ set_variables() {
 			case $snap_manager in
 			1)
 				snap_manager="snapper"
-				break ;;
+				break
+				;;
 			2)
 				snap_manager="yabsnap"
-				break ;;
+				break
+				;;
 			esac
 		done
 
@@ -86,29 +89,29 @@ set_variables() {
 	fi
 }
 
-
-
 check_keymap() {
-current_keymap=$(localectl status | grep 'VC Keymap' | awk '{print $3}')
+	existing_keymap=$(localectl status | grep 'VC Keymap' | awk '{print $3}')
 
-if [ "$current_keymap" = "(unset)" ] || [ "$current_keymap" = "" ]; then
-	set_keymap
+	if [ "$existing_keymap" = "(unset)" ] || [ "$existing_keymap" = "" ]; then
+		set_keymap
 
-else
-	while true; do
-		echo -e "-------------------------------------------------------------------------"
-		read -r -p "$current_keymap is currently used as keymap. Set it as default? (Y/n) " yesNo
-			
-		case $yesNo in
-			[yY1]) 
-				keyboard_keymap=$current_keymap
-				break ;;
-			[nN2]) 
+	else
+		while true; do
+			echo -e "-------------------------------------------------------------------------"
+			read -r -p "$existing_keymap is currently used as keymap. Set it as default? (Y/n) " yesNo
+
+			case $yesNo in
+			[yY1])
+				keyboard_keymap=$existing_keymap
+				break
+				;;
+			[nN2])
 				set_keymap
-				break ;;
-		esac
-	done
-fi
+				break
+				;;
+			esac
+		done
+	fi
 }
 
 set_keymap() {
@@ -131,10 +134,48 @@ set_keymap() {
 		read -r -p "Is $keyboard_keymap correct? (Y/n) " yesNo
 
 		case $yesNo in
-			[yY1]) break ;;
-			[nN2])
-				set_keymap 
-				break ;;
+		[yY1]) break ;;
+		[nN2])
+			set_keymap
+			break
+			;;
+		esac
+	done
+}
+
+set_locale() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Uncomment and then save the locales you want enabled"
+
+	sleep 4
+	nano /etc/locale.gen
+	locale-gen
+	available_locales=$(localectl list-locales | awk '{printf "%s  ", $0} END {print ""}')
+
+	while true; do
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Choose default locale"
+		echo -e "Available locales: $available_locales"
+		read -r -p "Name: " default_locale
+
+		if echo "$available_locales" | grep -qw "$default_locale"; then
+			break
+		elif [ "$default_locale" = "en_SE.UTF-8" ]; then
+			break
+		else
+			echo "Invalid locale chosen. Try again"
+		fi
+	done
+
+	while true; do
+		read -r -p "Are you satisfied with you current locales? (Y/n) " yesNo
+
+		case $yesNo in
+		[yY1]) break ;;
+		[nN2])
+			set_locale
+			break
+			;;
 		esac
 	done
 }
@@ -162,36 +203,37 @@ set_disk() {
 		[yY1]) break ;;
 		[nN2])
 			set_disk
-			break ;;
+			break
+			;;
 		esac
 	done
 }
 
 set_efi() {
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Select size for EFI partition"
-		echo -e "1. 256MB"
-		echo -e "2. 512MB"
-		echo -e "3. 1GB"
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Select size for EFI partition"
+	echo -e "1. 256MB"
+	echo -e "2. 512MB"
+	echo -e "3. 1GB"
 
-		while true; do
-			read -r -p "Size: " efi_size
+	while true; do
+		read -r -p "Size: " efi_size
 
-			case $efi_size in
-			1)
-				efi_size="257MiB";
-				break
-				;;
-			2)
-				efi_size="513MiB"
-				break
-				;;
-			3)
-				efi_size="1025MiB"
-				break
-				;;
-			esac
-		done
+		case $efi_size in
+		1)
+			efi_size="257MiB"
+			break
+			;;
+		2)
+			efi_size="513MiB"
+			break
+			;;
+		3)
+			efi_size="1025MiB"
+			break
+			;;
+		esac
+	done
 }
 
 set_kernel() {
@@ -209,16 +251,20 @@ set_kernel() {
 		case $kernel in
 		1)
 			kernel="linux"
-			break ;;
+			break
+			;;
 		2)
 			kernel="linux-zen"
-			break ;;
+			break
+			;;
 		3)
 			kernel="linux-lts"
-			break ;;
+			break
+			;;
 		4)
 			kernel="linux-hardened"
-			break ;;
+			break
+			;;
 		esac
 	done
 }
@@ -265,13 +311,13 @@ set_drivers() {
 
 	if [[ $lspci_output == *"Radeon"* ]] || [[ $lspci_output == *"AMD"* ]]; then
 		echo -e "Found AMD GPU"
-		
+
 		gpu_driver="mesa lib32-mesa vulkan-radeon lib32-vulkan-radeon libva-mesa-driver"
 		export gpu_manufacturer="amd"
 
 	elif [[ $lspci_output == *"Integrated Graphics Controller"* ]] || [[ $lspci_output == *"Intel Corporation HD"* ]] || [[ $lspci_output == *"Intel Corporation UHD"* ]]; then
 		echo -e "Found Intel GPU"
-		
+
 		gpu_driver="mesa lib32-mesa vulkan-intel lib32-vulkan-intel intel-media-driver libva-intel-driver"
 		export gpu_manufacturer="intel"
 
@@ -286,7 +332,7 @@ set_drivers() {
 		fi
 
 		echo -e "Installing $nvidia_version package"
-		
+
 		gpu_driver="$nvidia_version nvidia-utils lib32-nvidia-utils nvidia-settings libva-mesa-driver"
 		export gpu_manufacturer="nvidia"
 
@@ -294,7 +340,7 @@ set_drivers() {
 		echo "Found QEMU GPU"
 		gpu_driver="qemu-guest-agent vulkan-virtio lib32-vulkan-virtio"
 		export gpu_manufacturer="qemu"
-	
+
 	else
 		echo "GPU could not be detected"
 		while true; do
@@ -345,11 +391,10 @@ format_drive() {
 }
 
 setup_drive() {
-  	echo -e "-------------------------------------------------------------------------"
-  	echo -e "Formatting EFI partition"
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Formatting EFI partition"
 
 	mkfs.fat -F32 "$efi_partition"
-
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Formatting root partition"
@@ -360,18 +405,18 @@ setup_drive() {
 	echo -e "Mounting root and creating btrfs subvolumes"
 
 	mount "$root_partition" /mnt
-	
+
 	btrfs subvolume create /mnt/@ # Root
 	#btrfs subvolume create /mnt/@root # Root home
-	btrfs subvolume create /mnt/@home # Home
-	btrfs subvolume create /mnt/@log # Log files
-	btrfs subvolume create /mnt/@pkg # Package files
-	btrfs subvolume create /mnt/@tmp # Temp files
-	btrfs subvolume create /mnt/@cache # Cache files
-	btrfs subvolume create /mnt/@spool # Spool data
-	btrfs subvolume create /mnt/@srv # Web servers
+	btrfs subvolume create /mnt/@home                                                  # Home
+	btrfs subvolume create /mnt/@log                                                   # Log files
+	btrfs subvolume create /mnt/@pkg                                                   # Package files
+	btrfs subvolume create /mnt/@tmp                                                   # Temp files
+	btrfs subvolume create /mnt/@cache                                                 # Cache files
+	btrfs subvolume create /mnt/@spool                                                 # Spool data
+	btrfs subvolume create /mnt/@srv                                                   # Web servers
 	[[ $snapshot_layout == "arch" ]] && btrfs subvolume create /mnt/"$snapshot_subvol" # Snapshots
-	btrfs subvolume create /mnt/@swap # Swapfile
+	btrfs subvolume create /mnt/@swap                                                  # Swapfile
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Unmounting root"
@@ -421,7 +466,7 @@ setup_environment() {
 
 	sed -i "s/^#ParallelDownloads/ParallelDownloads/" /etc/pacman.conf
 	sed -i '/^ParallelDownloads = .*/a ILoveCandy' /etc/pacman.conf
-	
+
 	sed -i 's/^#\[multilib\]/\[multilib\]/' /etc/pacman.conf
 	sed -i '/^\[multilib\]$/,/^#Include/ s/^#//' /etc/pacman.conf
 
@@ -434,23 +479,23 @@ install_system() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing base and kernel packages"
 
-    while true; do
+	while true; do
 		# shellcheck disable=SC2086
 		pacstrap -K /mnt base base-devel sudo $kernel $kernel-headers linux-firmware $cpu_ucode $gpu_driver btrfs-progs dosfstools e2fsprogs exfatprogs f2fs-tools jfsutils ntfs-3g udftools xfsprogs iptables-nft && break
 
-    	echo "$(tput setaf 9)Package installation failed. Retrying... $(tput sgr0)"
+		echo "$(tput setaf 9)Package installation failed. Retrying... $(tput sgr0)"
 	done
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Generating fstab"
 
-	genfstab -U /mnt >> /mnt/etc/fstab
+	genfstab -U /mnt >>/mnt/etc/fstab
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring fstab"
 
 	sed -i 's/\(\/swap\)\(.*\)compress=zstd:3,ssd,discard=async,space_cache=v2\(.*\)/\1\2ssd\3/' /mnt/etc/fstab # Clean up btrfs swap partition
-	sed -i 's/,subvolid=...//g' /mnt/etc/fstab # Remove subvolid for better snapshot support
+	sed -i 's/,subvolid=...//g' /mnt/etc/fstab                                                                  # Remove subvolid for better snapshot support
 }
 
 arch_chroot() {
@@ -460,20 +505,24 @@ arch_chroot() {
 	cd /mnt && curl -L https://github.com/Martan404/Archer/archive/master.tar.gz | tar -xz Archer-main && cd /
 
 	echo -e "-------------------------------------------------------------------------"
+	echo -e "Copying locale.gen"
+	cp /etc/locale.gen /mnt/Archer-main/quiver/locale.gen
+
+	echo -e "-------------------------------------------------------------------------"
 	echo -e "Entering archer-chroot"
 
-	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot.sh "$user" "$hostname" "$snapshot_layout" "$cpu_manufacturer" "$gpu_manufacturer" "$snapshot_subvol" "$root_partition" "$snap_manager" "$keyboard_keymap"
+	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot.sh "$user" "$hostname" "$snapshot_layout" "$cpu_manufacturer" "$gpu_manufacturer" "$snapshot_subvol" "$root_partition" "$snap_manager" "$keyboard_keymap" "$default_locale"
 	rm -rf /mnt/Archer-main
 }
 
-exit_install() {	
+exit_install() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "System ready to boot, please remove the installation media before restarting"
 
 	read -r -p "Press any key to shutdown..."
-	
-	swapoff /mnt/swap/swapfile > /dev/null 2>&1
-	umount -l /mnt > /dev/null 2>&1
+
+	swapoff /mnt/swap/swapfile >/dev/null 2>&1
+	umount -l /mnt >/dev/null 2>&1
 	shutdown now && exit
 }
 
@@ -482,6 +531,7 @@ show_logo
 set_variables
 check_keymap
 set_disk
+set_locale
 set_efi
 set_kernel
 set_swap

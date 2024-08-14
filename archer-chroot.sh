@@ -12,6 +12,7 @@ snapshot_subvol=${6}
 root_partition=${7}
 snap_manager=${8}
 keyboard_keymap=${9}
+default_locale=${10}
 
 package_installer() {
 	input_packages=$1
@@ -20,52 +21,52 @@ package_installer() {
 	try_count=0
 
 	# Check if argument is .txt file and combine each line
-    if [[ "$input_packages" == *.txt ]]; then
+	if [[ "$input_packages" == *.txt ]]; then
 		packages=$(cat "$input_packages" | tr '\n' ' ')
 	else
 		packages=$input_packages
 	fi
 
 	while [ "$try_count" -lt "$max_tries" ]; do
-	    try_count=$((try_count+1))
-		
+		try_count=$((try_count + 1))
+
 		# shellcheck disable=SC2086
 		if [ "$pkg_manager" = "pacman" ]; then
 			pacman -S --needed --noconfirm $packages && break
-		
+
 		else
 			sudo -u "$user" paru -S --needed --noconfirm $packages && break
 		fi
 
-    	echo "$(tput setaf 9)Package installation failed. Retrying... ($try_count/$max_tries)$(tput sgr0)"
+		echo "$(tput setaf 9)Package installation failed. Retrying... ($try_count/$max_tries)$(tput sgr0)"
 	done
 
-if [ "$try_count" -eq "$max_tries" ]; then
-    echo "$(tput setaf 9)Package installation failed after $try_count attempts$(tput sgr0)"
+	if [ "$try_count" -eq "$max_tries" ]; then
+		echo "$(tput setaf 9)Package installation failed after $try_count attempts$(tput sgr0)"
 
-	echo -e "Choose option"
-	echo -e "1. Try again"
-	echo -e "2. Exit"
+		echo -e "Choose option"
+		echo -e "1. Try again"
+		echo -e "2. Exit"
 
-	while true; do
-		read -r -p "Select: " choice
+		while true; do
+			read -r -p "Select: " choice
 
-		case $choice in
-		[yY1])
-			try_count=0
-			package_installer "$input_packages" "$pkg_manager"
-			break ;;
-		[nN2])
-			echo "$(tput setaf 9)Exiting...$(tput sgr0)"
-			exit
-			;;
-		esac
-	done
-fi
+			case $choice in
+			[yY1])
+				try_count=0
+				package_installer "$input_packages" "$pkg_manager"
+				break
+				;;
+			[nN2])
+				echo "$(tput setaf 9)Exiting...$(tput sgr0)"
+				exit
+				;;
+			esac
+		done
+	fi
 }
 
 setup_pacman() {
-
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling multilib repository"
 
@@ -117,39 +118,42 @@ setup_system() {
 	systemctl enable systemd-timesyncd.service
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting English locale and $keyboard_keymap keymap"
+	echo -e "Setting $default_locale locale and $keyboard_keymap keymap"
 
-	sed -i '/^#en_US.UTF-8/s/^#//' /etc/locale.gen
-	echo "LANG=en_US.UTF-8" >> /etc/locale.conf
-	echo "KEYMAP=$keyboard_keymap" >> /etc/vconsole.conf
+	mv /Archer-main/quiver/locale.gen /etc/locale.gen
 	locale-gen
 
-	# If Swedish keymap is set then create en_SE locale
-	if [ "$keyboard_keymap" = "sv-latin1" ]; then
+	echo "LANG=$default_locale" >>/etc/locale.conf
+	echo "KEYMAP=$keyboard_keymap" >>/etc/vconsole.conf
+
+	if [ "$default_locale" = "en_SE.UTF-8" ]; then
 		echo -e "-------------------------------------------------------------------------"
-		echo -e "Enabling en_SE locale"	
+		echo -e "Enabling en_SE locale"
 
-		sed -i '/^#sv_SE.UTF-8/s/^#//' /etc/locale.gen
-		mv /Archer-main/quiver/configs/en_SE /usr/share/i18n/locales/en_SE && sed -i '/en_US\.UTF-8/i\en_SE\.UTF-8 UTF-8' /etc/locale.gen
-		sed -i 's/^LANG=.*/LANG=en_SE.UTF-8/' /etc/locale.conf || echo "LANG=en_SE.UTF-8" >> /etc/locale.conf
+		if ! (grep -q '^en_US\.UTF-8 UTF-8' /etc/locale.gen); then
+			sed -i 's/^#en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
+		elif ! (grep -q '^sv_SE\.UTF-8 UTF-8' /etc/locale.gen); then
+			sed -i 's/^#sv_SE.UTF-8/sv_SE.UTF-8/' /etc/locale.gen
+		fi
 
+		mv /Archer-main/quiver/configs/en_SE /usr/share/i18n/locales/en_SE && sed -i '/^[#]*en_US\.UTF-8/i\en_SE\.UTF-8 UTF-8' /etc/locale.gen
 		locale-gen
 	fi
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting hostname to $hostname"
 
-	echo "$hostname" >> /etc/hostname
+	echo "$hostname" >>/etc/hostname
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /etc/hosts"
 
-	cat <<-END >> /etc/hosts
-127.0.0.1		localhost
-::1				localhost ip6-localhost ip6-loopback
-ff02::1      	ip6-allnodes
-ff02::2      	ip6-allrouters
-END
+	cat <<-END >>/etc/hosts
+		127.0.0.1      localhost
+		::1              localhost ip6-localhost ip6-loopback
+		ff02::1       ip6-allnodes
+		ff02::2       ip6-allrouters
+	END
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling btrfs module in mkinitcpio.conf"
@@ -180,63 +184,31 @@ END
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Adding ~/.local/bin PATH to /etc/profile.d/custom-path.sh"
 
-	echo "export PATH=\$PATH:\$HOME/.local/bin" >> /etc/profile.d/custom-path.sh
+	echo "export PATH=\$PATH:\$HOME/.local/bin" >>/etc/profile.d/custom-path.sh
 }
 
 setup_paru_pipx() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing Paru AUR helper"
 
-        package_installer "git rust cmake" pacman
-	
+	package_installer "git rust cmake" pacman
+
 	cd /home/"$user"/
 	sudo -u "$user" git clone https://aur.archlinux.org/paru-bin.git
 	cd paru-bin
 
 	while true; do
 		sudo -u "$user" makepkg -si --needed --noconfirm && break
-    	echo "$(tput setaf 9)Paru installation failed. Retrying...$(tput sgr0)"
+		echo "$(tput setaf 9)Paru installation failed. Retrying...$(tput sgr0)"
 	done
-	
+
 	paru -Syu
 	cd .. && rm -rf paru-bin/ && cd /
-	
+
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing Python pipx"
 
 	package_installer "python-pipx"
-}
-
-install_driver_pkgs() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing driver packages"
-
-	sed -n '/# DRIVERS/{:a;n;/# DRIVERS/b;p;ba}' "/Archer-main/quiver/package_list.txt" > "Archer-main/quiver/drivers.txt"
-	package_installer "Archer-main/quiver/drivers.txt"
-}
-
-install_desktop_pkgs() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing desktop environment"
-
-	sed -n '/# DESKTOP/{:a;n;/# DESKTOP/b;p;ba}' "/Archer-main/quiver/package_list.txt" > "Archer-main/quiver/desktop.txt"
-	package_installer "Archer-main/quiver/desktop.txt"
-}
-
-install_system_pkgs() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing system packages"
-
-	sed -n '/# SYSTEM #/{:a;n;/# SYSTEM #/b;p;ba}' "/Archer-main/quiver/package_list.txt" > "Archer-main/quiver/system.txt"
-	package_installer "Archer-main/quiver/system.txt"
-}
-
-install_pacman_pkgs() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing pacman packages"
-
-	sed -n '/# PACMAN/{:a;n;/# PACMAN/b;p;ba}' "/Archer-main/quiver/package_list.txt" > "Archer-main/quiver/pacman.txt"
-	package_installer "Archer-main/quiver/pacman.txt"
 }
 
 install_packages() {
@@ -244,12 +216,12 @@ install_packages() {
 	echo -e "Installing system packages"
 
 	get_packages=$(grep -v '^#' /Archer-main/quiver/package_list.txt | grep -v '^$' | grep -v '\.')
-	
+
 	package_installer "$get_packages"
 }
 
 setup_laptop() {
-echo -e "-------------------------------------------------------------------------"
+	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing laptop-detect package"
 
 	package_installer "laptop-detect"
@@ -279,7 +251,7 @@ echo -e "-----------------------------------------------------------------------
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Uninstalling laptop-detect package"
-	
+
 	pacman -Rs --noconfirm laptop-detect
 }
 
@@ -297,21 +269,21 @@ setup_plasma() {
 	echo -e "Setting up Plasma config script"
 
 	sudo -u "$user" mkdir -p /home/"$user"/.config/plasma-workspace/env
-    mv /Archer-main/quiver/scripts/plasma-setup /home/"$user"/.config/plasma-workspace/env/plasma-setup.sh
-	
+	mv /Archer-main/quiver/scripts/plasma-setup /home/"$user"/.config/plasma-workspace/env/plasma-setup.sh
+
 	chmod a+x /home/"$user"/.config/plasma-workspace/env/plasma-setup.sh
 	chown "$user":"$user" /home/"$user"/.config/plasma-workspace/env/plasma-setup.sh
-	
+
 	sed -i "s/UNIX_USER/$user/g" /home/"$user"/.config/plasma-workspace/env/plasma-setup.sh
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting SDDM theme"
 
 	mkdir -p /etc/sddm.conf.d/
-	cat <<-END > /etc/sddm.conf.d/kde_settings.conf
-[Theme]
-Current=breeze
-END
+	cat <<-END >/etc/sddm.conf.d/kde_settings.conf
+		[Theme]
+		Current=breeze
+	END
 }
 
 setup_flatpak() {
@@ -324,7 +296,7 @@ setup_flatpak() {
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting Lutris Flatpak theming"
-		
+
 	flatpak override net.lutris.Lutris --env=GTK_THEME=Breeze
 
 	echo -e "-------------------------------------------------------------------------"
@@ -332,8 +304,8 @@ setup_flatpak() {
 
 	sudo -u "$user" mkdir -p /home/"$user"/.config/autostart/
 	sudo -u "$user" touch /home/"$user"/.config/autostart/flatpak-setup.desktop
-	
-	cat <<EOF >> /home/"$user"/.config/autostart/flatpak-setup.desktop
+
+	cat <<EOF >>/home/"$user"/.config/autostart/flatpak-setup.desktop
 [Desktop Entry]
 Exec=konsole -e /usr/bin/flatpak-setup
 Icon=/usr/share/pixmaps/archlinux-logo.png
@@ -344,11 +316,11 @@ EOF
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up Flatpak install script"
 
-	sed -n '/# FLATPAK/{:a;n;/# FLATPAK/b;p;ba}' "/Archer-main/quiver/package_list.txt" > "/Archer-main/quiver/flatpak.txt"
+	sed -n '/# FLATPAK/{:a;n;/# FLATPAK/b;p;ba}' "/Archer-main/quiver/package_list.txt" >"/Archer-main/quiver/flatpak.txt"
 	# shellcheck disable=SC2002
 	packages=$(cat "/Archer-main/quiver/flatpak.txt" | tr '\n' ' ')
-	
-	cat /Archer-main/quiver/scripts/flatpak-setup > /usr/bin/flatpak-setup
+
+	cat /Archer-main/quiver/scripts/flatpak-setup >/usr/bin/flatpak-setup
 	chmod a+x /usr/bin/flatpak-setup
 
 	sed -i "s/UNIX_USER/$user/g; s/PACKAGE_LIST/$packages/g" /usr/bin/flatpak-setup
@@ -363,10 +335,10 @@ setup_grub() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating efibootmgr wrapper script to prevent fail"
 
-	cat <<-END > /usr/local/bin/efibootmgr
-#!/bin/sh
-exec /usr/bin/efibootmgr -e 3 "\$@"
-END
+	cat <<-END >/usr/local/bin/efibootmgr
+		#!/bin/sh
+		exec /usr/bin/efibootmgr -e 3 "\$@"
+	END
 	chmod +x /usr/local/bin/efibootmgr
 
 	echo -e "-------------------------------------------------------------------------"
@@ -375,7 +347,7 @@ END
 	grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck
 	grub-mkconfig -o /boot/grub/grub.cfg
 
-	if pacman -Qs os-prober > /dev/null; then
+	if pacman -Qs os-prober >/dev/null; then
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Enabling Grub OS prober"
 
@@ -402,18 +374,18 @@ END
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating windows-boot script"
-	
-	cat <<-END >> /usr/local/bin/windows-boot
-#!/bin/bash
-# Set Windows Boot Manager as NextBoot and reboots
-efibootmgr -n \$(efibootmgr | awk '/Windows Boot Manager/ {gsub(/^Boot/, "", \$1); gsub(/\*/, "", \$1); print \$1}') && reboot
-END
+
+	cat <<-END >>/usr/local/bin/windows-boot
+		#!/bin/bash
+		# Set Windows Boot Manager as NextBoot and reboots
+		efibootmgr -n \$(efibootmgr | awk '/Windows Boot Manager/ {gsub(/^Boot/, "", \$1); gsub(/\*/, "", \$1); print \$1}') && reboot
+	END
 	chmod +x /usr/local/bin/windows-boot
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Adding sudo password exception to windows-boot script"
 
-	echo "%wheel ALL=(ALL) NOPASSWD: /usr/local/bin/windows-boot" >> /etc/sudoers
+	echo "%wheel ALL=(ALL) NOPASSWD: /usr/local/bin/windows-boot" >>/etc/sudoers
 }
 
 setup_drivers() {
@@ -437,9 +409,9 @@ setup_drivers() {
 		package_installer "thermald"
 		systemctl enable thermald.service
 	fi
-	
+
 	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $kernel_parameters\"/" /etc/default/grub
-	
+
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting kernel boot parameters for $gpu_manufacturer GPU"
 
@@ -462,7 +434,7 @@ setup_drivers() {
 	elif [ "$gpu_manufacturer" = "qemu" ]; then
 		kernel_parameters=""
 	fi
-	
+
 	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $kernel_parameters\"/" /etc/default/grub
 }
 
@@ -477,35 +449,35 @@ backup_kernel() {
 
 	mkdir -p /.bootbackup/{preupdate,postupdate}
 
-	cat <<-END > /etc/pacman.d/hooks/00-bootbackup-preupdate.hook
-[Trigger]
-Operation = Upgrade
-Operation = Install
-Operation = Remove
-Type = Path
-Target = usr/lib/modules/*/vmlinuz
+	cat <<-END >/etc/pacman.d/hooks/00-bootbackup-preupdate.hook
+		[Trigger]
+		Operation = Upgrade
+		Operation = Install
+		Operation = Remove
+		Type = Path
+		Target = usr/lib/modules/*/vmlinuz
 
-[Action]
-Depends = rsync
-Description = Backing up /boot before updating...
-When = PreTransaction
-Exec = /usr/bin/rsync -a --delete /boot /.bootbackup/preupdate
-END
+		[Action]
+		Depends = rsync
+		Description = Backing up /boot before updating...
+		When = PreTransaction
+		Exec = /usr/bin/rsync -a --delete /boot /.bootbackup/preupdate
+	END
 
-	cat <<-END > /etc/pacman.d/hooks/95-bootbackup-postupdate.hook
-[Trigger]
-Operation = Upgrade
-Operation = Install
-Operation = Remove
-Type = Path
-Target = usr/lib/modules/*/vmlinuz
+	cat <<-END >/etc/pacman.d/hooks/95-bootbackup-postupdate.hook
+		[Trigger]
+		Operation = Upgrade
+		Operation = Install
+		Operation = Remove
+		Type = Path
+		Target = usr/lib/modules/*/vmlinuz
 
-[Action]
-Depends = rsync
-Description = Backing up /boot after updating...
-When = PostTransaction
-Exec = /usr/bin/rsync -a --delete /boot /.bootbackup/postupdate
-END
+		[Action]
+		Depends = rsync
+		Description = Backing up /boot after updating...
+		When = PostTransaction
+		Exec = /usr/bin/rsync -a --delete /boot /.bootbackup/postupdate
+	END
 }
 
 snapper_setup() {
@@ -573,7 +545,7 @@ snapper_setup() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Excluding /.snapshots from updatedb"
 
-	echo "PRUNENAMES = \".snapshots\"" >> /etc/updatedb.conf
+	echo "PRUNENAMES = \".snapshots\"" >>/etc/updatedb.conf
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling Snapper Timeline and Cleanup services"
@@ -601,7 +573,7 @@ yabsnap_setup() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Excluding /.snapshots from updatedb"
 
-	echo "PRUNENAMES = \".snapshots\"" >> /etc/updatedb.conf
+	echo "PRUNENAMES = \".snapshots\"" >>/etc/updatedb.conf
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling Yabsnap service"
@@ -613,9 +585,9 @@ snapshot_rollback() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up Snapshot rollback script"
 
-	cat /Archer-main/quiver/scripts/rollback > /usr/local/bin/rollback
+	cat /Archer-main/quiver/scripts/rollback >/usr/local/bin/rollback
 	chmod a+x /usr/local/bin/rollback
-	
+
 	sed -i "s/SNAPSHOT_LAYOUT/$snapshot_layout/g" /usr/local/bin/rollback
 	sed -i "s/SNAP_MANAGER/$snap_manager/g" /usr/local/bin/rollback
 }
@@ -627,37 +599,37 @@ bash_config() {
 	sed -i '/PS1/,+1d' /etc/bash.bashrc
 	sed -i '/bash_completion/d' /etc/bash.bashrc && sed -i '/fi/d' /etc/bash.bashrc
 
-	cat /Archer-main/quiver/bashrc/bash.bashrc >> /etc/bash.bashrc
+	cat /Archer-main/quiver/bashrc/bash.bashrc >>/etc/bash.bashrc
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /etc/bash.bash_aliases"
 
-	cat /Archer-main/quiver/bashrc/bash.bash_aliases > /etc/bash.bash_aliases
+	cat /Archer-main/quiver/bashrc/bash.bash_aliases >/etc/bash.bash_aliases
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /home/$user/.bashrc"
 
 	sed -i '/PS1/d' /home/"$user"/.bashrc
 	sed -i '/alias/d' /home/"$user"/.bashrc
-	
-	cat /Archer-main/quiver/bashrc/user.bashrc >> /home/"$user"/.bashrc
+
+	cat /Archer-main/quiver/bashrc/user.bashrc >>/home/"$user"/.bashrc
 	chown "$user":"$user" /home/"$user"/.bashrc
-	
+
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Symlinking /home/$user/.bashrc to /root/.bashrc"
-	
+
 	ln -s /home/"$user"/.bashrc /root/.bashrc
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /home/$user/.bash_aliases"
 
-	cat /Archer-main/quiver/bashrc/user.bash_aliases >> /home/"$user"/.bash_aliases
+	cat /Archer-main/quiver/bashrc/user.bash_aliases >>/home/"$user"/.bash_aliases
 	chown "$user":"$user" /home/"$user"/.bash_aliases
 }
 
 package_config() {
-		echo -e "-------------------------------------------------------------------------"
-	echo -e "Configuring installed"
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Configuring installed packages"
 
 	installed_packages=$(pacman -Q)
 
@@ -666,16 +638,17 @@ package_config() {
 		package_name=$(echo "$line" | awk '{print $1}')
 
 		if [[ -f "/Archer-main/quiver/package-setup/$package_name" ]]; then
+			echo -e "-------------------------------------------------------------------------"
 			echo "Found $package_name config"
 			# shellcheck disable=SC1090
 			source "/Archer-main/quiver/package-setup/$package_name"
 		fi
-	done <<< "$installed_packages"
+	done <<<"$installed_packages"
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring not-installed"
 	# shellcheck disable=SC1091
-	source "/Archer-main/quiver/package-setup/not-installed" 
+	source "/Archer-main/quiver/package-setup/not-installed"
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Cleaning orphaned packages"
@@ -693,20 +666,20 @@ boot_setup() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up boot script"
 
-	cat /Archer-main/archer-boot.sh > /usr/bin/archer-boot.sh
+	cat /Archer-main/archer-boot.sh >/usr/bin/archer-boot.sh
 	chmod a+x /usr/bin/archer-boot.sh
 
-cat <<-END > /etc/systemd/system/archer-boot.service
-[Unit]
-Description=Archer boot setup script
- 
-[Service]
-ExecStart=/usr/bin/archer-boot.sh
- 
-[Install]
-WantedBy=multi-user.target
-END
-	
+	cat <<-END >/etc/systemd/system/archer-boot.service
+		[Unit]
+		Description=Archer boot setup script
+		 
+		[Service]
+		ExecStart=/usr/bin/archer-boot.sh
+		 
+		[Install]
+		WantedBy=multi-user.target
+	END
+
 	systemctl enable archer-boot.service
 }
 
