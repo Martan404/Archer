@@ -33,6 +33,7 @@ networkmanager
 iwd
 wireless-regdb
 firewalld
+iptables-nft
 nss-mdns
 bluez
 cups
@@ -66,6 +67,15 @@ ttf-ms-fonts
 ttf-nerd-fonts-symbols
 ttf-nerd-fonts-symbols-common
 ttf-nerd-fonts-symbols-mono
+btrfs-progs
+dosfstools
+e2fsprogs
+exfatprogs
+f2fs-tools
+jfsutils
+ntfs-3g
+udftools
+xfsprogs
 # DRIVERS #
 
 # SYSTEM #
