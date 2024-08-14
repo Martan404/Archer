@@ -33,7 +33,6 @@ networkmanager
 iwd
 wireless-regdb
 firewalld
-iptables-nft
 nss-mdns
 bluez
 cups
