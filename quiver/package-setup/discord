@@ -1,14 +1,10 @@
 #!/bin/bash
 # Archer config file
 
-echo -e "-------------------------------------------------------------------------"
 echo -e "Setting Discord to use local login credentials"
-
 sed -i 's/Exec=\/usr\/bin\/discord/Exec=\/usr\/bin\/discord --password-store=basic/' /opt/discord/discord.desktop
 
-echo -e "-------------------------------------------------------------------------"
 echo -e "Removing Discord internal update check"
-
 sudo -u "$user" mkdir -p /home/"$user"/.config/discord
 sudo -u "$user" touch /home/"$user"/.config/discord/settings.json
 

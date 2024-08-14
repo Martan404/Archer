@@ -1,9 +1,7 @@
 #!/bin/bash
 # Archer config file
 
-echo -e "-------------------------------------------------------------------------"
-echo -e "Adding sudo password exception to udisk2/mount"
-
+echo -e "Adding sudo password exception to udisk2 mounting"
 cat <<-END > /etc/polkit-1/rules.d/10-udisks2.rules
 // Allow udisks2 to mount devices without authentication
 // for users in the "wheel" group.

@@ -1,9 +1,7 @@
 #!/bin/bash
 # Archer config file
 
-echo -e "-------------------------------------------------------------------------"
 echo -e "Setting up XDG user directories"
-
 xdg-user-dirs-update
 
 #sed -i '/TEMPLATES/s/^/#/' /etc/xdg/user-dirs.defaults
@@ -16,19 +14,14 @@ PROJECTS=Projects
 SYNC=Sync
 END
 
-echo -e "-------------------------------------------------------------------------"
 echo -e "Creating home sub-directories for $user"
-
 sudo -u "$user" xdg-user-dirs-update --force
 
-echo -e "-------------------------------------------------------------------------"
 echo -e "Creating home/System sub-directories for $user"
-
 sudo -u "$user" mkdir -p /home/"$user"/System/{icons,scripts}
 
-echo -e "-------------------------------------------------------------------------"
-echo -e "Setting sub-directory icons"
 
+echo -e "Setting sub-directory icons"
 sudo -u "$user" touch /home/"$user"/{Applications,Games,Projects,Sync,System}/.directory
 {
 echo "[Desktop Entry]"
