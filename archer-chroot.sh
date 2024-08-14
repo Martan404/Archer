@@ -123,11 +123,8 @@ setup_system() {
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Enabling en_SE locale"
 
-		if ! (grep -q '^en_US\.UTF-8 UTF-8' /etc/locale.gen); then
-			sed -i 's/^#en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
-		elif ! (grep -q '^sv_SE\.UTF-8 UTF-8' /etc/locale.gen); then
-			sed -i 's/^#sv_SE.UTF-8/sv_SE.UTF-8/' /etc/locale.gen
-		fi
+		grep -q '^en_US\.UTF-8 UTF-8' /etc/locale.gen || sed -i 's/^#en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
+		grep -q '^sv_SE\.UTF-8 UTF-8' /etc/locale.gen || sed -i 's/^#sv_SE.UTF-8/sv_SE.UTF-8/' /etc/locale.gen
 
 		mv /Archer-main/quiver/configs/en_SE /usr/share/i18n/locales/en_SE && sed -i '/^[#]*en_US\.UTF-8/i\en_SE\.UTF-8 UTF-8' /etc/locale.gen
 		locale-gen
