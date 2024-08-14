@@ -20,13 +20,6 @@ package_installer() {
 	max_tries=3
 	try_count=0
 
-	# Check if argument is .txt file and combine each line
-	if [[ "$input_packages" == *.txt ]]; then
-		packages=$(cat "$input_packages" | tr '\n' ' ')
-	else
-		packages=$input_packages
-	fi
-
 	while [ "$try_count" -lt "$max_tries" ]; do
 		try_count=$((try_count + 1))
 
