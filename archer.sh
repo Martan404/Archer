@@ -530,8 +530,9 @@ show_logo
 
 set_variables
 check_keymap
-set_disk
 set_locale
+
+set_disk
 set_efi
 set_kernel
 set_swap
