@@ -72,16 +72,10 @@ setup_pacman() {
 	sed -i 's/^#ParallelDownloads/ParallelDownloads/' /etc/pacman.conf
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling pacman hooks"
+	echo -e "Creating pacman hook directory"
 
 	sed -i 's/^#HookDir/HookDir/' /etc/pacman.conf
 	mkdir -p /etc/pacman.d/hooks/
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Moving pacman hooks"
-
-	mv -v /Archer-main/quiver/hooks/* /etc/pacman.d/hooks/
-	chown -R :wheel /etc/pacman.d/hooks/*
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Adding candy to pacman"
@@ -645,6 +639,12 @@ package_config() {
 
 	# shellcheck disable=SC2046
 	pacman -Rns --noconfirm $(pacman -Qtdq)
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Moving pacman hooks"
+
+	mv -v /Archer-main/quiver/hooks/* /etc/pacman.d/hooks/
+	chown -R :wheel /etc/pacman.d/hooks/*
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Rebuilding GRUB configs"
