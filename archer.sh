@@ -173,7 +173,7 @@ set_locale() {
 	done
 
 	while true; do
-		read -r -p "Are you satisfied with you chosen locales? (Y/n) " yesNo
+		read -r -p "Are you satisfied with your chosen locales? (Y/n) " yesNo
 
 		case $yesNo in
 		[yY1]) break ;;
