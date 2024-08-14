@@ -37,6 +37,7 @@ nss-mdns
 bluez
 cups
 cups-pdf
+cups-pk-helper
 foomatic-db-ppds
 foomatic-db-engine
 foomatic-db-nonfree-ppds
@@ -75,6 +76,8 @@ jfsutils
 ntfs-3g
 udftools
 xfsprogs
+fatresize
+libdvdcss
 # DRIVERS #
 
 # SYSTEM #
@@ -110,8 +113,6 @@ spectacle
 texinfo
 usbutils
 vivid
-vulkan-mesa-layers
-lib32-vulkan-mesa-layers
 # SYSTEM #
 
 # DESKTOP #
@@ -157,6 +158,7 @@ kwayland-integration
 kwin
 kwrited
 milou
+mlocate
 partitionmanager
 plasma-browser-integration
 plasma-desktop
@@ -181,4 +183,5 @@ system-config-printer
 systemsettings
 xdg-desktop-portal
 xdg-desktop-portal-kde
+xdg-desktop-portal-gtk
 # DESKTOP #
