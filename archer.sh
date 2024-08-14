@@ -156,6 +156,7 @@ set_locale() {
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Choose default locale"
 		echo -e "Available locales: $available_locales"
+		echo -e "Optional locales: en_SE.UTF-8"
 		read -r -p "Name: " default_locale
 
 		if echo "$available_locales" | grep -qw "$default_locale"; then
@@ -527,7 +528,6 @@ exit_install() {
 }
 
 show_logo
-
 set_variables
 check_keymap
 set_locale
