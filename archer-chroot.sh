@@ -15,7 +15,7 @@ keyboard_keymap=${9}
 default_locale=${10}
 
 package_installer() {
-	input_packages=$1
+	packages=$1
 	pkg_manager=$2
 	max_tries=3
 	try_count=0
@@ -47,7 +47,7 @@ package_installer() {
 			case $choice in
 			[yY1])
 				try_count=0
-				package_installer "$input_packages" "$pkg_manager"
+				package_installer "$packages" "$pkg_manager"
 				break
 				;;
 			[nN2])
