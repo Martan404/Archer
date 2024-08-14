@@ -482,7 +482,7 @@ install_system() {
 
 	while true; do
 		# shellcheck disable=SC2086
-		pacstrap -K /mnt base base-devel sudo $kernel $kernel-headers linux-firmware $cpu_ucode $gpu_driver btrfs-progs dosfstools e2fsprogs exfatprogs f2fs-tools jfsutils ntfs-3g udftools xfsprogs iptables-nft && break
+		pacstrap -K /mnt base base-devel sudo $kernel $kernel-headers linux-firmware $cpu_ucode $gpu_driver && break
 
 		echo "$(tput setaf 9)Package installation failed. Retrying... $(tput sgr0)"
 	done
