@@ -24,7 +24,7 @@ package_installer() {
 		try_count=$((try_count + 1))
 
 		# shellcheck disable=SC2086
-		if [ "$pkg_manager" = "pacman" ]; then
+		if [ "$pkg_manager" == "pacman" ]; then
 			pacman -S --needed --noconfirm $packages && break
 
 		else
@@ -119,7 +119,7 @@ setup_system() {
 	echo "LANG=$default_locale" >>/etc/locale.conf
 	echo "KEYMAP=$keyboard_keymap" >>/etc/vconsole.conf
 
-	if [ "$default_locale" = "en_SE.UTF-8" ]; then
+	if [ "$default_locale" == "en_SE.UTF-8" ]; then
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Enabling en_SE locale"
 
@@ -387,10 +387,10 @@ setup_drivers() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting kernel boot parameters for $cpu_manufacturer CPU"
 
-	if [ "$cpu_manufacturer" = "amd" ]; then
+	if [ "$cpu_manufacturer" == "amd" ]; then
 		kernel_parameters=""
 
-	elif [ "$cpu_manufacturer" = "intel" ]; then
+	elif [ "$cpu_manufacturer" == "intel" ]; then
 		kernel_parameters="intel_iommu=on iommu=pt"
 
 		echo -e "-------------------------------------------------------------------------"
@@ -405,13 +405,13 @@ setup_drivers() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting kernel boot parameters for $gpu_manufacturer GPU"
 
-	if [ "$gpu_manufacturer" = "amd" ]; then
+	if [ "$gpu_manufacturer" == "amd" ]; then
 		kernel_parameters=""
 
-	elif [ "$gpu_manufacturer" = "intel" ]; then
+	elif [ "$gpu_manufacturer" == "intel" ]; then
 		kernel_parameters=""
 
-	elif [ "$gpu_manufacturer" = "nvidia" ]; then
+	elif [ "$gpu_manufacturer" == "nvidia" ]; then
 		kernel_parameters="nvidia_drm.modeset=1 nvidia.NVreg_PreserveVideoMemoryAllocations=1"
 
 		echo -e "-------------------------------------------------------------------------"
@@ -421,7 +421,7 @@ setup_drivers() {
 		systemctl enable nvidia-hibernate.service
 		systemctl enable nvidia-resume.service
 
-	elif [ "$gpu_manufacturer" = "qemu" ]; then
+	elif [ "$gpu_manufacturer" == "qemu" ]; then
 		kernel_parameters=""
 	fi
 

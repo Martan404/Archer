@@ -92,7 +92,7 @@ set_variables() {
 check_keymap() {
 	existing_keymap=$(localectl status | grep 'VC Keymap' | awk '{print $3}')
 
-	if [ "$existing_keymap" = "(unset)" ] || [ "$existing_keymap" = "" ]; then
+	if [ "$existing_keymap" == "(unset)" ] || [ "$existing_keymap" == "" ]; then
 		set_keymap
 
 	else
@@ -162,9 +162,9 @@ set_locale() {
 
 		if echo "$available_locales" | grep -qw "$default_locale"; then
 			break
-		elif [ "$default_locale" = "en_SE.UTF-8" ]; then
+		elif [ "$default_locale" == "en_SE.UTF-8" ]; then
 			break
-		elif [ "$default_locale" = "locale.gen" ]; then
+		elif [ "$default_locale" == "locale.gen" ]; then
 			set_locale
 			break
 		else
@@ -317,13 +317,16 @@ set_drivers() {
 	if [[ $lspci_output == *"Radeon"* ]] || [[ $lspci_output == *"AMD"* ]]; then
 		echo -e "Found AMD GPU"
 
-		gpu_driver="mesa lib32-mesa vulkan-radeon lib32-vulkan-radeon libva-mesa-driver"
+		gpu_driver="vulkan-radeon lib32-vulkan-radeon mesa lib32-mesa libva-mesa-driver"
 		export gpu_manufacturer="amd"
 
 	elif [[ $lspci_output == *"Integrated Graphics Controller"* ]] || [[ $lspci_output == *"Intel Corporation HD"* ]] || [[ $lspci_output == *"Intel Corporation UHD"* ]]; then
 		echo -e "Found Intel GPU"
 
-		gpu_driver="mesa lib32-mesa vulkan-intel lib32-vulkan-intel intel-media-driver libva-intel-driver"
+		# QuickSync 
+		# LEGACY intel-media-driver intel-media-sdk 
+		# TIGER LAKE(2020+) libva-intel-driver vpl-gpu-rt
+		gpu_driver=" vulkan-intel lib32-vulkan-intel mesa lib32-mesa libva-mesa-driver vulkan-mesa-layers lib32-vulkan-mesa-layers"
 		export gpu_manufacturer="intel"
 
 	elif [[ $lspci_output == *"NVIDIA"* ]] || [[ $lspci_output == *"GeForce"* ]]; then
@@ -338,7 +341,7 @@ set_drivers() {
 
 		echo -e "Installing $nvidia_version package"
 
-		gpu_driver="$nvidia_version nvidia-utils lib32-nvidia-utils nvidia-settings libva-mesa-driver"
+		gpu_driver="$nvidia_version nvidia-utils lib32-nvidia-utils nvidia-settings mesa libva-mesa-driver vulkan-mesa-layers lib32-vulkan-mesa-layers"
 		export gpu_manufacturer="nvidia"
 
 	elif [[ ${lspci_output} =~ (Virtio|QEMU) ]] || [[ ${lspci_output_full} =~ (Virtio|QEMU) ]]; then
@@ -354,7 +357,7 @@ set_drivers() {
 			case $yN in
 			[yY1])
 				echo "Installing QEMU drivers"
-				gpu_driver="qemu-guest-agent vulkan-virtio lib32-vulkan-virtio"
+				gpu_driver="qemu-guest-agent vulkan-virtio lib32-vulkan-virtio vulkan-mesa-layers lib32-vulkan-mesa-layers"
 				export gpu_manufacturer="qemu"
 				break
 				;;
