@@ -4,7 +4,7 @@
 
 archer-help() { grep '^[[:alnum:]-]*()' ~/.bash_aliases | awk -F'[(]' '{print $1}'; grep "^alias" ~/.bash_aliases | awk -F= '{sub("^alias[ \t]*", ""); print $1}'; }
 
-alias update='paru -Syu'
+alias update='paru -Syu && pipx --global upgrade-all'
 alias package-cache-cleanup='paru -Scd'
 alias sudo-password-unlock='faillock --user $USER --reset'
 alias pacman-refresh-mirrors='sudo reflector --age 48 --country "$(curl ifconfig.co/country-iso)" --fastest 5 --latest 20 --sort rate --save /etc/pacman.d/mirrorlist'
