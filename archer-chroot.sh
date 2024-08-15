@@ -199,6 +199,247 @@ setup_paru_pipx() {
 	package_installer "python-pipx"
 }
 
+setup_grub() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing Grub packages"
+
+	package_installer "grub-btrfs efibootmgr inotify-tools os-prober"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating efibootmgr wrapper script to prevent fail"
+
+	cat <<-END >/usr/local/bin/efibootmgr
+		#!/bin/sh
+		exec /usr/bin/efibootmgr -e 3 "\$@"
+	END
+	chmod +x /usr/local/bin/efibootmgr
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Configuring Grub"
+
+	grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck
+	grub-mkconfig -o /boot/grub/grub.cfg
+
+	if pacman -Qs os-prober >/dev/null; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Enabling Grub OS prober"
+
+		sed -i '/^[#]*GRUB_DISABLE_OS_PROBER=/s/true/false/' /etc/default/grub
+		sed -i '/^#GRUB_DISABLE_OS_PROBER/s/^#//' /etc/default/grub
+	fi
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing Grub theme"
+
+	mv /Archer-main/quiver/themes/arch-silence /boot/grub/themes/arch-silence
+	sed -i '/^[#]*GRUB_THEME=/c\GRUB_THEME="\/boot\/grub\/themes\/arch-silence\/theme.txt"' /etc/default/grub
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling GRUB-btrfsd snapshot daemon"
+
+	systemctl enable grub-btrfsd
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Disabling snapshot listing in pacman for grub-btrfs"
+
+	sed -i '/^[#]*GRUB_BTRFS_SHOW_SNAPSHOTS_FOUND=/s/true/false/' /etc/default/grub-btrfs/config
+	sed -i '/^#GRUB_BTRFS_SHOW_SNAPSHOTS_FOUND/s/^#//' /etc/default/grub-btrfs/config
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Removing 'quiet' kernel parameter"
+
+	sed -i '/GRUB_CMDLINE_LINUX_DEFAULT/s/ quiet//g' /etc/default/grub
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating windows-boot script"
+
+	cat <<-END >>/usr/local/bin/windows-boot
+		#!/bin/bash
+		# Set Windows Boot Manager as NextBoot and reboots
+		efibootmgr -n \$(efibootmgr | awk '/Windows Boot Manager/ {gsub(/^Boot/, "", \$1); gsub(/\*/, "", \$1); print \$1}') && reboot
+	END
+	chmod +x /usr/local/bin/windows-boot
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Adding sudo password exception to windows-boot script"
+
+	echo "%wheel ALL=(ALL) NOPASSWD: /usr/local/bin/windows-boot" >>/etc/sudoers
+}
+
+backup_kernel() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing rsync"
+
+	package_installer "rsync"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating pacman hooks for kernel backup"
+
+	mkdir -p /.bootbackup/{preupdate,postupdate}
+
+	cat <<-END >/etc/pacman.d/hooks/00-bootbackup-preupdate.hook
+		[Trigger]
+		Operation = Upgrade
+		Operation = Install
+		Operation = Remove
+		Type = Path
+		Target = usr/lib/modules/*/vmlinuz
+
+		[Action]
+		Depends = rsync
+		Description = Backing up /boot before updating...
+		When = PreTransaction
+		Exec = /usr/bin/rsync -a --delete /boot /.bootbackup/preupdate
+	END
+
+	cat <<-END >/etc/pacman.d/hooks/95-bootbackup-postupdate.hook
+		[Trigger]
+		Operation = Upgrade
+		Operation = Install
+		Operation = Remove
+		Type = Path
+		Target = usr/lib/modules/*/vmlinuz
+
+		[Action]
+		Depends = rsync
+		Description = Backing up /boot after updating...
+		When = PostTransaction
+		Exec = /usr/bin/rsync -a --delete /boot /.bootbackup/postupdate
+	END
+}
+
+setup_cpu() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Checking CPU"
+
+	lscpu_output=$(lscpu)
+	read -r -t 1
+
+	if [[ $lscpu_output == *"AuthenticAMD"* ]]; then
+		echo -e "Found AMD"
+		amd_cpu
+
+	elif [[ $lscpu_output == *"GenuineIntel"* ]]; then
+		echo -e "Found Intel"
+		intel_cpu
+	fi
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting grub cpu boot parameters"
+
+	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $cpu_kernel_parameters\"/" /etc/default/grub
+}
+
+amd_cpu() {
+	cpu_kernel_parameters=""
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing packages"
+
+	package_installer "amd-ucode"
+}
+
+intel_cpu() {
+	cpu_kernel_parameters="intel_iommu=on iommu=pt"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing packages"
+
+	package_installer "intel-ucode thermald"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling thermald service"
+
+	systemctl enable thermald.service
+}
+
+setup_gpu() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Checking GPU"
+
+	lspci_output=$(lspci | grep VGA)
+	lspci_output_full=$(lspci)
+	read -r -t 1
+
+	if [[ $lspci_output == *"Radeon"* ]] || [[ $lspci_output == *"AMD"* ]]; then
+		echo -e "Found AMD"
+		amd_gpu
+
+	elif [[ $lspci_output == *"Integrated Graphics Controller"* ]] || [[ $lspci_output == *"Intel Corporation HD"* ]] || [[ $lspci_output == *"Intel Corporation UHD"* ]]; then
+		echo -e "Found Intel"
+		intel_gpu
+
+	elif [[ $lspci_output == *"NVIDIA"* ]] || [[ $lspci_output == *"GeForce"* ]]; then
+		echo -e "Found NVIDIA"
+		nvidia_gpu
+
+	elif [[ ${lspci_output} =~ (Virtio|QEMU) ]] || [[ ${lspci_output_full} =~ (Virtio|QEMU) ]]; then
+		echo "Found QEMU"
+		qemu_gpu
+	fi
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting grub gpu boot parameters"
+
+	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $gpu_kernel_parameters\"/" /etc/default/grub
+}
+
+amd_gpu() {
+	gpu_kernel_parameters=""
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing packages"
+
+	package_installer "vulkan-radeon lib32-vulkan-radeon mesa lib32-mesa libva-mesa-driver"
+}
+
+nvidia_gpu() {
+	gpu_kernel_parameters="nvidia_drm.modeset=1 nvidia.NVreg_PreserveVideoMemoryAllocations=1"
+
+	if [[ $lspci_output == *"RTX"* ]]; then
+		echo -e "Found RTX card. Installing nvidia-open-dkms"
+		nvidia_version="nvidia-open-dkms"
+	else
+		nvidia_version="nvidia-dkms"
+	fi
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing packages"
+
+	package_installer "$nvidia_version nvidia-utils lib32-nvidia-utils nvidia-settings mesa libva-mesa-driver vulkan-mesa-layers lib32-vulkan-mesa-layers"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling support for suspend/wakeup"
+
+	systemctl enable nvidia-suspend.service
+	systemctl enable nvidia-hibernate.service
+	systemctl enable nvidia-resume.service
+}
+
+intel_gpu() {
+	gpu_kernel_parameters=""
+
+	# Need a way to test for new and old gpu and also if cpu
+	# QuickSync # LEGACY intel-media-driver intel-media-sdk # TIGER LAKE(2020+) libva-intel-driver vpl-gpu-rt
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing packages"
+
+	package_installer "vulkan-intel lib32-vulkan-intel mesa lib32-mesa libva-mesa-driver vulkan-mesa-layers lib32-vulkan-mesa-layers"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting grub kernel boot parameters"
+}
+
+qemu_gpu() {
+	gpu_kernel_parameters=""
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing packages"
+
+	package_installer "qemu-guest-agent vulkan-virtio lib32-vulkan-virtio vulkan-mesa-layers lib32-vulkan-mesa-layers"
+}
+
 install_packages() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing system packages"
@@ -310,249 +551,6 @@ EOF
 	chmod a+x /usr/bin/flatpak-setup
 
 	sed -i "s/UNIX_USER/$user/g; s/PACKAGE_LIST/$packages/g" /usr/bin/flatpak-setup
-}
-
-setup_grub() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing Grub packages"
-
-	package_installer "grub-btrfs efibootmgr inotify-tools os-prober"
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating efibootmgr wrapper script to prevent fail"
-
-	cat <<-END >/usr/local/bin/efibootmgr
-		#!/bin/sh
-		exec /usr/bin/efibootmgr -e 3 "\$@"
-	END
-	chmod +x /usr/local/bin/efibootmgr
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Configuring Grub"
-
-	grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck
-	grub-mkconfig -o /boot/grub/grub.cfg
-
-	if pacman -Qs os-prober >/dev/null; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Enabling Grub OS prober"
-
-		sed -i '/^[#]*GRUB_DISABLE_OS_PROBER=/s/true/false/' /etc/default/grub
-		sed -i '/^#GRUB_DISABLE_OS_PROBER/s/^#//' /etc/default/grub
-	fi
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing Grub theme"
-
-	mv /Archer-main/quiver/themes/arch-silence /boot/grub/themes/arch-silence
-	sed -i '/^[#]*GRUB_THEME=/c\GRUB_THEME="\/boot\/grub\/themes\/arch-silence\/theme.txt"' /etc/default/grub
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling GRUB-btrfsd snapshot daemon"
-
-	systemctl enable grub-btrfsd
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Disabling snapshot listing in pacman for grub-btrfs"
-
-	sed -i '/^[#]*GRUB_BTRFS_SHOW_SNAPSHOTS_FOUND=/s/true/false/' /etc/default/grub-btrfs/config
-	sed -i '/^#GRUB_BTRFS_SHOW_SNAPSHOTS_FOUND/s/^#//' /etc/default/grub-btrfs/config
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Removing 'quiet' kernel parameter"
-
-	sed -i '/GRUB_CMDLINE_LINUX_DEFAULT/s/ quiet//g' /etc/default/grub
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating windows-boot script"
-
-	cat <<-END >>/usr/local/bin/windows-boot
-		#!/bin/bash
-		# Set Windows Boot Manager as NextBoot and reboots
-		efibootmgr -n \$(efibootmgr | awk '/Windows Boot Manager/ {gsub(/^Boot/, "", \$1); gsub(/\*/, "", \$1); print \$1}') && reboot
-	END
-	chmod +x /usr/local/bin/windows-boot
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Adding sudo password exception to windows-boot script"
-
-	echo "%wheel ALL=(ALL) NOPASSWD: /usr/local/bin/windows-boot" >>/etc/sudoers
-}
-
-check_cpu() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Checking CPU"
-
-	lscpu_output=$(lscpu)
-	read -r -t 1
-
-	if [[ $lscpu_output == *"AuthenticAMD"* ]]; then
-		echo -e "Found AMD"
-		amd_cpu
-
-	elif [[ $lscpu_output == *"GenuineIntel"* ]]; then
-		echo -e "Found Intel"
-		intel_cpu
-	fi
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting grub cpu boot parameters"
-
-	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $cpu_kernel_parameters\"/" /etc/default/grub
-}
-
-amd_cpu() {
-	cpu_kernel_parameters=""
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing packages"
-
-	package_installer "amd-ucode"
-}
-
-intel_cpu() {
-	cpu_kernel_parameters="intel_iommu=on iommu=pt"
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing packages"
-
-	package_installer "intel-ucode thermald"
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling thermald service"
-
-	systemctl enable thermald.service
-}
-
-check_gpu() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Checking GPU"
-
-	lspci_output=$(lspci | grep VGA)
-	lspci_output_full=$(lspci)
-	read -r -t 1
-
-	if [[ $lspci_output == *"Radeon"* ]] || [[ $lspci_output == *"AMD"* ]]; then
-		echo -e "Found AMD"
-		amd_gpu
-
-	elif [[ $lspci_output == *"Integrated Graphics Controller"* ]] || [[ $lspci_output == *"Intel Corporation HD"* ]] || [[ $lspci_output == *"Intel Corporation UHD"* ]]; then
-		echo -e "Found Intel"
-		intel_gpu
-
-	elif [[ $lspci_output == *"NVIDIA"* ]] || [[ $lspci_output == *"GeForce"* ]]; then
-		echo -e "Found NVIDIA"
-		nvidia_gpu
-
-	elif [[ ${lspci_output} =~ (Virtio|QEMU) ]] || [[ ${lspci_output_full} =~ (Virtio|QEMU) ]]; then
-		echo "Found QEMU"
-		qemu_gpu
-	fi
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting grub gpu boot parameters"
-
-	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $gpu_kernel_parameters\"/" /etc/default/grub
-}
-
-amd_gpu() {
-	gpu_kernel_parameters=""
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing packages"
-
-	package_installer "vulkan-radeon lib32-vulkan-radeon mesa lib32-mesa libva-mesa-driver"
-}
-
-nvidia_gpu() {
-	gpu_kernel_parameters="nvidia_drm.modeset=1 nvidia.NVreg_PreserveVideoMemoryAllocations=1"
-
-	if [[ $lspci_output == *"RTX"* ]]; then
-		echo -e "Found RTX card. Installing nvidia-open-dkms"
-		nvidia_version="nvidia-open-dkms"
-	else
-		nvidia_version="nvidia-dkms"
-	fi
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing packages"
-
-	package_installer "$nvidia_version nvidia-utils lib32-nvidia-utils nvidia-settings mesa libva-mesa-driver vulkan-mesa-layers lib32-vulkan-mesa-layers"
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling support for suspend/wakeup"
-
-	systemctl enable nvidia-suspend.service
-	systemctl enable nvidia-hibernate.service
-	systemctl enable nvidia-resume.service
-}
-
-intel_gpu() {
-	gpu_kernel_parameters=""
-
-	# Need a way to test for new and old gpu and also if cpu
-	# QuickSync
-	# LEGACY intel-media-driver intel-media-sdk
-	# TIGER LAKE(2020+) libva-intel-driver vpl-gpu-rt
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing packages"
-
-	package_installer "vulkan-intel lib32-vulkan-intel mesa lib32-mesa libva-mesa-driver vulkan-mesa-layers lib32-vulkan-mesa-layers"
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting grub kernel boot parameters"
-}
-
-qemu_gpu() {
-	gpu_kernel_parameters=""
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing packages"
-
-	package_installer "qemu-guest-agent vulkan-virtio lib32-vulkan-virtio vulkan-mesa-layers lib32-vulkan-mesa-layers"
-}
-
-backup_kernel() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing rsync"
-
-	package_installer "rsync"
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating pacman hooks for kernel backup"
-
-	mkdir -p /.bootbackup/{preupdate,postupdate}
-
-	cat <<-END >/etc/pacman.d/hooks/00-bootbackup-preupdate.hook
-		[Trigger]
-		Operation = Upgrade
-		Operation = Install
-		Operation = Remove
-		Type = Path
-		Target = usr/lib/modules/*/vmlinuz
-
-		[Action]
-		Depends = rsync
-		Description = Backing up /boot before updating...
-		When = PreTransaction
-		Exec = /usr/bin/rsync -a --delete /boot /.bootbackup/preupdate
-	END
-
-	cat <<-END >/etc/pacman.d/hooks/95-bootbackup-postupdate.hook
-		[Trigger]
-		Operation = Upgrade
-		Operation = Install
-		Operation = Remove
-		Type = Path
-		Target = usr/lib/modules/*/vmlinuz
-
-		[Action]
-		Depends = rsync
-		Description = Backing up /boot after updating...
-		When = PostTransaction
-		Exec = /usr/bin/rsync -a --delete /boot /.bootbackup/postupdate
-	END
 }
 
 snapper_setup() {
@@ -792,16 +790,17 @@ set_password() {
 setup_pacman
 setup_system
 setup_paru_pipx
+
+setup_grub
+backup_kernel
+
+setup_cpu
+setup_gpu
 install_packages
 
 setup_laptop
 setup_plasma
 setup_flatpak
-
-setup_grub
-check_cpu
-check_gpu
-backup_kernel
 
 [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "snapper" ]] && snapper_setup
 [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "yabsnap" ]] && yabsnap_setup
