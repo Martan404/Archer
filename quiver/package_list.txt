@@ -20,6 +20,7 @@ org.mozilla.firefox
 
 # PACMAN #
 bleachbit
+distrobox
 steam
 # PACMAN #
 
