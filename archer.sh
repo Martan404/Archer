@@ -398,37 +398,13 @@ setup_environment() {
 	touch archer-check # This is used to check if the script is ran a second time
 }
 
-cpu_drivers() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Checking CPU"
-
-	lscpu_output=$(lscpu)
-	read -r -t 1
-	cpu_ucode=""
-	cpu_manufacturer="none"
-
-	if [[ $lscpu_output == *"AuthenticAMD"* ]]; then
-		echo -e "Found AMD"
-		cpu_ucode="amd-ucode"
-		export cpu_manufacturer="amd"
-
-	elif [[ $lscpu_output == *"GenuineIntel"* ]]; then
-		echo -e "Found Intel"
-		cpu_ucode="intel-ucode"
-		export cpu_manufacturer="intel"
-	else
-		echo -e "Found no CPU brand"
-		read -r -t 3
-	fi
-}
-
 install_system() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing base and kernel packages"
 
 	while true; do
 		# shellcheck disable=SC2086
-		pacstrap -K /mnt base base-devel sudo $kernel $kernel-headers linux-firmware $cpu_ucode iptables-nft && break
+		pacstrap -K /mnt base base-devel sudo $kernel $kernel-headers linux-firmware iptables-nft && break
 
 		echo "$(tput setaf 9)Package installation failed. Retrying... $(tput sgr0)"
 	done
@@ -458,7 +434,7 @@ arch_chroot() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Entering archer-chroot"
 
-	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot.sh "$user" "$hostname" "$snapshot_layout" "$cpu_manufacturer" "$snapshot_subvol" "$root_partition" "$snap_manager" "$keyboard_keymap" "$default_locale"
+	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot.sh "$user" "$hostname" "$snapshot_layout" "$snapshot_subvol" "$root_partition" "$snap_manager" "$keyboard_keymap" "$default_locale"
 	rm -rf /mnt/Archer-main
 }
 
@@ -487,7 +463,6 @@ format_drive
 setup_drive
 [[ ! -e "archer-check" ]] && setup_environment
 
-cpu_drivers
 install_system
 arch_chroot
 exit_install

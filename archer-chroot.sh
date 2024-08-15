@@ -6,12 +6,11 @@
 user=${1}
 hostname=${2}
 snapshot_layout=${3}
-cpu_manufacturer=${4}
-snapshot_subvol=${5}
-root_partition=${6}
-snap_manager=${7}
-keyboard_keymap=${8}
-default_locale=${9}
+snapshot_subvol=${4}
+root_partition=${5}
+snap_manager=${6}
+keyboard_keymap=${7}
+default_locale=${8}
 
 package_installer() {
 	input_packages=$1
@@ -380,25 +379,58 @@ setup_grub() {
 	echo "%wheel ALL=(ALL) NOPASSWD: /usr/local/bin/windows-boot" >>/etc/sudoers
 }
 
-cpu_gpu() {
+check_cpu() {
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Configuring $cpu_manufacturer CPU"
+	echo -e "Checking CPU"
 
-	[[ "$cpu_manufacturer" == "amd" ]] && amd_cpu
-	[[ "$cpu_manufacturer" == "intel" ]] && intel_cpu
+	lscpu_output=$(lscpu)
+	read -r -t 1
+
+	if [[ $lscpu_output == *"AuthenticAMD"* ]]; then
+		echo -e "Found AMD"
+		amd_cpu
+
+	elif [[ $lscpu_output == *"GenuineIntel"* ]]; then
+		echo -e "Found Intel"
+		intel_cpu
+	fi
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting grub gpu boot parameters"
+	echo -e "Setting grub cpu boot parameters"
 
-	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $kernel_parameters\"/" /etc/default/grub
+	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $cpu_kernel_parameters\"/" /etc/default/grub
+}
 
+amd_cpu() {
+	cpu_kernel_parameters=""
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing packages"
+
+	package_installer "amd-ucode"
+}
+
+intel_cpu() {
+	cpu_kernel_parameters="intel_iommu=on iommu=pt"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing packages"
+
+	package_installer "intel-ucode thermald"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling thermald service"
+
+	systemctl enable thermald.service
+}
+
+check_gpu() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Checking GPU"
 
 	lspci_output=$(lspci | grep VGA)
 	lspci_output_full=$(lspci)
 	read -r -t 1
-	gpu_driver="" && gpu_manufacturer="none"
 
 	if [[ $lspci_output == *"Radeon"* ]] || [[ $lspci_output == *"AMD"* ]]; then
 		echo -e "Found AMD"
@@ -420,25 +452,11 @@ cpu_gpu() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting grub gpu boot parameters"
 
-	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $kernel_parameters\"/" /etc/default/grub
-}
-
-amd_cpu() {
-	kernel_parameters=""
-}
-
-intel_cpu() {
-	kernel_parameters="intel_iommu=on iommu=pt"
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing and enabling thermald service"
-
-	package_installer "thermald"
-	systemctl enable thermald.service
+	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $gpu_kernel_parameters\"/" /etc/default/grub
 }
 
 amd_gpu() {
-	kernel_parameters=""
+	gpu_kernel_parameters=""
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing packages"
@@ -447,7 +465,7 @@ amd_gpu() {
 }
 
 nvidia_gpu() {
-	kernel_parameters="nvidia_drm.modeset=1 nvidia.NVreg_PreserveVideoMemoryAllocations=1"
+	gpu_kernel_parameters="nvidia_drm.modeset=1 nvidia.NVreg_PreserveVideoMemoryAllocations=1"
 
 	if [[ $lspci_output == *"RTX"* ]]; then
 		echo -e "Found RTX card. Installing nvidia-open-dkms"
@@ -470,7 +488,7 @@ nvidia_gpu() {
 }
 
 intel_gpu() {
-	kernel_parameters=""
+	gpu_kernel_parameters=""
 
 	# Need a way to test for new and old gpu and also if cpu
 	# QuickSync
@@ -487,7 +505,7 @@ intel_gpu() {
 }
 
 qemu_gpu() {
-	kernel_parameters=""
+	gpu_kernel_parameters=""
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing packages"
@@ -781,7 +799,8 @@ setup_plasma
 setup_flatpak
 
 setup_grub
-cpu_gpu
+check_cpu
+check_gpu
 backup_kernel
 
 [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "snapper" ]] && snapper_setup
