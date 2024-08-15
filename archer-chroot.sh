@@ -7,18 +7,23 @@ user=${1}
 hostname=${2}
 snapshot_layout=${3}
 cpu_manufacturer=${4}
-gpu_manufacturer=${5}
-snapshot_subvol=${6}
-root_partition=${7}
-snap_manager=${8}
-keyboard_keymap=${9}
-default_locale=${10}
+snapshot_subvol=${5}
+root_partition=${6}
+snap_manager=${7}
+keyboard_keymap=${8}
+default_locale=${9}
 
 package_installer() {
-	packages=$1
+	input_packages=$1
 	pkg_manager=$2
 	max_tries=3
 	try_count=0
+
+	if [[ "$input_packages" == *.txt ]]; then
+		packages=$(grep -v '^#' "$input_packages" | grep -v '^$' | grep -v '\.')
+	else
+		packages=$input_packages
+	fi
 
 	while [ "$try_count" -lt "$max_tries" ]; do
 		try_count=$((try_count + 1))
@@ -199,9 +204,7 @@ install_packages() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing system packages"
 
-	get_packages=$(grep -v '^#' /Archer-main/quiver/package_list.txt | grep -v '^$' | grep -v '\.')
-
-	package_installer "$get_packages"
+	package_installer "/Archer-main/quiver/package_list.txt"
 }
 
 setup_laptop() {
@@ -357,6 +360,11 @@ setup_grub() {
 	sed -i '/^#GRUB_BTRFS_SHOW_SNAPSHOTS_FOUND/s/^#//' /etc/default/grub-btrfs/config
 
 	echo -e "-------------------------------------------------------------------------"
+	echo -e "Removing 'quiet' kernel parameter"
+
+	sed -i '/GRUB_CMDLINE_LINUX_DEFAULT/s/ quiet//g' /etc/default/grub
+
+	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating windows-boot script"
 
 	cat <<-END >>/usr/local/bin/windows-boot
@@ -372,54 +380,119 @@ setup_grub() {
 	echo "%wheel ALL=(ALL) NOPASSWD: /usr/local/bin/windows-boot" >>/etc/sudoers
 }
 
-setup_drivers() {
+cpu_gpu() {
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Removing 'quiet' kernel parameter"
+	echo -e "Configuring $cpu_manufacturer CPU"
 
-	sed -i '/GRUB_CMDLINE_LINUX_DEFAULT/s/ quiet//g' /etc/default/grub
+	[[ "$cpu_manufacturer" == "amd" ]] && amd_cpu
+	[[ "$cpu_manufacturer" == "intel" ]] && intel_cpu
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting kernel boot parameters for $cpu_manufacturer CPU"
-
-	if [ "$cpu_manufacturer" == "amd" ]; then
-		kernel_parameters=""
-
-	elif [ "$cpu_manufacturer" == "intel" ]; then
-		kernel_parameters="intel_iommu=on iommu=pt"
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Installing and enabling thermald service"
-
-		package_installer "thermald"
-		systemctl enable thermald.service
-	fi
+	echo -e "Setting grub gpu boot parameters"
 
 	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $kernel_parameters\"/" /etc/default/grub
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting kernel boot parameters for $gpu_manufacturer GPU"
+	echo -e "Checking GPU"
 
-	if [ "$gpu_manufacturer" == "amd" ]; then
-		kernel_parameters=""
+	lspci_output=$(lspci | grep VGA)
+	lspci_output_full=$(lspci)
+	read -r -t 1
+	gpu_driver="" && gpu_manufacturer="none"
 
-	elif [ "$gpu_manufacturer" == "intel" ]; then
-		kernel_parameters=""
+	if [[ $lspci_output == *"Radeon"* ]] || [[ $lspci_output == *"AMD"* ]]; then
+		echo -e "Found AMD"
+		amd_gpu
 
-	elif [ "$gpu_manufacturer" == "nvidia" ]; then
-		kernel_parameters="nvidia_drm.modeset=1 nvidia.NVreg_PreserveVideoMemoryAllocations=1"
+	elif [[ $lspci_output == *"Integrated Graphics Controller"* ]] || [[ $lspci_output == *"Intel Corporation HD"* ]] || [[ $lspci_output == *"Intel Corporation UHD"* ]]; then
+		echo -e "Found Intel"
+		intel_gpu
 
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Enabling support for suspend/wakeup"
+	elif [[ $lspci_output == *"NVIDIA"* ]] || [[ $lspci_output == *"GeForce"* ]]; then
+		echo -e "Found NVIDIA"
+		nvidia_gpu
 
-		systemctl enable nvidia-suspend.service
-		systemctl enable nvidia-hibernate.service
-		systemctl enable nvidia-resume.service
-
-	elif [ "$gpu_manufacturer" == "qemu" ]; then
-		kernel_parameters=""
+	elif [[ ${lspci_output} =~ (Virtio|QEMU) ]] || [[ ${lspci_output_full} =~ (Virtio|QEMU) ]]; then
+		echo "Found QEMU"
+		qemu_gpu
 	fi
 
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting grub gpu boot parameters"
+
 	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $kernel_parameters\"/" /etc/default/grub
+}
+
+amd_cpu() {
+	kernel_parameters=""
+}
+
+intel_cpu() {
+	kernel_parameters="intel_iommu=on iommu=pt"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing and enabling thermald service"
+
+	package_installer "thermald"
+	systemctl enable thermald.service
+}
+
+amd_gpu() {
+	kernel_parameters=""
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing packages"
+
+	package_installer "vulkan-radeon lib32-vulkan-radeon mesa lib32-mesa libva-mesa-driver"
+}
+
+nvidia_gpu() {
+	kernel_parameters="nvidia_drm.modeset=1 nvidia.NVreg_PreserveVideoMemoryAllocations=1"
+
+	if [[ $lspci_output == *"RTX"* ]]; then
+		echo -e "Found RTX card. Installing nvidia-open-dkms"
+		nvidia_version="nvidia-open-dkms"
+	else
+		nvidia_version="nvidia-dkms"
+	fi
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing packages"
+
+	package_installer "$nvidia_version nvidia-utils lib32-nvidia-utils nvidia-settings mesa libva-mesa-driver vulkan-mesa-layers lib32-vulkan-mesa-layers"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling support for suspend/wakeup"
+
+	systemctl enable nvidia-suspend.service
+	systemctl enable nvidia-hibernate.service
+	systemctl enable nvidia-resume.service
+}
+
+intel_gpu() {
+	kernel_parameters=""
+
+	# Need a way to test for new and old gpu and also if cpu
+	# QuickSync
+	# LEGACY intel-media-driver intel-media-sdk
+	# TIGER LAKE(2020+) libva-intel-driver vpl-gpu-rt
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing packages"
+
+	package_installer "vulkan-intel lib32-vulkan-intel mesa lib32-mesa libva-mesa-driver vulkan-mesa-layers lib32-vulkan-mesa-layers"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting grub kernel boot parameters"
+}
+
+qemu_gpu() {
+	kernel_parameters=""
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing packages"
+
+	package_installer "qemu-guest-agent vulkan-virtio lib32-vulkan-virtio vulkan-mesa-layers lib32-vulkan-mesa-layers"
 }
 
 backup_kernel() {
@@ -701,11 +774,6 @@ set_password() {
 setup_pacman
 setup_system
 setup_paru_pipx
-
-#install_driver_pkgs
-#install_desktop_pkgs
-#install_system_pkgs
-#install_pacman_pkgs
 install_packages
 
 setup_laptop
@@ -713,7 +781,7 @@ setup_plasma
 setup_flatpak
 
 setup_grub
-setup_drivers
+cpu_gpu
 backup_kernel
 
 [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "snapper" ]] && snapper_setup

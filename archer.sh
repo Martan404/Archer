@@ -147,7 +147,7 @@ set_locale() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Uncomment and then save the locales you want enabled"
 
-	read -r -t 4
+	read -r -t 3
 	nano /etc/locale.gen
 	locale-gen
 	available_locales=$(localectl list-locales | awk '{printf "%s  ", $0} END {print ""}')
@@ -285,89 +285,6 @@ set_swap() {
 	echo -e "Setting swap size to $swapsize GiB"
 }
 
-set_drivers() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Checking CPU"
-
-	lscpu_output=$(lscpu)
-	read -r -t 1
-	cpu_ucode=""
-	cpu_manufacturer="none"
-
-	if [[ $lscpu_output == *"AuthenticAMD"* ]]; then
-		echo -e "Found AMD CPU"
-		cpu_ucode="amd-ucode"
-		export cpu_manufacturer="amd"
-
-	elif [[ $lscpu_output == *"GenuineIntel"* ]]; then
-		echo -e "Found Intel CPU"
-		cpu_ucode="intel-ucode"
-		export cpu_manufacturer="intel"
-	fi
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Checking GPU"
-
-	lspci_output=$(lspci | grep VGA)
-	lspci_output_full=$(lspci)
-	read -r -t 1
-	gpu_driver="" && gpu_manufacturer="none"
-	
-	if [[ $lspci_output == *"Radeon"* ]] || [[ $lspci_output == *"AMD"* ]]; then
-		echo -e "Found AMD GPU"
-
-		gpu_driver="vulkan-radeon lib32-vulkan-radeon mesa lib32-mesa libva-mesa-driver"
-		export gpu_manufacturer="amd"
-
-	elif [[ $lspci_output == *"Integrated Graphics Controller"* ]] || [[ $lspci_output == *"Intel Corporation HD"* ]] || [[ $lspci_output == *"Intel Corporation UHD"* ]]; then
-		echo -e "Found Intel GPU"
-		# QuickSync
-		# LEGACY intel-media-driver intel-media-sdk 
-		# TIGER LAKE(2020+) libva-intel-driver vpl-gpu-rt
-		gpu_driver=" vulkan-intel lib32-vulkan-intel mesa lib32-mesa libva-mesa-driver vulkan-mesa-layers lib32-vulkan-mesa-layers"
-		export gpu_manufacturer="intel"
-
-	elif [[ $lspci_output == *"NVIDIA"* ]] || [[ $lspci_output == *"GeForce"* ]]; then
-		if [[ $lspci_output == *"RTX"* ]]; then
-			echo -e "Found Nvidia RTX GPU"
-			nvidia_version="nvidia-open-dkms"
-
-		else
-			echo -e "Found Nvidia GPU"
-			nvidia_version="nvidia-dkms"
-		fi
-
-		echo -e "Installing $nvidia_version package"
-
-		gpu_driver="$nvidia_version nvidia-utils lib32-nvidia-utils nvidia-settings mesa libva-mesa-driver vulkan-mesa-layers lib32-vulkan-mesa-layers"
-		export gpu_manufacturer="nvidia"
-
-	elif [[ ${lspci_output} =~ (Virtio|QEMU) ]] || [[ ${lspci_output_full} =~ (Virtio|QEMU) ]]; then
-		echo "Found QEMU GPU"
-		gpu_driver="qemu-guest-agent vulkan-virtio lib32-vulkan-virtio"
-		export gpu_manufacturer="qemu"
-
-	else
-		echo "GPU could not be detected"
-		while true; do
-			read -r -p "Do you want to install QEMU virtual machine drivers? (y/N) " yN
-
-			case $yN in
-			[yY1])
-				echo "Installing QEMU drivers"
-				gpu_driver="qemu-guest-agent vulkan-virtio lib32-vulkan-virtio vulkan-mesa-layers lib32-vulkan-mesa-layers"
-				export gpu_manufacturer="qemu"
-				break
-				;;
-			[nN2])
-				echo "Skipping GPU drivers"
-				break
-				;;
-			esac
-		done
-	fi
-}
-
 format_drive() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Wiping drive and setting up GPT partition table"
@@ -481,13 +398,37 @@ setup_environment() {
 	touch archer-check # This is used to check if the script is ran a second time
 }
 
+cpu_drivers() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Checking CPU"
+
+	lscpu_output=$(lscpu)
+	read -r -t 1
+	cpu_ucode=""
+	cpu_manufacturer="none"
+
+	if [[ $lscpu_output == *"AuthenticAMD"* ]]; then
+		echo -e "Found AMD"
+		cpu_ucode="amd-ucode"
+		export cpu_manufacturer="amd"
+
+	elif [[ $lscpu_output == *"GenuineIntel"* ]]; then
+		echo -e "Found Intel"
+		cpu_ucode="intel-ucode"
+		export cpu_manufacturer="intel"
+	else
+		echo -e "Found no CPU brand"
+		read -r -t 3
+	fi
+}
+
 install_system() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing base and kernel packages"
 
 	while true; do
 		# shellcheck disable=SC2086
-		pacstrap -K /mnt base base-devel sudo $kernel $kernel-headers linux-firmware $cpu_ucode $gpu_driver iptables-nft && break
+		pacstrap -K /mnt base base-devel sudo $kernel $kernel-headers linux-firmware $cpu_ucode iptables-nft && break
 
 		echo "$(tput setaf 9)Package installation failed. Retrying... $(tput sgr0)"
 	done
@@ -517,7 +458,7 @@ arch_chroot() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Entering archer-chroot"
 
-	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot.sh "$user" "$hostname" "$snapshot_layout" "$cpu_manufacturer" "$gpu_manufacturer" "$snapshot_subvol" "$root_partition" "$snap_manager" "$keyboard_keymap" "$default_locale"
+	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot.sh "$user" "$hostname" "$snapshot_layout" "$cpu_manufacturer" "$snapshot_subvol" "$root_partition" "$snap_manager" "$keyboard_keymap" "$default_locale"
 	rm -rf /mnt/Archer-main
 }
 
@@ -541,11 +482,12 @@ set_disk
 set_efi
 set_kernel
 set_swap
-set_drivers
 
 format_drive
 setup_drive
 [[ ! -e "archer-check" ]] && setup_environment
+
+cpu_drivers
 install_system
 arch_chroot
 exit_install
