@@ -22,7 +22,7 @@ From initial prompt run these commands:
 ```
 localectl list-keymaps
 localectl set-keymap sv-latin1
-bash <(curl -L https://raw.githubusercontent.com/Martan404/Archer/main/archer))
+bash <(curl -L https://raw.githubusercontent.com/Martan404/Archer/main/archer)
 ```
 *Replace sv-latin1 with whatever keymap you want*
 
