@@ -12,7 +12,7 @@ From initial prompt run `ip a` to get the ip adress then `passwd` to set passwor
 
 Enter new system with `ssh root@ip_adress` then run:
 ```
-bash <(curl -L tinyurl.com/archersh)
+bash <(curl -L https://raw.githubusercontent.com/Martan404/Archer/main/archer)
 ```
 *To fix broken keys run `ssh-keygen -R ip_adress`*
 
@@ -22,7 +22,7 @@ From initial prompt run these commands:
 ```
 localectl list-keymaps
 localectl set-keymap sv-latin1
-bash <(curl -L tinyurl.com/archersh)
+bash <(curl -L https://raw.githubusercontent.com/Martan404/Archer/main/archer))
 ```
 *Replace sv-latin1 with whatever keymap you want*
 
@@ -41,6 +41,6 @@ Enter your password and run `exit`. You can test if you have internet connection
 
 ## Edit script during Install
 
-From initial prompt run `curl -L tinyurl.com/archersh > archer.sh` and then run `nano archer.sh` to edit the script
+From initial prompt run `curl -L https://raw.githubusercontent.com/Martan404/Archer/main/archer > archer` and then run `nano archer` to edit the script
 
-After editing run `chmod +x archer.sh` to make the script executable and then `./archer.sh` to run it
+After editing run `chmod +x archer` to make the script executable and then `sh archer` to run it
