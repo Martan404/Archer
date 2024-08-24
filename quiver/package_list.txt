@@ -18,17 +18,10 @@ org.kde.okular
 org.mozilla.firefox
 # FLATPAK #
 
-# PACMAN #
-bleachbit
-distrobox
-steam
-# PACMAN #
-
 # DRIVERS #
 wayland
 wayland-protocols
 xorg-xwayland
-xwaylandvideobridge
 avahi
 networkmanager
 iwd
@@ -47,6 +40,7 @@ pipewire-alsa
 pipewire-audio
 pipewire-ffado
 pipewire-jack
+pipewire-libcamera
 pipewire-pulse
 pipewire-roc
 pipewire-v4l2
@@ -64,7 +58,7 @@ noto-fonts-extra
 ttf-bitstream-vera
 ttf-dejavu
 ttf-liberation
-ttf-ms-fonts
+ttf-ms-win11-auto
 ttf-nerd-fonts-symbols
 ttf-nerd-fonts-symbols-common
 ttf-nerd-fonts-symbols-mono
@@ -82,9 +76,13 @@ libdvdcss
 # DRIVERS #
 
 # SYSTEM #
+bleachbit
+distrobox
+steam
 ark
 p7zip
 unrar
+atuin
 autojump
 bash-completion
 bash-language-server
