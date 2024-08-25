@@ -729,9 +729,9 @@ package_config() {
 	done <<<"$installed_packages"
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Configuring not-installed"
+	echo -e "Configuring _not-installed"
 	# shellcheck disable=SC1091
-	source "/Archer-main/quiver/package-setup/not-installed"
+	source "/Archer-main/quiver/package-setup/_not-installed"
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Cleaning orphaned packages"

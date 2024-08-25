@@ -14,7 +14,7 @@ Enter new system with `ssh root@ip_adress` then run:
 ```
 bash <(curl -L https://raw.githubusercontent.com/Martan404/Archer/main/archer)
 ```
-*To fix broken keys run `ssh-keygen -R ip_adress`*
+*To fix old/broken keys run `ssh-keygen -R ip_adress`*
 
 ## Regular Install
 
