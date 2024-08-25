@@ -9,3 +9,11 @@ cat /Archer-main/quiver/configs/fastfetch-config-small.jsonc > /home/"$user"/.co
 
 chown "$user":"$user" /home/"$user"/.config/fastfetch/config.jsonc
 chown "$user":"$user" /home/"$user"/.config/fastfetch/config-small.jsonc
+
+mkdir -p /home/root/.config/fastfetch/
+
+cat /Archer-main/quiver/configs/fastfetch-config.jsonc > /root/.config/fastfetch/config.jsonc
+cat /Archer-main/quiver/configs/fastfetch-config-small.jsonc > /root/.config/fastfetch/config-small.jsonc
+
+chown root:root /home/root/.config/fastfetch/config.jsonc
+chown root:root /home/root/.config/fastfetch/config-small.jsonc
