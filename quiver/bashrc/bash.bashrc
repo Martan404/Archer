@@ -25,12 +25,6 @@ eval "$(register-python-argcomplete pipx)"
 # Autojump
 [[ -r /etc/profile.d/autojump.sh ]] && source /etc/profile.d/autojump.sh
 
-# ble.sh
-[[ -r /usr/share/blesh/ble.sh ]] && [[ $- == *i* ]] && source /usr/share/blesh/ble.sh
-
-# Atuin
-eval "$(atuin init bash)"
-
 # Enter directory by only typing the name
 shopt -s autocd
 
