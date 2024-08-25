@@ -8,7 +8,7 @@ Download the  Arch ISO from [https://archlinux.org/download/](https://archlinux.
 
 ## SSH Install
 
-From initial prompt run `ip a` to get the ip adress then `passwd` to set password
+From initial prompt run `ip a` to get the ip adress then `passwd` to set a password
 
 Enter new system with `ssh root@ip_adress` then run:
 ```
