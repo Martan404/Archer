@@ -437,11 +437,11 @@ arch_chroot() {
 	cp /etc/locale.gen /mnt/Archer-main/quiver/locale.gen
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Entering archer-chroot"
+	echo -e "Changing root into new system"
 
 	export hostname && export user && export keyboard_keymap && export default_locale && export snapshot_layout && export snapshot_subvol && export root_partition && export snap_manager
 
-	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot "$user" "$hostname" "$keyboard_keymap" "$default_locale" "$snapshot_layout" "$snapshot_subvol" "$root_partition" "$snap_manager"
+	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot
 	rm -rf /mnt/Archer-main
 }
 

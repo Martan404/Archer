@@ -729,15 +729,16 @@ package_config() {
 	done <<<"$installed_packages"
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Configuring _not-installed"
-	# shellcheck disable=SC1091
-	source "/Archer-main/quiver/package-setup/_not-installed"
+	echo -e "Configuring not installed packages"
 
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Cleaning orphaned packages"
-
-	# shellcheck disable=SC2046
-	pacman -Rns --noconfirm $(pacman -Qtdq)
+	find "/Archer-main/quiver/package-setup/" -type f \( -name '_*' -o -name '*_' \) | while IFS= read -r config_path; do
+		config_name=$(basename "$config_path")
+		
+		echo -e "-------------------------------------------------------------------------"
+		echo "Found $config_name config"
+		# shellcheck disable=SC1090
+		source "/Archer-main/quiver/package-setup/$config_name"
+	done
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Moving pacman hooks"
