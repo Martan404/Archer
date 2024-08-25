@@ -20,6 +20,7 @@ $(tput sgr0)
 }
 
 # If the script is run for a second time then we need to make sure everything is unmounted
+touch archer-check
 [[ -e "archer-check" ]] && swapoff /mnt/swap/swapfile >/dev/null 2>&1
 [[ -e "archer-check" ]] && umount -l /mnt >/dev/null 2>&1
 
@@ -392,15 +393,14 @@ setup_environment() {
 
 	sed -i '/^#Color/s/^#//' /etc/pacman.conf
 
-	sed -i "s/^#ParallelDownloads/ParallelDownloads/" /etc/pacman.conf
+	sed -i '/^#ParallelDownloads/s/^#//' /etc/pacman.conf
+
 	sed -i '/^ParallelDownloads = .*/a ILoveCandy' /etc/pacman.conf
 
-	sed -i 's/^#\[multilib\]/\[multilib\]/' /etc/pacman.conf
+	sed -i '/^#\[multilib\]/s/^#//' /etc/pacman.conf
 	sed -i '/^\[multilib\]$/,/^#Include/ s/^#//' /etc/pacman.conf
 
 	pacman -Sy
-
-	touch archer-check # This is used to check if the script is ran a second time
 }
 
 install_system() {
@@ -468,7 +468,7 @@ set_swap
 
 format_drive
 setup_drive
-[[ ! -e "archer-check" ]] && setup_environment
+setup_environment
 
 install_system
 arch_chroot

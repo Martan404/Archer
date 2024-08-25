@@ -69,13 +69,13 @@ setup_pacman() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling multilib repository"
 
-	sed -i 's/^#\[multilib\]/\[multilib\]/' /etc/pacman.conf
+	sed -i '/^#\[multilib\]/s/^#//' /etc/pacman.conf
 	sed -i '/^\[multilib\]$/,/^#Include/ s/^#//' /etc/pacman.conf
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling parallel downloads"
 
-	sed -i 's/^#ParallelDownloads/ParallelDownloads/' /etc/pacman.conf
+	sed -i '/^#ParallelDownloads/s/^#//' /etc/pacman.conf
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating pacman hook directory"
@@ -84,9 +84,10 @@ setup_pacman() {
 	mkdir -p /etc/pacman.d/hooks/
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Adding candy to pacman"
+	echo -e "Adding candy and color to pacman"
 
 	sed -i '/^ParallelDownloads = .*/a ILoveCandy' /etc/pacman.conf
+	sed -i '/^#Color/s/^#//' /etc/pacman.conf
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Updating pacman databases"
@@ -139,10 +140,10 @@ setup_system() {
 	echo -e "Configuring /etc/hosts"
 
 	cat <<-END >>/etc/hosts
-		127.0.0.1      localhost
-		::1              localhost ip6-localhost ip6-loopback
-		ff02::1       ip6-allnodes
-		ff02::2       ip6-allrouters
+127.0.0.1      localhost
+::1              localhost ip6-localhost ip6-loopback
+ff02::1       ip6-allnodes
+ff02::2       ip6-allrouters
 	END
 
 	echo -e "-------------------------------------------------------------------------"
@@ -199,6 +200,13 @@ setup_paru_pipx() {
 	echo -e "Installing Python pipx"
 
 	package_installer "python-pipx"
+
+	echo -e "Enabling atuin in /home/$user/.bashrc"
+	cat <<-END >>/home/"$user"/.bashrc
+
+eval "\$(atuin init bash)"
+	END
+	END
 }
 
 setup_grub() {
@@ -211,8 +219,8 @@ setup_grub() {
 	echo -e "Creating efibootmgr wrapper script to prevent fail"
 
 	cat <<-END >/usr/local/bin/efibootmgr
-		#!/bin/sh
-		exec /usr/bin/efibootmgr -e 3 "\$@"
+#!/bin/sh
+exec /usr/bin/efibootmgr -e 3 "\$@"
 	END
 	chmod +x /usr/local/bin/efibootmgr
 
@@ -261,9 +269,9 @@ setup_grub() {
 	echo -e "Creating windows-boot script"
 
 	cat <<-END >>/usr/local/bin/windows-boot
-		#!/bin/bash
-		# Set Windows Boot Manager as NextBoot and reboots
-		efibootmgr -n \$(efibootmgr | awk '/Windows Boot Manager/ {gsub(/^Boot/, "", \$1); gsub(/\*/, "", \$1); print \$1}') && reboot
+#!/bin/bash
+# Set Windows Boot Manager as NextBoot and reboots
+efibootmgr -n \$(efibootmgr | awk '/Windows Boot Manager/ {gsub(/^Boot/, "", \$1); gsub(/\*/, "", \$1); print \$1}') && reboot
 	END
 	chmod +x /usr/local/bin/windows-boot
 
@@ -285,33 +293,33 @@ backup_kernel() {
 	mkdir -p /.bootbackup/{preupdate,postupdate}
 
 	cat <<-END >/etc/pacman.d/hooks/00-bootbackup-preupdate.hook
-		[Trigger]
-		Operation = Upgrade
-		Operation = Install
-		Operation = Remove
-		Type = Path
-		Target = usr/lib/modules/*/vmlinuz
+[Trigger]
+Operation = Upgrade
+Operation = Install
+Operation = Remove
+Type = Path
+Target = usr/lib/modules/*/vmlinuz
 
-		[Action]
-		Depends = rsync
-		Description = Backing up /boot before updating...
-		When = PreTransaction
-		Exec = /usr/bin/rsync -a --delete /boot /.bootbackup/preupdate
+[Action]
+Depends = rsync
+Description = Backing up /boot before updating...
+When = PreTransaction
+Exec = /usr/bin/rsync -a --delete /boot /.bootbackup/preupdate
 	END
 
 	cat <<-END >/etc/pacman.d/hooks/95-bootbackup-postupdate.hook
-		[Trigger]
-		Operation = Upgrade
-		Operation = Install
-		Operation = Remove
-		Type = Path
-		Target = usr/lib/modules/*/vmlinuz
+[Trigger]
+Operation = Upgrade
+Operation = Install
+Operation = Remove
+Type = Path
+Target = usr/lib/modules/*/vmlinuz
 
-		[Action]
-		Depends = rsync
-		Description = Backing up /boot after updating...
-		When = PostTransaction
-		Exec = /usr/bin/rsync -a --delete /boot /.bootbackup/postupdate
+[Action]
+Depends = rsync
+Description = Backing up /boot after updating...
+When = PostTransaction
+Exec = /usr/bin/rsync -a --delete /boot /.bootbackup/postupdate
 	END
 }
 
@@ -515,8 +523,8 @@ setup_plasma() {
 
 	mkdir -p /etc/sddm.conf.d/
 	cat <<-END >/etc/sddm.conf.d/kde_settings.conf
-		[Theme]
-		Current=breeze
+[Theme]
+Current=breeze
 	END
 }
 
@@ -691,9 +699,9 @@ bash_config() {
 	chown "$user":"$user" /home/"$user"/.bashrc
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Symlinking /home/$user/.bashrc to /root/.bashrc"
+	echo -e "Copying /home/$user/.bashrc to /root/.bashrc"
 
-	ln -s /home/"$user"/.bashrc /root/.bashrc
+	cp /home/"$user"/.bashrc /root/.bashrc
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /home/$user/.bash_aliases"
@@ -751,14 +759,14 @@ boot_script() {
 	chmod a+x /usr/bin/archer-boot.sh
 
 	cat <<-END >/etc/systemd/system/archer-boot.service
-		[Unit]
-		Description=Archer boot setup script
+[Unit]
+Description=Archer boot setup script
 		 
-		[Service]
-		ExecStart=/usr/bin/archer-boot.sh
+[Service]
+ExecStart=/usr/bin/archer-boot.sh
 		 
-		[Install]
-		WantedBy=multi-user.target
+[Install]
+WantedBy=multi-user.target
 	END
 
 	systemctl enable archer-boot.service
