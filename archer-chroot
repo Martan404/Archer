@@ -731,7 +731,7 @@ package_config() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring not installed packages"
 
-	source "/Archer-main/quiver/package-config/_not-installed"
+	find "/Archer-main/quiver/package-config/" -type f -name '_*' | while IFS= read -r config_path; do source "$config_path"; done
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Moving pacman hooks"
