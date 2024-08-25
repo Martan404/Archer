@@ -1,16 +1,16 @@
 #!/bin/bash
 # Main script 2/3
-# shellcheck disable=SC2002,SC2164,SC2269
+# shellcheck disable=SC2002,SC2164
 
-# Declaring exported variables from first script
-hostname=${hostname}
-user=${user}
-keyboard_keymap=${keyboard_keymap}
-default_locale=${default_locale}
-snapshot_layout=${snapshot_layout}
-snapshot_subvol=${snapshot_subvol}
-root_partition=${root_partition}
-snap_manager=${snap_manager}
+# Import variables from first script
+user=${1}
+hostname=${2}
+snapshot_layout=${3}
+snapshot_subvol=${4}
+root_partition=${5}
+snap_manager=${6}
+keyboard_keymap=${7}
+default_locale=${8}
 
 package_installer() {
 	input_packages=$1
@@ -64,8 +64,6 @@ package_installer() {
 }
 
 setup_pacman() {
-	export -p
-	
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling multilib repository"
 
@@ -253,11 +251,6 @@ setup_grub() {
 	sed -i '/GRUB_CMDLINE_LINUX_DEFAULT/s/ quiet//g' /etc/default/grub
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Fixing grub resolution"
-
-	sed -i '/^GRUB_GFXMODE=/s/=.*/=3840x2160,2560x1440,1920x1080,1280x720,1024x768,auto/' /etc/default/grub
-
-	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating windows-boot script"
 
 	cat <<-END >>/usr/local/bin/windows-boot
@@ -392,16 +385,16 @@ setup_gpu() {
 }
 
 amd_gpu() {
-	gpu_kernel_parameters="radeon.si_support=0 radeon.cik_support=0 amdgpu.si_support=1 amdgpu.cik_support=1"
+	gpu_kernel_parameters=""
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing packages"
 
-	package_installer "vulkan-radeon lib32-vulkan-radeon mesa lib32-mesa libva-mesa-driver mesa-vdpau lib32-mesa-vdpau"
+	package_installer "vulkan-radeon lib32-vulkan-radeon mesa lib32-mesa libva-mesa-driver"
 }
 
 nvidia_gpu() {
-	gpu_kernel_parameters="nvidia_drm.modeset=1 nvidia_drm.fbdev=1 nvidia.NVreg_PreserveVideoMemoryAllocations=1"
+	gpu_kernel_parameters="nvidia_drm.modeset=1 nvidia.NVreg_PreserveVideoMemoryAllocations=1"
 
 	if [[ $lspci_output == *"RTX"* ]]; then
 		echo -e "Found RTX card. Installing nvidia-open-dkms"
@@ -527,6 +520,11 @@ setup_flatpak() {
 	flatpak override --filesystem=xdg-config/{Kvantum,gtkrc,gtkrc-2.0,gtk-3.0,gtk-4.0}
 	flatpak override --filesystem={~/.themes,~/.icons,~/.fonts,~/.local/share/themes}
 	flatpak override --env=GTK_THEME=Breeze
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting Lutris Flatpak theming"
+
+	flatpak override net.lutris.Lutris --env=GTK_THEME=Breeze
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating flatpak-setup desktop entry"
@@ -743,7 +741,7 @@ package_config() {
 	grub-mkconfig -o /boot/grub/grub.cfg
 }
 
-boot_script() {
+boot_setup() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up boot script"
 
@@ -774,7 +772,7 @@ set_password() {
 	echo -e "Set root password"
 
 	status=1
-	while [ $status != 0 ]; do
+	while [ $status -ne 0 ]; do
 		passwd
 		status=$?
 	done
@@ -783,7 +781,7 @@ set_password() {
 	echo -e "Set user password"
 
 	status=1
-	while [ $status != 0 ]; do
+	while [ $status -ne 0 ]; do
 		passwd "$user"
 		status=$?
 	done
@@ -812,6 +810,6 @@ snapshot_rollback
 bash_config
 package_config
 
-boot_script
+boot_setup
 set_password
 exit
