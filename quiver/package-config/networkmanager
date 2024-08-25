@@ -1,0 +1,5 @@
+#!/bin/bash
+# Archer config file
+
+echo -e "Enabling networkmanager service"
+systemctl enable NetworkManager.service

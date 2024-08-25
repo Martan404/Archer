@@ -1,0 +1,5 @@
+#!/bin/bash
+# Archer config file
+
+echo -e "Enabling bluetooth driver"
+systemctl enable bluetooth.service

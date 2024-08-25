@@ -1,0 +1,17 @@
+#!/bin/bash
+# Archer config file
+
+
+echo -e "Generating Firefox profiles"
+sudo -u "$user" firefox -headless &
+read -r -t 1
+
+# shellcheck disable=SC2009
+for pid in $(ps -ef | grep "firefox -headless" | awk '{print $2}'); do kill -9 "$pid"; done
+
+echo -e "Importing Betterfox user.js"
+cd /home/"$user"/.mozilla/firefox/*default-release/
+mv /Archer-main/quiver/configs/betterfox-userjs ./user.js
+chown "$user":"$user" ./user.js
+		
+cd /

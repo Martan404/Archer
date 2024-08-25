@@ -1,0 +1,5 @@
+#!/bin/bash
+# Archer config file
+
+echo -e "Enabling cups printer socket"
+systemctl enable cups.socket
