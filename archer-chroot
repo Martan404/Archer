@@ -716,8 +716,8 @@ package_config() {
 
 	installed_packages=$(pacman -Q)
 
-	while IFS= read -r line; do 
-		
+	while IFS= read -r line; do
+
 		package_name=$(echo "$line" | awk '{print $1}')
 
 		if [[ -f "/Archer-main/quiver/package-config/$package_name" ]]; then
