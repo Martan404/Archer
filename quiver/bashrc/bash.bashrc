@@ -19,11 +19,17 @@ bind 'TAB:menu-complete'
 bind '"\e[A": history-search-backward'
 bind '"\e[B": history-search-forward'
 
+# Add pipx to PATH
+eval "$(register-python-argcomplete pipx)"
+
 # Autojump
 [[ -r /etc/profile.d/autojump.sh ]] && source /etc/profile.d/autojump.sh
 
-# Add pipx to PATH
-eval "$(register-python-argcomplete pipx)"
+# ble.sh
+[[ -r /usr/share/blesh/ble.sh ]] && [[ $- == *i* ]] && source /usr/share/blesh/ble.sh
+
+# Atuin
+eval "$(atuin init bash)"
 
 # Enter directory by only typing the name
 shopt -s autocd

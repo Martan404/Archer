@@ -7,6 +7,3 @@
 
 # Display system information
 fastfetch --config ~/.config/fastfetch/config-small.jsonc
-
-# ble.sh
-[[ -r /usr/share/blesh/ble.sh ]] && [[ $- == *i* ]] && source /usr/share/blesh/ble.sh
