@@ -58,7 +58,7 @@ noto-fonts-extra
 ttf-bitstream-vera
 ttf-dejavu
 ttf-liberation
-ttf-ms-win11-auto
+ttf-ms-fonts
 ttf-nerd-fonts-symbols
 ttf-nerd-fonts-symbols-common
 ttf-nerd-fonts-symbols-mono
