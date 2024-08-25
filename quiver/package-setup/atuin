@@ -1,7 +1,0 @@
-#!/bin/bash
-# Archer config file
-
-	cat <<-END >>/home/"$user"/.bashrc
-# Atuin
-eval "$(atuin init bash)"
-	END
