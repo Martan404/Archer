@@ -1,6 +1,6 @@
 #!/bin/bash
 # Main script 2/3
-# shellcheck disable=SC2002,SC2164,SC2269
+# shellcheck disable=SC2002,SC2164,SC2269,SC1090,SC1091
 
 # Declaring exported variables from first script
 hostname=${hostname}
@@ -720,25 +720,18 @@ package_config() {
 
 		package_name=$(echo "$line" | awk '{print $1}')
 
-		if [[ -f "/Archer-main/quiver/package-setup/$package_name" ]]; then
+		if [[ -f "/Archer-main/quiver/package-config/$package_name" ]]; then
 			echo -e "-------------------------------------------------------------------------"
 			echo "Found $package_name config"
-			# shellcheck disable=SC1090
-			source "/Archer-main/quiver/package-setup/$package_name"
+
+			source "/Archer-main/quiver/package-config/$package_name"
 		fi
 	done <<<"$installed_packages"
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring not installed packages"
 
-	find "/Archer-main/quiver/package-setup/" -type f \( -name '_*' -o -name '*_' \) | while IFS= read -r config_path; do
-		config_name=$(basename "$config_path")
-		
-		echo -e "-------------------------------------------------------------------------"
-		echo "Found $config_name config"
-		# shellcheck disable=SC1090
-		source "/Archer-main/quiver/package-setup/$config_name"
-	done
+	source "/Archer-main/quiver/package-config/_not-installed"
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Moving pacman hooks"
