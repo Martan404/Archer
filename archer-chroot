@@ -511,12 +511,12 @@ setup_plasma() {
 	echo -e "Setting up Plasma config script"
 
 	sudo -u "$user" mkdir -p /home/"$user"/.config/plasma-workspace/env
-	mv /Archer-main/quiver/scripts/plasma-setup /home/"$user"/.config/plasma-workspace/env/plasma-setup.sh
+	mv /Archer-main/quiver/scripts/plasma-setup /home/"$user"/.config/plasma-workspace/env/plasma-setup
 
-	chmod a+x /home/"$user"/.config/plasma-workspace/env/plasma-setup.sh
-	chown "$user":"$user" /home/"$user"/.config/plasma-workspace/env/plasma-setup.sh
+	chmod a+x /home/"$user"/.config/plasma-workspace/env/plasma-setup
+	chown "$user":"$user" /home/"$user"/.config/plasma-workspace/env/plasma-setup
 
-	sed -i "s/UNIX_USER/$user/g" /home/"$user"/.config/plasma-workspace/env/plasma-setup.sh
+	sed -i "s/UNIX_USER/$user/g" /home/"$user"/.config/plasma-workspace/env/plasma-setup
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting SDDM theme"
@@ -755,15 +755,15 @@ boot_script() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up boot script"
 
-	cat /Archer-main/archer-boot.sh >/usr/bin/archer-boot.sh
-	chmod a+x /usr/bin/archer-boot.sh
+	cat /Archer-main/archer-boot >/usr/bin/archer-boot
+	chmod a+x /usr/bin/archer-boot
 
 	cat <<-END >/etc/systemd/system/archer-boot.service
 [Unit]
 Description=Archer boot setup script
 		 
 [Service]
-ExecStart=/usr/bin/archer-boot.sh
+ExecStart=/usr/bin/archer-boot
 		 
 [Install]
 WantedBy=multi-user.target
