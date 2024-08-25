@@ -30,8 +30,6 @@ firewall-cmd
 firewall-cmd --permanent --zone=internal --change-interface=lo
 firewall-cmd --permanent --zone=trusted --change-interface=virbr0
 firewall-cmd --permanent --zone=trusted --change-interface=waydroid0
-firewall-cmd --permanent --zone=home --add-port 5353/udp    # Avahi port
-firewall-cmd --permanent --zone=trusted --add-port 5353/udp # Avahi port
 
 echo -e "-------------------------------------------------------------------------"
 echo -e "Cleaning up script"

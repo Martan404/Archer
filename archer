@@ -116,7 +116,7 @@ check_keymap() {
 
 set_keymap() {
 	local status=1
-	while [ $status -ne 0 ]; do
+	while [ $status != 0 ]; do
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Listing available keyboard keymaps"
 
@@ -187,7 +187,7 @@ set_locale() {
 
 set_disk() {
 	local status=1
-	while [ $status -ne 0 ]; do
+	while [ $status != 0 ]; do
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Listing available disks to use for installation"
 
@@ -278,8 +278,13 @@ set_swap() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enter size for swap file (GiB)"
 
-	while [ -z "$swapsize" ]; do
+	while [ -z "$swapsize" ] || [[ ! "$swapsize" =~ ^[0-9]+$ ]]; do
 		read -r -p "Size: " swapsize
+
+		if [[ ! "$swapsize" =~ ^[0-9]+$ ]]; then
+			echo "Invalid input. Enter a valid number"
+			swapsize=""
+		fi
 	done
 
 	echo -e "Setting swap size to $swapsize GiB"
@@ -385,7 +390,7 @@ setup_environment() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting Pacman configurations"
 
-	sed -i "s/^#Color/Color/" /etc/pacman.conf
+	sed -i '/^#Color/s/^#//' /etc/pacman.conf
 
 	sed -i "s/^#ParallelDownloads/ParallelDownloads/" /etc/pacman.conf
 	sed -i '/^ParallelDownloads = .*/a ILoveCandy' /etc/pacman.conf
@@ -434,7 +439,9 @@ arch_chroot() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Entering archer-chroot"
 
-	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot.sh "$user" "$hostname" "$snapshot_layout" "$snapshot_subvol" "$root_partition" "$snap_manager" "$keyboard_keymap" "$default_locale"
+	export hostname && export user && export keyboard_keymap && export default_locale && export snapshot_layout && export snapshot_subvol && export root_partition && export snap_manager
+
+	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot.sh "$user" "$hostname" "$keyboard_keymap" "$default_locale" "$snapshot_layout" "$snapshot_subvol" "$root_partition" "$snap_manager"
 	rm -rf /mnt/Archer-main
 }
 
