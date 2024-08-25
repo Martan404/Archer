@@ -1,5 +1,0 @@
-#!/bin/bash
-# Archer config file
-
-echo -e "Enabling sddm display manager"
-systemctl enable sddm.service

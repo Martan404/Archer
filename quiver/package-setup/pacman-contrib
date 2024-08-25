@@ -1,5 +1,0 @@
-#!/bin/bash
-# Archer config file
-
-echo -e "Enabling pacman cache cleaner service"
-systemctl enable paccache.timer
