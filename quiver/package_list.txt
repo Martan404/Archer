@@ -109,7 +109,6 @@ pacutils
 reflector
 shellcheck
 spectacle
-texinfo
 usbutils
 vivid
 # SYSTEM #

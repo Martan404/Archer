@@ -1,0 +1,30 @@
+#!/bin/bash
+# shellcheck disable=SC2154
+echo -e "-------------------------------------------------------------------------"
+echo -e "Installing konsave"
+
+export PATH=$PATH:/home/$user/.local/bin
+
+sudo -u "$user" pipx install konsave
+
+mv /Archer-main/quiver/configs/archer.knsv /home/"$user"/archer.knsv
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Setting up Plasma config boot script"
+
+sudo -u "$user" mkdir -p /home/"$user"/.config/plasma-workspace/env
+mv /Archer-main/quiver/scripts/plasma-setup /home/"$user"/.config/plasma-workspace/env/plasma-setup
+
+chmod a+x /home/"$user"/.config/plasma-workspace/env/plasma-setup
+chown "$user":"$user" /home/"$user"/.config/plasma-workspace/env/plasma-setup
+
+sed -i "s/UNIX_USER/$user/g" /home/"$user"/.config/plasma-workspace/env/plasma-setup
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Setting SDDM theme"
+
+mkdir -p /etc/sddm.conf.d/
+cat <<-END >/etc/sddm.conf.d/kde_settings.conf
+[Theme]
+Current=breeze
+END
