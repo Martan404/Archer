@@ -491,9 +491,6 @@ bash_config() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /etc/bash.bashrc"
 
-	#sed -i '/PS1/,+1d' /etc/bash.bashrc
-	#sed -i '/bash_completion/d' /etc/bash.bashrc && sed -i '/fi/d' /etc/bash.bashrc
-
 	cat /Archer-main/quiver/bashrc/bash.bashrc >>/etc/bash.bashrc
 
 	echo -e "-------------------------------------------------------------------------"
@@ -504,8 +501,8 @@ bash_config() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /home/$user/.bashrc"
 
-	sed -i '/PS1/d' /home/"$user"/.bashrc
-	sed -i '/alias/d' /home/"$user"/.bashrc
+	#sed -i '/PS1/d' /home/"$user"/.bashrc
+	#sed -i '/alias/d' /home/"$user"/.bashrc
 
 	cat /Archer-main/quiver/bashrc/user.bashrc >>/home/"$user"/.bashrc
 	chown "$user":"$user" /home/"$user"/.bashrc
@@ -513,7 +510,7 @@ bash_config() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Copying /home/$user/.bashrc to /root/.bashrc"
 
-	cp /home/"$user"/.bashrc /root/.bashrc
+	ln -s /home/"$user"/.bashrc /root/.bashrc
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /home/$user/.bash_aliases"
