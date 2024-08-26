@@ -154,7 +154,7 @@ setup_grub() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing Grub packages"
 
-	package_installer "grub-btrfs efibootmgr inotify-tools os-prober"
+	package_installer "grub-btrfs efibootmgr inotify-tools"
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating efibootmgr wrapper script to prevent fail"
@@ -170,14 +170,6 @@ exec /usr/bin/efibootmgr -e 3 "\$@"
 
 	grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck
 	grub-mkconfig -o /boot/grub/grub.cfg
-
-	if pacman -Qs os-prober >/dev/null; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Enabling Grub OS prober"
-
-		sed -i '/^[#]*GRUB_DISABLE_OS_PROBER=/s/true/false/' /etc/default/grub
-		sed -i '/^#GRUB_DISABLE_OS_PROBER/s/^#//' /etc/default/grub
-	fi
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing Grub theme"
@@ -204,7 +196,7 @@ exec /usr/bin/efibootmgr -e 3 "\$@"
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Fixing grub resolution"
 
-	sed -i '/^GRUB_GFXMODE=/s/=.*/=3840x2160,2560x1440,1920x1080,1280x720,1024x768,auto/' /etc/default/grub
+	sed -i '/^GRUB_GFXMODE=/s/=.*/=1920x1080,1280x720,1024x768,auto/' /etc/default/grub
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating windows-boot script"
@@ -470,10 +462,12 @@ package_config() {
 		fi
 	done <<<"$installed_packages"
 
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Configuring not installed packages"
+	if [ "$install_type" != "lite" ]; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Configuring not installed packages"
 
-	find "/Archer-main/quiver/package-config/" -type f -name '_*' | while IFS= read -r config_path; do source "$config_path"; done
+		find "/Archer-main/quiver/package-config/" -type f -name '_*' | while IFS= read -r config_path; do source "$config_path"; done
+	fi
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Moving pacman hooks"
@@ -501,8 +495,8 @@ bash_config() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /home/$user/.bashrc"
 
-	#sed -i '/PS1/d' /home/"$user"/.bashrc
-	#sed -i '/alias/d' /home/"$user"/.bashrc
+	sed -i '/PS1/d' /home/"$user"/.bashrc
+	sed -i '/alias/d' /home/"$user"/.bashrc
 
 	cat /Archer-main/quiver/bashrc/user.bashrc >>/home/"$user"/.bashrc
 	chown "$user":"$user" /home/"$user"/.bashrc
