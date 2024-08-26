@@ -12,57 +12,6 @@ snapshot_subvol=${snapshot_subvol}
 root_partition=${root_partition}
 snap_manager=${snap_manager}
 
-package_installer() {
-	input_packages=$1
-	pkg_manager=$2
-	max_tries=3
-	try_count=0
-
-	if [[ "$input_packages" == *.txt ]]; then
-		packages=$(grep -v '^#' "$input_packages" | grep -v '^$' | grep -v '\.')
-	else
-		packages=$input_packages
-	fi
-
-	while [ "$try_count" -lt "$max_tries" ]; do
-		try_count=$((try_count + 1))
-
-		# shellcheck disable=SC2086
-		if [ "$pkg_manager" == "pacman" ]; then
-			pacman -S --needed --noconfirm $packages && break
-
-		else
-			sudo -u "$user" paru -S --needed --noconfirm $packages && break
-		fi
-
-		echo "$(tput setaf 9)Package installation failed. Retrying... ($try_count/$max_tries)$(tput sgr0)"
-	done
-
-	if [ "$try_count" -eq "$max_tries" ]; then
-		echo "$(tput setaf 9)Package installation failed after $try_count attempts$(tput sgr0)"
-
-		echo -e "Choose option"
-		echo -e "1. Try again"
-		echo -e "2. Exit"
-
-		while true; do
-			read -r -p "Select: " choice
-
-			case $choice in
-			[yY1])
-				try_count=0
-				package_installer "$packages" "$pkg_manager"
-				break
-				;;
-			[nN2])
-				echo "$(tput setaf 9)Exiting...$(tput sgr0)"
-				exit
-				;;
-			esac
-		done
-	fi
-}
-
 setup_pacman() {
 	export -p
 	
@@ -200,13 +149,6 @@ setup_paru_pipx() {
 	echo -e "Installing Python pipx"
 
 	package_installer "python-pipx"
-
-	echo -e "Enabling atuin in /home/$user/.bashrc"
-	cat <<-END >>/home/"$user"/.bashrc
-
-eval "\$(atuin init bash)"
-	END
-	END
 }
 
 setup_grub() {
@@ -259,6 +201,17 @@ exec /usr/bin/efibootmgr -e 3 "\$@"
 	echo -e "Removing 'quiet' kernel parameter"
 
 	sed -i '/GRUB_CMDLINE_LINUX_DEFAULT/s/ quiet//g' /etc/default/grub
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting swapfile offset for hibernation kernel parameter"
+
+	swapfile_offset=$(btrfs inspect-internal map-swapfile -r /swap/swapfile)
+	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 resume_offset=$swapfile_offset\"/" /etc/default/grub
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Adding 'resume' hook for hibernation"
+
+	sed -i '/^HOOKS=(/ s/)/ resume)/' /etc/mkinitcpio.conf
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Fixing grub resolution"
@@ -340,7 +293,7 @@ setup_cpu() {
 	fi
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting grub cpu boot parameters"
+	echo -e "Setting cpu kernel parameters"
 
 	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $cpu_kernel_parameters\"/" /etc/default/grub
 }
@@ -394,7 +347,7 @@ setup_gpu() {
 	fi
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting grub gpu boot parameters"
+	echo -e "Setting gpu kernel parameters"
 
 	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $gpu_kernel_parameters\"/" /etc/default/grub
 }
@@ -441,9 +394,6 @@ intel_gpu() {
 	echo -e "Installing packages"
 
 	package_installer "vulkan-intel lib32-vulkan-intel mesa lib32-mesa libva-mesa-driver vulkan-mesa-layers lib32-vulkan-mesa-layers"
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting grub kernel boot parameters"
 }
 
 qemu_gpu() {
@@ -789,6 +739,57 @@ set_password() {
 		passwd "$user"
 		status=$?
 	done
+}
+
+package_installer() {
+	input_packages=$1
+	pkg_manager=$2
+	max_tries=3
+	try_count=0
+
+	if [[ "$input_packages" == *.txt ]]; then
+		packages=$(grep -v '^#' "$input_packages" | grep -v '^$' | grep -v '\.')
+	else
+		packages=$input_packages
+	fi
+
+	while [ "$try_count" -lt "$max_tries" ]; do
+		try_count=$((try_count + 1))
+
+		# shellcheck disable=SC2086
+		if [ "$pkg_manager" == "pacman" ]; then
+			pacman -S --needed --noconfirm $packages && break
+
+		else
+			sudo -u "$user" paru -S --needed --noconfirm $packages && break
+		fi
+
+		echo "$(tput setaf 9)Package installation failed. Retrying... ($try_count/$max_tries)$(tput sgr0)"
+	done
+
+	if [ "$try_count" -eq "$max_tries" ]; then
+		echo "$(tput setaf 9)Package installation failed after $try_count attempts$(tput sgr0)"
+
+		echo -e "Choose option"
+		echo -e "1. Try again"
+		echo -e "2. Exit"
+
+		while true; do
+			read -r -p "Select: " choice
+
+			case $choice in
+			[yY1])
+				try_count=0
+				package_installer "$packages" "$pkg_manager"
+				break
+				;;
+			[nN2])
+				echo "$(tput setaf 9)Exiting...$(tput sgr0)"
+				exit
+				;;
+			esac
+		done
+	fi
 }
 
 setup_pacman
