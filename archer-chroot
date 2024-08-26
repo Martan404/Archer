@@ -5,6 +5,7 @@
 # Declaring exported variables from first script
 hostname=${hostname}
 user=${user}
+install_type=${install_type}
 keyboard_keymap=${keyboard_keymap}
 default_locale=${default_locale}
 snapshot_layout=${snapshot_layout}
@@ -29,7 +30,7 @@ setup_pacman() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating pacman hook directory"
 
-	sed -i 's/^#HookDir/HookDir/' /etc/pacman.conf
+	sed -i '/^#HookDir/s/^#//' /etc/pacman.conf
 	mkdir -p /etc/pacman.d/hooks/
 
 	echo -e "-------------------------------------------------------------------------"
@@ -203,17 +204,6 @@ exec /usr/bin/efibootmgr -e 3 "\$@"
 	sed -i '/GRUB_CMDLINE_LINUX_DEFAULT/s/ quiet//g' /etc/default/grub
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting swapfile offset for hibernation kernel parameter"
-
-	swapfile_offset=$(btrfs inspect-internal map-swapfile -r /swap/swapfile)
-	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 resume_offset=$swapfile_offset\"/" /etc/default/grub
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Adding 'resume' hook for hibernation"
-
-	sed -i '/^HOOKS=(/ s/)/ resume)/' /etc/mkinitcpio.conf
-
-	echo -e "-------------------------------------------------------------------------"
 	echo -e "Fixing grub resolution"
 
 	sed -i '/^GRUB_GFXMODE=/s/=.*/=3840x2160,2560x1440,1920x1080,1280x720,1024x768,auto/' /etc/default/grub
@@ -274,6 +264,118 @@ Description = Backing up /boot after updating...
 When = PostTransaction
 Exec = /usr/bin/rsync -a --delete /boot /.bootbackup/postupdate
 	END
+}
+
+snapper_setup() {
+	if [[ $snapshot_layout == "snapper" ]]; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Installing Snapper packages"
+
+		package_installer "snapper snap-pac snap-pac-grub snapper-support snapper-rollback"
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Creating Snapper root config"
+
+		snapper --no-dbus -c root create-config /
+
+	elif [[ $snapshot_layout == "arch" ]]; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Installing Snapper packages"
+
+		package_installer "snapper snap-pac snap-pac-grub snapper-rollback"
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Removing /.snapshots"
+
+		umount /.snapshots
+		rm -r /.snapshots
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Creating Snapper root config"
+
+		snapper --no-dbus -c root create-config /
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Removing snapper /.snapshots subvolume"
+
+		btrfs subvolume delete /.snapshots
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Remounting $snapshot_subvol subvolume"
+
+		mount --mkdir -o subvol="$snapshot_subvol" "$root_partition" /.snapshots
+		mount -a
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Setting new ./snapshots permissions"
+
+		chmod 750 /.snapshots
+		chown -R :wheel /.snapshots/
+	fi
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Configuring timeline cleanup"
+
+	sed -i 's/^NUMBER_LIMIT="50"/NUMBER_LIMIT="10"/' /etc/snapper/configs/root
+	sed -i 's/^TIMELINE_LIMIT_HOURLY="10"/TIMELINE_LIMIT_HOURLY="0"/' /etc/snapper/configs/root
+	sed -i 's/^TIMELINE_LIMIT_DAILY="10"/TIMELINE_LIMIT_DAILY="7"/' /etc/snapper/configs/root
+	sed -i 's/^TIMELINE_LIMIT_WEEKLY="10"/TIMELINE_LIMIT_WEEKLY="3"/' /etc/snapper/configs/root
+	sed -i 's/^TIMELINE_LIMIT_MONTHLY="10"/TIMELINE_LIMIT_MONTHLY="0"/' /etc/snapper/configs/root
+	sed -i 's/^TIMELINE_LIMIT_YEARLY="10"/TIMELINE_LIMIT_YEARLY="0"/' /etc/snapper/configs/root
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Adding wheel group to snapper permissions"
+
+	sed -i 's/^ALLOW_GROUPS=""/ALLOW_GROUPS="wheel"/' /etc/snapper/configs/root
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Excluding /.snapshots from updatedb"
+
+	echo "PRUNENAMES = \".snapshots\"" >>/etc/updatedb.conf
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling Snapper Timeline and Cleanup services"
+
+	systemctl enable snapper-timeline.timer
+	systemctl enable snapper-cleanup.timer
+}
+
+yabsnap_setup() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing Yabsnap"
+
+	package_installer "yabsnap"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating Yabsnap root config"
+
+	yabsnap create-config root
+
+	sed -i 's/source =/source = \//' /etc/yabsnap/configs/root.conf
+	sed -i 's/keep_preinstall = 1/keep_preinstall = 6/' /etc/yabsnap/configs/root.conf
+	sed -i 's/keep_user = 1/keep_user = 2/' /etc/yabsnap/configs/root.conf
+	sed -i 's/keep_preinstall = 1/keep_preinstall = 10/' /etc/yabsnap/configs/root.conf
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Excluding /.snapshots from updatedb"
+
+	echo "PRUNENAMES = \".snapshots\"" >>/etc/updatedb.conf
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling Yabsnap service"
+
+	systemctl enable yabsnap.timer
+}
+
+snapshot_rollback() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting up Snapshot rollback script"
+
+	cat /Archer-main/quiver/scripts/rollback >/usr/local/bin/rollback
+	chmod a+x /usr/local/bin/rollback
+
+	sed -i "s/SNAPSHOT_LAYOUT/$snapshot_layout/g" /usr/local/bin/rollback
+	sed -i "s/SNAP_MANAGER/$snap_manager/g" /usr/local/bin/rollback
 }
 
 setup_cpu() {
@@ -405,13 +507,6 @@ qemu_gpu() {
 	package_installer "qemu-guest-agent vulkan-virtio lib32-vulkan-virtio vulkan-mesa-layers lib32-vulkan-mesa-layers"
 }
 
-install_packages() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing system packages"
-
-	package_installer "/Archer-main/quiver/package_list.txt"
-}
-
 setup_laptop() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing laptop-detect package"
@@ -424,7 +519,7 @@ setup_laptop() {
 	laptop-detect
 	laptop_status=$?
 
-	if [ $laptop_status -eq 0 ]; then
+	if [ $laptop_status = 0 ]; then
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Installing laptop packages"
 
@@ -433,11 +528,11 @@ setup_laptop() {
 		systemctl mask power-profiles-daemon.service
 		systemctl enable auto-cpufreq.service
 
-	elif [ $laptop_status -eq 1 ]; then
+	elif [ $laptop_status = 1 ]; then
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Device not recognized as laptop"
 
-	elif [ $laptop_status -eq 2 ]; then
+	elif [ $laptop_status = 2 ]; then
 		laptop-detect -v
 	fi
 
@@ -445,6 +540,28 @@ setup_laptop() {
 	echo -e "Uninstalling laptop-detect package"
 
 	pacman -Rs --noconfirm laptop-detect
+}
+
+setup_hibernation() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting swapfile offset for hibernation kernel parameter"
+
+	swapfile_offset=$(btrfs inspect-internal map-swapfile -r /swap/swapfile)
+	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 resume_offset=$swapfile_offset\"/" /etc/default/grub
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Adding 'resume' hook for hibernation"
+
+	sed -i '/^HOOKS=(/ s/)/ resume)/' /etc/mkinitcpio.conf
+}
+
+install_packages() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing system packages"
+
+	[[ $install_type == "lite" ]] && package_installer "/Archer-main/quiver/lite_packages.txt"
+	[[ $install_type == "kde" ]] && package_installer "/Archer-main/quiver/kde_packages.txt"
+	[[ $install_type == "hyprland" ]] && package_installer "/Archer-main/quiver/hyprland_packages.txt"
 }
 
 setup_plasma() {
@@ -504,160 +621,13 @@ EOF
 	echo -e "Setting up Flatpak install script"
 
 	sed -n '/# FLATPAK/{:a;n;/# FLATPAK/b;p;ba}' "/Archer-main/quiver/package_list.txt" >"/Archer-main/quiver/flatpak.txt"
-	# shellcheck disable=SC2002
+
 	packages=$(cat "/Archer-main/quiver/flatpak.txt" | tr '\n' ' ')
 
 	cat /Archer-main/quiver/scripts/flatpak-setup >/usr/bin/flatpak-setup
 	chmod a+x /usr/bin/flatpak-setup
 
 	sed -i "s/UNIX_USER/$user/g; s/PACKAGE_LIST/$packages/g" /usr/bin/flatpak-setup
-}
-
-snapper_setup() {
-	if [[ $snapshot_layout == "snapper" ]]; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Installing Snapper packages"
-
-		package_installer "snapper snap-pac snap-pac-grub snapper-support snapper-rollback"
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Creating Snapper root config"
-
-		snapper --no-dbus -c root create-config /
-
-	elif [[ $snapshot_layout == "arch" ]]; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Installing Snapper packages"
-
-		package_installer "snapper snap-pac snap-pac-grub snapper-rollback"
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Removing /.snapshots"
-
-		umount /.snapshots
-		rm -r /.snapshots
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Creating Snapper root config"
-
-		snapper --no-dbus -c root create-config /
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Removing snapper /.snapshots subvolume"
-
-		btrfs subvolume delete /.snapshots
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Remounting $snapshot_subvol subvolume"
-
-		mount --mkdir -o subvol="$snapshot_subvol" "$root_partition" /.snapshots
-		mount -a
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Setting new ./snapshots permissions"
-
-		chmod 750 /.snapshots
-		chown -R :wheel /.snapshots/
-	fi
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Configuring timeline cleanup"
-
-	sed -i 's/^NUMBER_LIMIT="50"/NUMBER_LIMIT="10"/' /etc/snapper/configs/root
-	sed -i 's/^TIMELINE_LIMIT_HOURLY="10"/TIMELINE_LIMIT_HOURLY="0"/' /etc/snapper/configs/root
-	sed -i 's/^TIMELINE_LIMIT_DAILY="10"/TIMELINE_LIMIT_DAILY="7"/' /etc/snapper/configs/root
-	sed -i 's/^TIMELINE_LIMIT_WEEKLY="10"/TIMELINE_LIMIT_WEEKLY="3"/' /etc/snapper/configs/root
-	sed -i 's/^TIMELINE_LIMIT_MONTHLY="10"/TIMELINE_LIMIT_MONTHLY="0"/' /etc/snapper/configs/root
-	sed -i 's/^TIMELINE_LIMIT_YEARLY="10"/TIMELINE_LIMIT_YEARLY="0"/' /etc/snapper/configs/root
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Adding wheel group to snapper permissions"
-
-	sed -i 's/^ALLOW_GROUPS=""/ALLOW_GROUPS="wheel"/' /etc/snapper/configs/root
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Excluding /.snapshots from updatedb"
-
-	echo "PRUNENAMES = \".snapshots\"" >>/etc/updatedb.conf
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling Snapper Timeline and Cleanup services"
-
-	systemctl enable snapper-timeline.timer
-	systemctl enable snapper-cleanup.timer
-}
-
-yabsnap_setup() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing Yabsnap"
-
-	package_installer "yabsnap"
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating Yabsnap root config"
-
-	yabsnap create-config root
-
-	sed -i 's/source =/source = \//' /etc/yabsnap/configs/root.conf
-	sed -i 's/keep_preinstall = 1/keep_preinstall = 6/' /etc/yabsnap/configs/root.conf
-	sed -i 's/keep_user = 1/keep_user = 2/' /etc/yabsnap/configs/root.conf
-	sed -i 's/keep_preinstall = 1/keep_preinstall = 10/' /etc/yabsnap/configs/root.conf
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Excluding /.snapshots from updatedb"
-
-	echo "PRUNENAMES = \".snapshots\"" >>/etc/updatedb.conf
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling Yabsnap service"
-
-	systemctl enable yabsnap.timer
-}
-
-snapshot_rollback() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting up Snapshot rollback script"
-
-	cat /Archer-main/quiver/scripts/rollback >/usr/local/bin/rollback
-	chmod a+x /usr/local/bin/rollback
-
-	sed -i "s/SNAPSHOT_LAYOUT/$snapshot_layout/g" /usr/local/bin/rollback
-	sed -i "s/SNAP_MANAGER/$snap_manager/g" /usr/local/bin/rollback
-}
-
-bash_config() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Configuring /etc/bash.bashrc"
-
-	sed -i '/PS1/,+1d' /etc/bash.bashrc
-	sed -i '/bash_completion/d' /etc/bash.bashrc && sed -i '/fi/d' /etc/bash.bashrc
-
-	cat /Archer-main/quiver/bashrc/bash.bashrc >>/etc/bash.bashrc
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Configuring /etc/bash.bash_aliases"
-
-	cat /Archer-main/quiver/bashrc/bash.bash_aliases >/etc/bash.bash_aliases
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Configuring /home/$user/.bashrc"
-
-	sed -i '/PS1/d' /home/"$user"/.bashrc
-	sed -i '/alias/d' /home/"$user"/.bashrc
-
-	cat /Archer-main/quiver/bashrc/user.bashrc >>/home/"$user"/.bashrc
-	chown "$user":"$user" /home/"$user"/.bashrc
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Copying /home/$user/.bashrc to /root/.bashrc"
-
-	cp /home/"$user"/.bashrc /root/.bashrc
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Configuring /home/$user/.bash_aliases"
-
-	cat /Archer-main/quiver/bashrc/user.bash_aliases >>/home/"$user"/.bash_aliases
-	chown "$user":"$user" /home/"$user"/.bash_aliases
 }
 
 package_config() {
@@ -693,6 +663,41 @@ package_config() {
 	echo -e "Rebuilding GRUB configs"
 
 	grub-mkconfig -o /boot/grub/grub.cfg
+}
+
+bash_config() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Configuring /etc/bash.bashrc"
+
+	#sed -i '/PS1/,+1d' /etc/bash.bashrc
+	#sed -i '/bash_completion/d' /etc/bash.bashrc && sed -i '/fi/d' /etc/bash.bashrc
+
+	cat /Archer-main/quiver/bashrc/bash.bashrc >>/etc/bash.bashrc
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Configuring /etc/bash.bash_aliases"
+
+	cat /Archer-main/quiver/bashrc/bash.bash_aliases >/etc/bash.bash_aliases
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Configuring /home/$user/.bashrc"
+
+	sed -i '/PS1/d' /home/"$user"/.bashrc
+	sed -i '/alias/d' /home/"$user"/.bashrc
+
+	cat /Archer-main/quiver/bashrc/user.bashrc >>/home/"$user"/.bashrc
+	chown "$user":"$user" /home/"$user"/.bashrc
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Copying /home/$user/.bashrc to /root/.bashrc"
+
+	cp /home/"$user"/.bashrc /root/.bashrc
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Configuring /home/$user/.bash_aliases"
+
+	cat /Archer-main/quiver/bashrc/user.bash_aliases >>/home/"$user"/.bash_aliases
+	chown "$user":"$user" /home/"$user"/.bash_aliases
 }
 
 boot_script() {
@@ -767,7 +772,7 @@ package_installer() {
 		echo "$(tput setaf 9)Package installation failed. Retrying... ($try_count/$max_tries)$(tput sgr0)"
 	done
 
-	if [ "$try_count" -eq "$max_tries" ]; then
+	if [ "$try_count" == "$max_tries" ]; then
 		echo "$(tput setaf 9)Package installation failed after $try_count attempts$(tput sgr0)"
 
 		echo -e "Choose option"
@@ -798,23 +803,22 @@ setup_paru_pipx
 
 setup_grub
 backup_kernel
-
-setup_cpu
-setup_gpu
-install_packages
-
-setup_laptop
-setup_plasma
-setup_flatpak
-
 [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "snapper" ]] && snapper_setup
 [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "yabsnap" ]] && yabsnap_setup
 [[ $snapshot_layout == "snapper" ]] && snapper_setup
 snapshot_rollback
 
-bash_config
+setup_cpu
+setup_gpu
+setup_laptop
+setup_hibernation
+
+install_packages
+[[ $install_type == "kde" ]] && setup_plasma
+[[ $install_type != "lite" ]] && setup_flatpak
 package_config
 
+bash_config
 boot_script
 set_password
 exit

@@ -43,6 +43,31 @@ set_variables() {
 	echo "Setting user name to $user"
 
 	echo -e "-------------------------------------------------------------------------"
+	echo -e "What type of installation do you want?"
+	echo -e "0. Lite"
+	echo -e "1. KDE"
+	echo -e "2. Hyprland"
+
+	while true; do
+		read -r -p "Select: " install_type
+
+		case $install_type in
+		0)
+			install_type="lite"
+			break
+			;;
+		1)
+			install_type="kde"
+			break
+			;;
+		2)
+			install_type="hyprland"
+			break
+			;;
+		esac
+	done
+
+	echo -e "-------------------------------------------------------------------------"
 	echo -e "Do you want to use the Arch standard or Snapper BTRFS layout?"
 	echo -e "1. Arch"
 	echo -e "2. Snapper"
@@ -439,7 +464,7 @@ arch_chroot() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Changing root into new system"
 
-	export hostname && export user && export keyboard_keymap && export default_locale && export snapshot_layout && export snapshot_subvol && export root_partition && export snap_manager
+	export hostname && export user && export install_type && export keyboard_keymap && export default_locale && export snapshot_layout && export snapshot_subvol && export root_partition && export snap_manager
 
 	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot
 	rm -rf /mnt/Archer-main
