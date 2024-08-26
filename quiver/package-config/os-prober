@@ -1,6 +1,5 @@
 #!/bin/bash
 # Archer config file
-# This is for configuring packages that did not get installed
 
 echo -e "Enabling Grub OS prober"
 
