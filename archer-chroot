@@ -13,9 +13,7 @@ snapshot_subvol=${snapshot_subvol}
 root_partition=${root_partition}
 snap_manager=${snap_manager}
 
-setup_pacman() {
-	export -p
-	
+setup_pacman() {	
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling multilib repository"
 
@@ -224,160 +222,6 @@ efibootmgr -n \$(efibootmgr | awk '/Windows Boot Manager/ {gsub(/^Boot/, "", \$1
 	echo "%wheel ALL=(ALL) NOPASSWD: /usr/local/bin/windows-boot" >>/etc/sudoers
 }
 
-backup_kernel() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing rsync"
-
-	package_installer "rsync"
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating pacman hooks for kernel backup"
-
-	mkdir -p /.bootbackup/{preupdate,postupdate}
-
-	cat <<-END >/etc/pacman.d/hooks/00-bootbackup-preupdate.hook
-[Trigger]
-Operation = Upgrade
-Operation = Install
-Operation = Remove
-Type = Path
-Target = usr/lib/modules/*/vmlinuz
-
-[Action]
-Depends = rsync
-Description = Backing up /boot before updating...
-When = PreTransaction
-Exec = /usr/bin/rsync -a --delete /boot /.bootbackup/preupdate
-	END
-
-	cat <<-END >/etc/pacman.d/hooks/95-bootbackup-postupdate.hook
-[Trigger]
-Operation = Upgrade
-Operation = Install
-Operation = Remove
-Type = Path
-Target = usr/lib/modules/*/vmlinuz
-
-[Action]
-Depends = rsync
-Description = Backing up /boot after updating...
-When = PostTransaction
-Exec = /usr/bin/rsync -a --delete /boot /.bootbackup/postupdate
-	END
-}
-
-snapper_setup() {
-	if [[ $snapshot_layout == "snapper" ]]; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Installing Snapper packages"
-
-		package_installer "snapper snap-pac snap-pac-grub snapper-support snapper-rollback"
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Creating Snapper root config"
-
-		snapper --no-dbus -c root create-config /
-
-	elif [[ $snapshot_layout == "arch" ]]; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Installing Snapper packages"
-
-		package_installer "snapper snap-pac snap-pac-grub snapper-rollback"
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Removing /.snapshots"
-
-		umount /.snapshots
-		rm -r /.snapshots
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Creating Snapper root config"
-
-		snapper --no-dbus -c root create-config /
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Removing snapper /.snapshots subvolume"
-
-		btrfs subvolume delete /.snapshots
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Remounting $snapshot_subvol subvolume"
-
-		mount --mkdir -o subvol="$snapshot_subvol" "$root_partition" /.snapshots
-		mount -a
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Setting new ./snapshots permissions"
-
-		chmod 750 /.snapshots
-		chown -R :wheel /.snapshots/
-	fi
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Configuring timeline cleanup"
-
-	sed -i 's/^NUMBER_LIMIT="50"/NUMBER_LIMIT="10"/' /etc/snapper/configs/root
-	sed -i 's/^TIMELINE_LIMIT_HOURLY="10"/TIMELINE_LIMIT_HOURLY="0"/' /etc/snapper/configs/root
-	sed -i 's/^TIMELINE_LIMIT_DAILY="10"/TIMELINE_LIMIT_DAILY="7"/' /etc/snapper/configs/root
-	sed -i 's/^TIMELINE_LIMIT_WEEKLY="10"/TIMELINE_LIMIT_WEEKLY="3"/' /etc/snapper/configs/root
-	sed -i 's/^TIMELINE_LIMIT_MONTHLY="10"/TIMELINE_LIMIT_MONTHLY="0"/' /etc/snapper/configs/root
-	sed -i 's/^TIMELINE_LIMIT_YEARLY="10"/TIMELINE_LIMIT_YEARLY="0"/' /etc/snapper/configs/root
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Adding wheel group to snapper permissions"
-
-	sed -i 's/^ALLOW_GROUPS=""/ALLOW_GROUPS="wheel"/' /etc/snapper/configs/root
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Excluding /.snapshots from updatedb"
-
-	echo "PRUNENAMES = \".snapshots\"" >>/etc/updatedb.conf
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling Snapper Timeline and Cleanup services"
-
-	systemctl enable snapper-timeline.timer
-	systemctl enable snapper-cleanup.timer
-}
-
-yabsnap_setup() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing Yabsnap"
-
-	package_installer "yabsnap"
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating Yabsnap root config"
-
-	yabsnap create-config root
-
-	sed -i 's/source =/source = \//' /etc/yabsnap/configs/root.conf
-	sed -i 's/keep_preinstall = 1/keep_preinstall = 6/' /etc/yabsnap/configs/root.conf
-	sed -i 's/keep_user = 1/keep_user = 2/' /etc/yabsnap/configs/root.conf
-	sed -i 's/keep_preinstall = 1/keep_preinstall = 10/' /etc/yabsnap/configs/root.conf
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Excluding /.snapshots from updatedb"
-
-	echo "PRUNENAMES = \".snapshots\"" >>/etc/updatedb.conf
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling Yabsnap service"
-
-	systemctl enable yabsnap.timer
-}
-
-snapshot_rollback() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting up Snapshot rollback script"
-
-	cat /Archer-main/quiver/scripts/rollback >/usr/local/bin/rollback
-	chmod a+x /usr/local/bin/rollback
-
-	sed -i "s/SNAPSHOT_LAYOUT/$snapshot_layout/g" /usr/local/bin/rollback
-	sed -i "s/SNAP_MANAGER/$snap_manager/g" /usr/local/bin/rollback
-}
-
 setup_cpu() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Checking CPU"
@@ -564,35 +408,13 @@ install_packages() {
 	[[ $install_type == "hyprland" ]] && package_installer "/Archer-main/quiver/hyprland_packages.txt"
 }
 
-setup_plasma() {
+setup_environment() {
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing konsave"
+	echo -e "Setting up environment"
 
-	export PATH=$PATH:/home/$user/.local/bin
-
-	sudo -u "$user" pipx install konsave
-
-	mv /Archer-main/quiver/configs/archer.knsv /home/"$user"/archer.knsv
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting up Plasma config script"
-
-	sudo -u "$user" mkdir -p /home/"$user"/.config/plasma-workspace/env
-	mv /Archer-main/quiver/scripts/plasma-setup /home/"$user"/.config/plasma-workspace/env/plasma-setup
-
-	chmod a+x /home/"$user"/.config/plasma-workspace/env/plasma-setup
-	chown "$user":"$user" /home/"$user"/.config/plasma-workspace/env/plasma-setup
-
-	sed -i "s/UNIX_USER/$user/g" /home/"$user"/.config/plasma-workspace/env/plasma-setup
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting SDDM theme"
-
-	mkdir -p /etc/sddm.conf.d/
-	cat <<-END >/etc/sddm.conf.d/kde_settings.conf
-[Theme]
-Current=breeze
-	END
+	[[ $install_type == "lite" ]]
+	[[ $install_type == "kde" ]] && source "/Archer-main/quiver/kde_setup"
+	[[ $install_type == "hyprland" ]] && source "/Archer-main/quiver/hyprland_setup"
 }
 
 setup_flatpak() {
@@ -700,6 +522,160 @@ bash_config() {
 	chown "$user":"$user" /home/"$user"/.bash_aliases
 }
 
+backup_kernel() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing rsync"
+
+	package_installer "rsync"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating pacman hooks for kernel backup"
+
+	mkdir -p /.bootbackup/{preupdate,postupdate}
+
+	cat <<-END >/etc/pacman.d/hooks/00-bootbackup-preupdate.hook
+[Trigger]
+Operation = Upgrade
+Operation = Install
+Operation = Remove
+Type = Path
+Target = usr/lib/modules/*/vmlinuz
+
+[Action]
+Depends = rsync
+Description = Backing up /boot before updating...
+When = PreTransaction
+Exec = /usr/bin/rsync -a --delete /boot /.bootbackup/preupdate
+	END
+
+	cat <<-END >/etc/pacman.d/hooks/95-bootbackup-postupdate.hook
+[Trigger]
+Operation = Upgrade
+Operation = Install
+Operation = Remove
+Type = Path
+Target = usr/lib/modules/*/vmlinuz
+
+[Action]
+Depends = rsync
+Description = Backing up /boot after updating...
+When = PostTransaction
+Exec = /usr/bin/rsync -a --delete /boot /.bootbackup/postupdate
+	END
+}
+
+snapper_setup() {
+	if [[ $snapshot_layout == "snapper" ]]; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Installing Snapper packages"
+
+		package_installer "snapper snap-pac snap-pac-grub snapper-support snapper-rollback"
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Creating Snapper root config"
+
+		snapper --no-dbus -c root create-config /
+
+	elif [[ $snapshot_layout == "arch" ]]; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Installing Snapper packages"
+
+		package_installer "snapper snap-pac snap-pac-grub snapper-rollback"
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Removing /.snapshots"
+
+		umount /.snapshots
+		rm -r /.snapshots
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Creating Snapper root config"
+
+		snapper --no-dbus -c root create-config /
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Removing snapper /.snapshots subvolume"
+
+		btrfs subvolume delete /.snapshots
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Remounting $snapshot_subvol subvolume"
+
+		mount --mkdir -o subvol="$snapshot_subvol" "$root_partition" /.snapshots
+		mount -a
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Setting new ./snapshots permissions"
+
+		chmod 750 /.snapshots
+		chown -R :wheel /.snapshots/
+	fi
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Configuring timeline cleanup"
+
+	sed -i 's/^NUMBER_LIMIT="50"/NUMBER_LIMIT="10"/' /etc/snapper/configs/root
+	sed -i 's/^TIMELINE_LIMIT_HOURLY="10"/TIMELINE_LIMIT_HOURLY="0"/' /etc/snapper/configs/root
+	sed -i 's/^TIMELINE_LIMIT_DAILY="10"/TIMELINE_LIMIT_DAILY="7"/' /etc/snapper/configs/root
+	sed -i 's/^TIMELINE_LIMIT_WEEKLY="10"/TIMELINE_LIMIT_WEEKLY="3"/' /etc/snapper/configs/root
+	sed -i 's/^TIMELINE_LIMIT_MONTHLY="10"/TIMELINE_LIMIT_MONTHLY="0"/' /etc/snapper/configs/root
+	sed -i 's/^TIMELINE_LIMIT_YEARLY="10"/TIMELINE_LIMIT_YEARLY="0"/' /etc/snapper/configs/root
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Adding wheel group to snapper permissions"
+
+	sed -i 's/^ALLOW_GROUPS=""/ALLOW_GROUPS="wheel"/' /etc/snapper/configs/root
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Excluding /.snapshots from updatedb"
+
+	echo "PRUNENAMES = \".snapshots\"" >>/etc/updatedb.conf
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling Snapper Timeline and Cleanup services"
+
+	systemctl enable snapper-timeline.timer
+	systemctl enable snapper-cleanup.timer
+}
+
+yabsnap_setup() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing Yabsnap"
+
+	package_installer "yabsnap"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating Yabsnap root config"
+
+	yabsnap create-config root
+
+	sed -i 's/source =/source = \//' /etc/yabsnap/configs/root.conf
+	sed -i 's/keep_preinstall = 1/keep_preinstall = 6/' /etc/yabsnap/configs/root.conf
+	sed -i 's/keep_user = 1/keep_user = 2/' /etc/yabsnap/configs/root.conf
+	sed -i 's/keep_preinstall = 1/keep_preinstall = 10/' /etc/yabsnap/configs/root.conf
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Excluding /.snapshots from updatedb"
+
+	echo "PRUNENAMES = \".snapshots\"" >>/etc/updatedb.conf
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling Yabsnap service"
+
+	systemctl enable yabsnap.timer
+}
+
+snapshot_rollback() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting up Snapshot rollback script"
+
+	cat /Archer-main/quiver/scripts/rollback >/usr/local/bin/rollback
+	chmod a+x /usr/local/bin/rollback
+
+	sed -i "s/SNAPSHOT_LAYOUT/$snapshot_layout/g" /usr/local/bin/rollback
+	sed -i "s/SNAP_MANAGER/$snap_manager/g" /usr/local/bin/rollback
+}
+
 boot_script() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up boot script"
@@ -800,13 +776,7 @@ package_installer() {
 setup_pacman
 setup_system
 setup_paru_pipx
-
 setup_grub
-backup_kernel
-[[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "snapper" ]] && snapper_setup
-[[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "yabsnap" ]] && yabsnap_setup
-[[ $snapshot_layout == "snapper" ]] && snapper_setup
-snapshot_rollback
 
 setup_cpu
 setup_gpu
@@ -814,11 +784,17 @@ setup_laptop
 setup_hibernation
 
 install_packages
-[[ $install_type == "kde" ]] && setup_plasma
+setup_environment
 [[ $install_type != "lite" ]] && setup_flatpak
 package_config
-
 bash_config
+
+backup_kernel
+[[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "snapper" ]] && snapper_setup
+[[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "yabsnap" ]] && yabsnap_setup
+[[ $snapshot_layout == "snapper" ]] && snapper_setup
+snapshot_rollback
+
 boot_script
 set_password
 exit
