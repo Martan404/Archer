@@ -1,0 +1,6 @@
+#!/bin/bash
+# Archer config file
+
+echo -e "Enabling avahi networking and setting up hostname resolution"
+systemctl enable avahi-daemon.service
+sudo sed -i '/^hosts: mymachines/ s/resolve/mdns_minimal [NOTFOUND=return] resolve/' /etc/nsswitch.conf 

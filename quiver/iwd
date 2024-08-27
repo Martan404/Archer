@@ -1,0 +1,5 @@
+#!/bin/bash
+# Archer config file
+
+echo -e "Enabling wireless network daemon"
+systemctl enable iwd.service
