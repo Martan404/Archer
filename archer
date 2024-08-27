@@ -371,7 +371,7 @@ setup_drive() {
 
 	if [[ $disk_encryption == "yes" ]]; then
 
-		cryptsetup -v luksFormat "$root_partition"
+		cryptsetup -v -q luksFormat "$root_partition"
 		cryptsetup open "$root_partition" root
 		mkfs.btrfs -f -L "$hostname" /dev/mapper/root
 
