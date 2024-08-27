@@ -12,6 +12,8 @@ snapshot_layout=${snapshot_layout}
 snapshot_subvol=${snapshot_subvol}
 root_partition=${root_partition}
 snap_manager=${snap_manager}
+disk_encryption=${disk_encryption}
+unencrypted_partition=${unencrypted_partition}
 
 setup_pacman() {	
 	echo -e "-------------------------------------------------------------------------"
@@ -98,6 +100,13 @@ ff02::2       ip6-allrouters
 	echo -e "Enabling btrfs module in mkinitcpio.conf"
 
 	sed -i 's/^MODULES=()/MODULES=(btrfs)/' /etc/mkinitcpio.conf
+
+	if [[ $disk_encryption == "yes" ]]; then 
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Enabling hooks in mkinitcpio.conf"
+
+		sed -i "/^HOOKS=(/ s/)/ sd-encrypt sd-vconsole)/" /etc/mkinitcpio.conf
+	fi
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Rebuilding the initramfs image"
@@ -192,6 +201,14 @@ exec /usr/bin/efibootmgr -e 3 "\$@"
 	echo -e "Removing 'quiet' kernel parameter"
 
 	sed -i '/GRUB_CMDLINE_LINUX_DEFAULT/s/ quiet//g' /etc/default/grub
+
+	if [[ $disk_encryption == "yes" ]]; then 
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Setting encryption kernel parameters"
+
+		device_UUID=$(blkid | grep "$unencrypted_partition" | grep -oP ' UUID="\K[^"]+')
+		sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 rd.luks.name=$device_UUID=root root=/dev/mapper/root\"/" /etc/default/grub
+	fi
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Fixing grub resolution"

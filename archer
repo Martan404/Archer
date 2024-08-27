@@ -67,6 +67,22 @@ set_variables() {
 		esac
 	done
 
+	while true; do
+		echo -e "-------------------------------------------------------------------------"
+		read -r -p "Do you wan to enable LUKS disk encryption? (Y/n) " disk_encryption
+
+		case $disk_encryption in
+		[yY1])
+			disk_encryption="yes"
+			break
+			;;
+		[nN2])
+			disk_encryption="no"
+			break
+			;;
+		esac
+	done
+
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Do you want to use the Arch standard or Snapper BTRFS layout?"
 	echo -e "1. Arch"
@@ -353,8 +369,18 @@ setup_drive() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Formatting root partition"
 
-	mkfs.btrfs -f -L "$hostname" "$root_partition"
+	if [[ $disk_encryption == "yes" ]]; then
 
+		cryptsetup -v luksFormat "$root_partition"
+		cryptsetup open "$root_partition" root
+		mkfs.btrfs -f -L "$hostname" /dev/mapper/root
+
+		unencrypted_partition=$root_partition
+		root_partition="/dev/mapper/root"
+
+	else
+		mkfs.btrfs -f -L "$hostname" "$root_partition"
+	fi
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Mounting root and creating btrfs subvolumes"
 
@@ -434,7 +460,7 @@ install_system() {
 
 	while true; do
 		# shellcheck disable=SC2086
-		pacstrap -K /mnt base base-devel $kernel $kernel-headers linux-firmware sudo iptables-nft && break
+		pacstrap -K /mnt base base-devel $kernel $kernel-headers linux-firmware btrfs-progs sudo iptables-nft && break
 
 		echo "$(tput setaf 9)Package installation failed. Retrying... $(tput sgr0)"
 	done
@@ -464,7 +490,7 @@ arch_chroot() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Changing root into new system"
 
-	export hostname && export user && export install_type && export keyboard_keymap && export default_locale && export snapshot_layout && export snapshot_subvol && export root_partition && export snap_manager
+	export hostname && export user && export install_type && export keyboard_keymap && export default_locale && export snapshot_layout && export snapshot_subvol && export root_partition && export snap_manager && export disk_encryption && export unencrypted_partition
 
 	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot
 	rm -rf /mnt/Archer-main
