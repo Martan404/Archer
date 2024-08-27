@@ -206,8 +206,12 @@ exec /usr/bin/efibootmgr -e 3 "\$@"
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Setting encryption kernel parameters"
 
+		
 		device_UUID=$(blkid | grep "$unencrypted_partition" | grep -oP ' UUID="\K[^"]+')
-		sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 rd.luks.name=$device_UUID=root root=/dev/mapper/root\"/" /etc/default/grub
+
+		echo "UUID: $device_UUID"
+		sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 rd.luks.name=$device_UUID=root root=\/dev\/mapper\/root\"/" /etc/default/grub
+
 	fi
 
 	echo -e "-------------------------------------------------------------------------"
