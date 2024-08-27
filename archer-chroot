@@ -105,7 +105,7 @@ ff02::2       ip6-allrouters
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Enabling hooks in mkinitcpio.conf"
 
-		sed -i "/^HOOKS=(/ s/)/ sd-encrypt sd-vconsole)/" /etc/mkinitcpio.conf
+		sed -i "/^HOOKS=(/ s/)/ sd-vconsole sd-encrypt)/" /etc/mkinitcpio.conf
 	fi
 
 	echo -e "-------------------------------------------------------------------------"
