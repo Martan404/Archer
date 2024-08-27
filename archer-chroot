@@ -409,78 +409,6 @@ setup_environment() {
 	[[ $install_type == "hyprland" ]] && source "/Archer-main/quiver/hyprland_setup"
 }
 
-setup_flatpak() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling Flatpak theming"
-
-	flatpak override --filesystem=xdg-config/{Kvantum,gtkrc,gtkrc-2.0,gtk-3.0,gtk-4.0}
-	flatpak override --filesystem={~/.themes,~/.icons,~/.fonts,~/.local/share/themes}
-	flatpak override --env=GTK_THEME=Breeze
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating flatpak-setup desktop entry"
-
-	sudo -u "$user" mkdir -p /home/"$user"/.config/autostart/
-	sudo -u "$user" touch /home/"$user"/.config/autostart/flatpak-setup.desktop
-
-	cat <<EOF >>/home/"$user"/.config/autostart/flatpak-setup.desktop
-[Desktop Entry]
-Exec=konsole -e /usr/bin/flatpak-setup
-Icon=/usr/share/pixmaps/archlinux-logo.png
-StartupNotify=true
-Type=Application
-EOF
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting up Flatpak install script"
-
-	sed -n '/# FLATPAK/{:a;n;/# FLATPAK/b;p;ba}' "/Archer-main/quiver/package_list.txt" >"/Archer-main/quiver/flatpak.txt"
-
-	packages=$(cat "/Archer-main/quiver/flatpak.txt" | tr '\n' ' ')
-
-	cat /Archer-main/quiver/scripts/flatpak-setup >/usr/bin/flatpak-setup
-	chmod a+x /usr/bin/flatpak-setup
-
-	sed -i "s/UNIX_USER/$user/g; s/PACKAGE_LIST/$packages/g" /usr/bin/flatpak-setup
-}
-
-package_config() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Configuring installed packages"
-
-	installed_packages=$(pacman -Q)
-
-	while IFS= read -r line; do
-
-		package_name=$(echo "$line" | awk '{print $1}')
-
-		if [[ -f "/Archer-main/quiver/package-config/$package_name" ]]; then
-			echo -e "-------------------------------------------------------------------------"
-			echo "Found $package_name config"
-
-			source "/Archer-main/quiver/package-config/$package_name"
-		fi
-	done <<<"$installed_packages"
-
-	if [ "$install_type" != "lite" ]; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Configuring not installed packages"
-
-		find "/Archer-main/quiver/package-config/" -type f -name '_*' | while IFS= read -r config_path; do source "$config_path"; done
-	fi
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Moving pacman hooks"
-
-	mv -v /Archer-main/quiver/hooks/* /etc/pacman.d/hooks/
-	chown -R :wheel /etc/pacman.d/hooks/*
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Rebuilding GRUB configs"
-
-	grub-mkconfig -o /boot/grub/grub.cfg
-}
-
 bash_config() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring /etc/bash.bashrc"
@@ -667,6 +595,43 @@ snapshot_rollback() {
 	sed -i "s/SNAP_MANAGER/$snap_manager/g" /usr/local/bin/rollback
 }
 
+package_config() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Configuring installed packages"
+
+	installed_packages=$(pacman -Q)
+
+	while IFS= read -r line; do
+
+		package_name=$(echo "$line" | awk '{print $1}')
+
+		if [[ -f "/Archer-main/quiver/package-config/$package_name" ]]; then
+			echo -e "-------------------------------------------------------------------------"
+			echo "Found $package_name config"
+
+			source "/Archer-main/quiver/package-config/$package_name"
+		fi
+	done <<<"$installed_packages"
+
+	if [ "$install_type" != "lite" ]; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Configuring not installed packages"
+
+		find "/Archer-main/quiver/package-config/" -type f -name '_*' | while IFS= read -r config_path; do source "$config_path"; done
+	fi
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Moving pacman hooks"
+
+	mv -v /Archer-main/quiver/hooks/* /etc/pacman.d/hooks/
+	chown -R :wheel /etc/pacman.d/hooks/*
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Rebuilding GRUB configs"
+
+	grub-mkconfig -o /boot/grub/grub.cfg
+}
+
 boot_script() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up boot script"
@@ -776,8 +741,6 @@ setup_hibernation
 
 install_packages
 setup_environment
-[[ $install_type != "lite" ]] && setup_flatpak
-package_config
 bash_config
 
 backup_kernel
@@ -786,6 +749,7 @@ backup_kernel
 [[ $snapshot_layout == "snapper" ]] && snapper_setup
 snapshot_rollback
 
+package_config
 boot_script
 set_password
 exit
