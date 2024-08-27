@@ -6,7 +6,6 @@ networkmanager
 iwd
 wireless-regdb
 firewalld
-btrfs-progs
 dosfstools
 exfatprogs
 ntfs-3g
