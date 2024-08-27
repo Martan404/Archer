@@ -1,13 +1,13 @@
 #!/bin/bash
 # shellcheck disable=SC2154,SC2002
-echo -e "-------------------------------------------------------------------------"
+
 echo -e "Enabling Flatpak theming"
 
 flatpak override --filesystem=xdg-config/{Kvantum,gtkrc,gtkrc-2.0,gtk-3.0,gtk-4.0}
 flatpak override --filesystem={~/.themes,~/.icons,~/.fonts,~/.local/share/themes}
 flatpak override --env=GTK_THEME=Breeze
 
-echo -e "-------------------------------------------------------------------------"
+
 echo -e "Creating flatpak-setup desktop entry"
 
 sudo -u "$user" mkdir -p /home/"$user"/.config/autostart/
@@ -21,7 +21,6 @@ StartupNotify=true
 Type=Application
 EOF
 
-echo -e "-------------------------------------------------------------------------"
 echo -e "Setting up Flatpak install script"
 
 cat /Archer-main/quiver/scripts/flatpak-setup >/usr/bin/flatpak-setup
