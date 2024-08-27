@@ -17,7 +17,6 @@ wayland-protocols
 xorg-xwayland
 avahi
 networkmanager
-iwd
 wireless-regdb
 firewalld
 nss-mdns
