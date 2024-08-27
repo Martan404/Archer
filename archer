@@ -44,9 +44,9 @@ set_variables() {
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "What type of installation do you want?"
-	echo -e "0. Lite"
 	echo -e "1. KDE"
 	echo -e "2. Hyprland"
+	echo -e "0. Lite"
 
 	while true; do
 		read -r -p "Select: " install_type
@@ -107,20 +107,20 @@ set_variables() {
 
 	if [[ $snapshot_layout == "arch" ]]; then
 		echo -e "-------------------------------------------------------------------------"
-		echo -e "Do you want to use Snapper or Yabsnap for snapshots?"
-		echo -e "1. Snapper"
-		echo -e "2. Yabsnap"
+		echo -e "Do you want to use Yabsnap or Snapper for snapshots?"
+		echo -e "1. Yabsnap"
+		echo -e "2. Snapper"
 
 		while true; do
 			read -r -p "Select: " snap_manager
 
 			case $snap_manager in
 			1)
-				snap_manager="snapper"
+				snap_manager="yabsnap"
 				break
 				;;
 			2)
-				snap_manager="yabsnap"
+				snap_manager="snapper"
 				break
 				;;
 			esac
