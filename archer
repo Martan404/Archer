@@ -42,6 +42,22 @@ set_variables() {
 	done
 	echo "Setting user name to $user"
 
+	while true; do
+		echo -e "-------------------------------------------------------------------------"
+		read -r -p "Do you want to enable LUKS disk encryption? (Y/n) " disk_encryption
+
+		case $disk_encryption in
+		[yY1])
+			disk_encryption="yes"
+			break
+			;;
+		[nN2])
+			disk_encryption="no"
+			break
+			;;
+		esac
+	done
+
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "What type of installation do you want?"
 	echo -e "1. KDE"
@@ -62,22 +78,6 @@ set_variables() {
 			;;
 		2)
 			install_type="hyprland"
-			break
-			;;
-		esac
-	done
-
-	while true; do
-		echo -e "-------------------------------------------------------------------------"
-		read -r -p "Do you wan to enable LUKS disk encryption? (Y/n) " disk_encryption
-
-		case $disk_encryption in
-		[yY1])
-			disk_encryption="yes"
-			break
-			;;
-		[nN2])
-			disk_encryption="no"
 			break
 			;;
 		esac
