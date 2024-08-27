@@ -23,13 +23,15 @@ localectl set-keymap "$keyboard_keymap"
 default_locale=$(locale | awk -F= '/^LANG=/{print $2}')
 localectl set-locale $default_locale
 
-echo -e "-------------------------------------------------------------------------"
-echo -e "Setting up Firewalld rules"
+if pacman -Q firewalld >/dev/null 2>&1; then
+    echo -e "-------------------------------------------------------------------------"
+    echo -e "Setting up Firewalld rules"
 
-firewall-cmd
-firewall-cmd --permanent --zone=internal --change-interface=lo
-firewall-cmd --permanent --zone=trusted --change-interface=virbr0
-firewall-cmd --permanent --zone=trusted --change-interface=waydroid0
+    firewall-cmd
+    firewall-cmd --permanent --zone=internal --change-interface=lo
+    firewall-cmd --permanent --zone=trusted --change-interface=virbr0
+    firewall-cmd --permanent --zone=trusted --change-interface=waydroid0
+fi
 
 echo -e "-------------------------------------------------------------------------"
 echo -e "Cleaning up script"
