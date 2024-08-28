@@ -1,5 +1,0 @@
-#!/bin/bash
-# Archer config file
-
-echo -e "Enabling firewalld service"
-systemctl enable firewalld.service

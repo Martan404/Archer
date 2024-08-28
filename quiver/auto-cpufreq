@@ -1,6 +1,0 @@
-#!/bin/bash
-# Archer config file
-
-echo -e "Enabling auto-cpufreq.service"
-systemctl mask power-profiles-daemon.service
-systemctl enable auto-cpufreq.service

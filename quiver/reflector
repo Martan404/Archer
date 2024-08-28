@@ -1,5 +1,0 @@
-#!/bin/bash
-# Archer config file
-
-echo -e "Enabling reflector mirror update timer"
-systemctl enable reflector.timer
