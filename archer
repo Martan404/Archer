@@ -388,15 +388,15 @@ setup_drive() {
 
 	btrfs subvolume create /mnt/@ # Root
 	#btrfs subvolume create /mnt/@root # Root home
-	btrfs subvolume create /mnt/@home                                                  # Home
-	btrfs subvolume create /mnt/@log                                                   # Log files
-	btrfs subvolume create /mnt/@pkg                                                   # Package files
-	btrfs subvolume create /mnt/@tmp                                                   # Temp files
-	btrfs subvolume create /mnt/@cache                                                 # Cache files
-	btrfs subvolume create /mnt/@spool                                                 # Spool data
-	btrfs subvolume create /mnt/@srv                                                   # Web servers
+	btrfs subvolume create /mnt/@home # Home
+	btrfs subvolume create /mnt/@log # Log files
+	btrfs subvolume create /mnt/@pkg # Package cache
+	btrfs subvolume create /mnt/@tmp # Temp files
+	btrfs subvolume create /mnt/@cache # Cache files
+	btrfs subvolume create /mnt/@spool # Spool data
+	btrfs subvolume create /mnt/@srv # Web servers
 	[[ $snapshot_layout == "arch" ]] && btrfs subvolume create /mnt/"$snapshot_subvol" # Snapshots
-	btrfs subvolume create /mnt/@swap                                                  # Swapfile
+	btrfs subvolume create /mnt/@swap # Swapfile
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Unmounting root"
