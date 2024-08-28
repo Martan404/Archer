@@ -105,7 +105,6 @@ ff02::2       ip6-allrouters
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Enabling encryption hooks in mkinitcpio.conf"
 
-		#sed -i "/^HOOKS=(/ s/)/ systemd sd-vconsole sd-encrypt)/" /etc/mkinitcpio.conf
 		sed -i '/^HOOKS=/ s/\(base\)/\1 systemd/' /etc/mkinitcpio.conf
 		sed -i '/^HOOKS=/ s/\(keyboard\)/\1 sd-vconsole/' /etc/mkinitcpio.conf
 		sed -i '/^HOOKS=/ s/\(filesystems\)/sd-encrypt \1/' /etc/mkinitcpio.conf
