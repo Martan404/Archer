@@ -148,6 +148,7 @@ kscreenlocker
 ksshaskpass
 ksystemlog
 ksystemstats
+kup
 kwallet-pam
 kwalletmanager
 kwayland-integration
