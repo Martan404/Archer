@@ -84,6 +84,26 @@ set_variables() {
 	done
 
 	echo -e "-------------------------------------------------------------------------"
+	echo -e "What bootloader do you want?"
+	echo -e "1. rEFInd"
+	echo -e "2. Grub"
+
+	while true; do
+		read -r -p "Select: " bootloader
+
+		case $bootloader in
+		0)
+			bootloader="refind"
+			break
+			;;
+		1)
+			bootloader="grub"
+			break
+			;;
+		esac
+	done
+
+	echo -e "-------------------------------------------------------------------------"
 	echo -e "Do you want to use the Arch standard or Snapper BTRFS layout?"
 	echo -e "1. Arch"
 	echo -e "2. Snapper"
@@ -417,7 +437,8 @@ setup_drive() {
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@srv "$root_partition" /mnt/srv
 	[[ $snapshot_layout == "arch" ]] && mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol="$snapshot_subvol" "$root_partition" /mnt/.snapshots
 	mount --mkdir -t btrfs -o noatime,subvol=@swap "$root_partition" /mnt/swap
-	mount --mkdir -o defaults,noatime "$efi_partition" /mnt/boot
+	[[ $bootloader == "refind" ]] && mount --mkdir -o defaults,noatime "$efi_partition" /mnt/esp
+	[[ $bootloader == "grub" ]] && mount --mkdir -o defaults,noatime "$efi_partition" /mnt/boot
 
 	#chmod 0750 /mnt/root
 	chmod 1777 /mnt/var/tmp
@@ -490,7 +511,8 @@ arch_chroot() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Changing root into new system"
 
-	export hostname && export user && export install_type && export keyboard_keymap && export default_locale && export snapshot_layout && export snapshot_subvol && export root_partition && export snap_manager && export disk_encryption && export unencrypted_partition
+	export hostname && export user && export install_type && export bootloader && export kernel && export keyboard_keymap && export default_locale && 
+	export snapshot_layout && export snapshot_subvol && export root_partition && export snap_manager && export disk_encryption && export unencrypted_partition
 
 	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot
 	rm -rf /mnt/Archer-main

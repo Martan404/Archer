@@ -6,6 +6,8 @@
 hostname=${hostname}
 user=${user}
 install_type=${install_type}
+bootloader=${bootloader}
+kernel=${kernel}
 keyboard_keymap=${keyboard_keymap}
 default_locale=${default_locale}
 snapshot_layout=${snapshot_layout}
@@ -90,10 +92,10 @@ setup_system() {
 	echo -e "Configuring /etc/hosts"
 
 	cat <<-END >>/etc/hosts
-127.0.0.1      localhost
-::1              localhost ip6-localhost ip6-loopback
-ff02::1       ip6-allnodes
-ff02::2       ip6-allrouters
+127.0.0.1 		localhost
+::1 			localhost ip6-localhost ip6-loopback
+ff02::1 		ip6-allnodes
+ff02::2 		ip6-allrouters
 	END
 
 	echo -e "-------------------------------------------------------------------------"
@@ -159,6 +161,30 @@ setup_paru_pipx() {
 	echo -e "Installing Python pipx"
 
 	package_installer "python-pipx"
+}
+
+setup_refind() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing rEFInd packages"
+	
+	package_installer "refind refind-btrfs"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting up rEFInd"
+	
+	refind-install
+	mv /Archer-main/quiver/configs/refind-custom.conf /esp/EFI/refind/refind-custom.conf
+	echo "include refind-custom.conf" >> /esp/EFI/refind/refind.conf
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting up rEFInd boot entry"
+
+	# sed  /esp/EFI/refind/refind-custom.conf add UUID and kernel
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting up rEFInd theme"
+
+	mv /Archer-main/quiver/themes/refind-theme-regular/ /esp/EFI/refind/themes/refind-theme-regular/
 }
 
 setup_grub() {
@@ -751,6 +777,7 @@ package_installer() {
 setup_pacman
 setup_system
 setup_paru_pipx
+setup_refind
 setup_grub
 
 setup_cpu

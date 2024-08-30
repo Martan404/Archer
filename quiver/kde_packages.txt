@@ -115,6 +115,7 @@ vivid
 bluedevil
 breeze
 breeze-gtk
+bup
 cronie
 discover
 dolphin
