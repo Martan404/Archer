@@ -15,7 +15,7 @@ snapshot_subvol=${snapshot_subvol}
 root_partition=${root_partition}
 snap_manager=${snap_manager}
 disk_encryption=${disk_encryption}
-unencrypted_partition=${unencrypted_partition}
+encrypted_root_partition=${encrypted_root_partition}
 
 setup_pacman() {	
 	echo -e "-------------------------------------------------------------------------"
@@ -187,15 +187,15 @@ setup_refind() {
 	if [[ $disk_encryption == "yes" ]]; then
 		
 		echo -e "-------------------------------------------------------------------------"
-		echo -e "Setting root path"
-		#root_partuuid=$(blkid -s PARTUUID -o value "$unencrypted_partition")
+		echo -e "Setting unecypted root path"
+		#root_partuuid=$(blkid -s PARTUUID -o value "$encrypted_root_partition")
 		sed -i "s|PARTUUID=ROOT_PARTUUID|$root_partition|g" /boot/efi/EFI/refind/refind-custom.conf
 
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Setting kernel parameter"
 
 		root_uuid=$(blkid -s UUID -o value "$root_partition")
-		sed -i '/^options / s/"\(.*\)"/"& '"rd.luks.name=$root_uuid=root"'/"' /boot/efi/EFI/refind/refind-custom.conf
+		sed -i '/^options / s|"\(.*\)"|"& rd.luks.name='"$root_uuid"'=root"|' /boot/efi/EFI/refind/refind-custom.conf
 
 	else
 		echo -e "-------------------------------------------------------------------------"
@@ -260,7 +260,7 @@ exec /usr/bin/efibootmgr -e 3 "\$@"
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Setting encryption kernel parameters"
 		
-		device_UUID=$(blkid | grep "$unencrypted_partition" | grep -oP ' UUID="\K[^"]+')
+		device_UUID=$(blkid | grep "$encrypted_root_partition" | grep -oP ' UUID="\K[^"]+')
 		sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 rd.luks.name=$device_UUID=root root=\/dev\/mapper\/root\"/" /etc/default/grub
 	fi
 
