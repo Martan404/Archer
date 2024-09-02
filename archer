@@ -19,10 +19,8 @@ $(tput sgr0)
 -------------------------------------------------------------------------"
 }
 
-# If the script is run for a second time then we need to make sure everything is unmounted
 touch archer-check
-[[ -e "archer-check" ]] && swapoff /mnt/swap/swapfile >/dev/null 2>&1
-[[ -e "archer-check" ]] && umount -l /mnt >/dev/null 2>&1
+[[ -e "archer-check" ]] && echo -e "Rebooting computer to start fresh" && read -r -t 3 && systemctl reboot
 
 set_variables() {
 	echo -e "Enter hostname for System"
@@ -92,11 +90,11 @@ set_variables() {
 		read -r -p "Select: " bootloader
 
 		case $bootloader in
-		0)
+		1)
 			bootloader="refind"
 			break
 			;;
-		1)
+		2)
 			bootloader="grub"
 			break
 			;;
@@ -217,8 +215,8 @@ set_locale() {
 	while true; do
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Choose default locale"
-		echo -e "Available locales: $available_locales"
-		echo -e "Optional locales: en_SE.UTF-8"
+		echo -e "Available: $available_locales"
+		echo -e "Optional: en_SE.UTF-8"
 
 		read -r -p "Default: " default_locale
 
@@ -307,8 +305,8 @@ set_kernel() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Which kernel do you want to use?"
 
-	echo -e "1. Linux"
-	echo -e "2. Linux Zen"
+	echo -e "1. Linux Zen"
+	echo -e "2. Linux"
 	echo -e "3. Linux LTS"
 	echo -e "4. Linux Hardened"
 
@@ -317,11 +315,11 @@ set_kernel() {
 
 		case $kernel in
 		1)
-			kernel="linux"
+			kernel="linux-zen"
 			break
 			;;
 		2)
-			kernel="linux-zen"
+			kernel="linux"
 			break
 			;;
 		3)
