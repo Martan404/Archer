@@ -435,7 +435,7 @@ setup_drive() {
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@srv "$root_partition" /mnt/srv
 	[[ $snapshot_layout == "arch" ]] && mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol="$snapshot_subvol" "$root_partition" /mnt/.snapshots
 	mount --mkdir -t btrfs -o noatime,subvol=@swap "$root_partition" /mnt/swap
-	[[ $bootloader == "refind" ]] && mount --mkdir -o defaults,noatime "$efi_partition" /mnt/esp
+	[[ $bootloader == "refind" ]] && mount --mkdir -o defaults,noatime "$efi_partition" /mnt/boot/efi
 	[[ $bootloader == "grub" ]] && mount --mkdir -o defaults,noatime "$efi_partition" /mnt/boot
 
 	#chmod 0750 /mnt/root
@@ -479,7 +479,7 @@ install_system() {
 
 	while true; do
 		# shellcheck disable=SC2086
-		pacstrap -K /mnt base base-devel $kernel $kernel-headers linux-firmware btrfs-progs sudo iptables-nft && break
+		pacstrap -K /mnt base base-devel $kernel $kernel-headers linux-firmware util-linux btrfs-progs sudo iptables-nft && break
 
 		echo "$(tput setaf 9)Package installation failed. Retrying... $(tput sgr0)"
 	done

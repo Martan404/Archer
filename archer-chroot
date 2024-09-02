@@ -173,21 +173,33 @@ setup_refind() {
 	echo -e "Setting up rEFInd"
 	
 	refind-install
-	mv /Archer-main/quiver/configs/refind-custom.conf /esp/EFI/refind/refind-custom.conf
-	echo "include refind-custom.conf" >> /esp/EFI/refind/refind.conf
+	mv /Archer-main/quiver/configs/refind-custom.conf /boot/efi/EFI/refind/refind-custom.conf
+	echo "include refind-custom.conf" >> /boot/efi/EFI/refind/refind.conf
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up rEFInd boot entry"
 
-	sed -i "s/KERNEL_NAME/$kernel/g" /esp/EFI/refind/refind-custom.conf
+	sed -i "s/KERNEL_NAME/$kernel/g" /boot/efi/EFI/refind/refind-custom.conf
+	
+	if [[ $disk_encryption == "yes" ]]; then
+		
+		#root_partuuid=$(blkid -s PARTUUID -o value "$unencrypted_partition")
+		sed -i "s|PARTUUID=ROOT_PARTUUID|$root_partition|g" /boot/efi/EFI/refind/refind-custom.conf
 
-	root_partuuid=$(blkid -s PARTUUID -o value "$root_partition")
-	sed -i "s/ROOT_PARTUUID/$root_partuuid/g" /esp/EFI/refind/refind-custom.conf
+		device_UUID=$(blkid | grep "$unencrypted_partition" | grep -oP ' UUID="\K[^"]+')
+		sed -i '/^options / s/"\(.*\)"/"& '"rd.luks.name=$device_UUID=root"'/"' /boot/efi/EFI/refind/refind-custom.conf
+
+	else
+		root_partuuid=$(blkid -s PARTUUID -o value "$root_partition")
+		sed -i "s/ROOT_PARTUUID/$root_partuuid/g" /boot/efi/EFI/refind/refind-custom.conf
+
+	fi
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up rEFInd theme"
 
-	mv /Archer-main/quiver/themes/refind-theme-regular/ /esp/EFI/refind/themes/refind-theme-regular/
+	mkdir -p /boot/efi/EFI/refind/themes/
+	mv /Archer-main/quiver/themes/refind-theme-regular/ /boot/efi/EFI/refind/themes/refind-theme-regular/
 }
 
 setup_grub() {
@@ -281,6 +293,7 @@ setup_cpu() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting cpu kernel parameters"
 
+	# GET SED FOR rEFInd
 	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $cpu_kernel_parameters\"/" /etc/default/grub
 }
 
@@ -335,6 +348,7 @@ setup_gpu() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting gpu kernel parameters"
 
+	# GET SED FOR rEFInd
 	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $gpu_kernel_parameters\"/" /etc/default/grub
 }
 
@@ -431,6 +445,7 @@ setup_hibernation() {
 	echo -e "Setting swapfile offset for hibernation kernel parameter"
 
 	swapfile_offset=$(btrfs inspect-internal map-swapfile -r /swap/swapfile)
+	# GET SED FOR rEFInd
 	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 resume_offset=$swapfile_offset\"/" /etc/default/grub
 
 	echo -e "-------------------------------------------------------------------------"
@@ -536,7 +551,8 @@ snapper_setup() {
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Installing Snapper packages"
 
-		package_installer "snapper snap-pac snap-pac-grub snapper-support snapper-rollback"
+		package_installer "snapper snap-pac snapper-support snapper-rollback"
+		[[ $bootloader == "grub" ]] && package_installer "snap-pac-grub"
 
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Creating Snapper root config"
@@ -547,7 +563,8 @@ snapper_setup() {
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Installing Snapper packages"
 
-		package_installer "snapper snap-pac snap-pac-grub snapper-rollback"
+		package_installer "snapper snap-pac snapper-rollback"
+		[[ $bootloader == "grub" ]] && package_installer "snap-pac-grub"
 
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Removing /.snapshots"
@@ -674,10 +691,12 @@ package_config() {
 	mv -v /Archer-main/quiver/hooks/* /etc/pacman.d/hooks/
 	chown -R :wheel /etc/pacman.d/hooks/*
 
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Rebuilding GRUB configs"
-
-	grub-mkconfig -o /boot/grub/grub.cfg
+	if [[ $bootloader == "grub" ]]; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Rebuilding GRUB configs"
+	
+		grub-mkconfig -o /boot/grub/grub.cfg
+	fi
 }
 
 boot_script() {
