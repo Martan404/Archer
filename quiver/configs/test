@@ -1,0 +1,18 @@
+#!/bin/bash
+
+root_partition="/dev/nvme0n1p2"
+#root_partuuid=$(sudo blkid -s PARTUUID -o value "$root_partition")
+#sed -i "s/ROOT_PARTUUID/$root_partuuid/g" refind-custom.conf
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Setting kernel parameter"
+
+root_uuid=$(sudo blkid -s UUID -o value "$root_partition")
+
+sed -i 's/root=/rd.luks.name='"$root_uuid"' root=/' refind-custom.conf
+sed -i 's|PARTUUID=ROOT_PARTUUID|/dev/mapper/root|g' refind-custom.conf
+
+#sed -i 's/subvol=@/& rd.luks.name='"$root_uuid"'=root root=\/dev\/mapper\/root/' refind-custom.conf
+
+
+#sed -i '/^options  / s|"\(.*\)"|"& rd.luks.name='"$root_uuid"'=root root=/dev/mapper/root"|' refind-custom.conf

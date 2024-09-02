@@ -393,7 +393,7 @@ setup_drive() {
 		cryptsetup open "$root_partition" root
 		mkfs.btrfs -f -L "$hostname" /dev/mapper/root
 
-		unencrypted_partition=$root_partition
+		encrypted_root_partition=$root_partition
 		root_partition="/dev/mapper/root"
 
 	else
@@ -435,8 +435,7 @@ setup_drive() {
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@srv "$root_partition" /mnt/srv
 	[[ $snapshot_layout == "arch" ]] && mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol="$snapshot_subvol" "$root_partition" /mnt/.snapshots
 	mount --mkdir -t btrfs -o noatime,subvol=@swap "$root_partition" /mnt/swap
-	[[ $bootloader == "refind" ]] && mount --mkdir -o defaults,noatime "$efi_partition" /mnt/boot/efi
-	[[ $bootloader == "grub" ]] && mount --mkdir -o defaults,noatime "$efi_partition" /mnt/boot
+	mount --mkdir -o defaults,noatime "$efi_partition" /mnt/boot
 
 	#chmod 0750 /mnt/root
 	chmod 1777 /mnt/var/tmp
@@ -510,7 +509,7 @@ arch_chroot() {
 	echo -e "Changing root into new system"
 
 	export hostname && export user && export install_type && export bootloader && export kernel && export keyboard_keymap && export default_locale && 
-	export snapshot_layout && export snapshot_subvol && export root_partition && export snap_manager && export disk_encryption && export unencrypted_partition
+	export snapshot_layout && export snapshot_subvol && export root_partition && export snap_manager && export disk_encryption && export encrypted_root_partition
 
 	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot
 	rm -rf /mnt/Archer-main

@@ -173,8 +173,8 @@ setup_refind() {
 	echo -e "Setting up rEFInd"
 	
 	refind-install
-	mv /Archer-main/quiver/configs/refind-custom.conf /boot/efi/EFI/refind/refind-custom.conf
-	echo "include refind-custom.conf" >> /boot/efi/EFI/refind/refind.conf
+	mv /Archer-main/quiver/configs/refind-custom.conf /boot/EFI/refind/refind-custom.conf
+	echo "include refind-custom.conf" >> /boot/EFI/refind/refind.conf
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up rEFInd boot entry"
@@ -182,27 +182,28 @@ setup_refind() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting kernel name"
 
-	sed -i "s/KERNEL_NAME/$kernel/g" /boot/efi/EFI/refind/refind-custom.conf
+	sed -i "s/KERNEL_NAME/$kernel/g" /boot/EFI/refind/refind-custom.conf
 	
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting root path"
 
-	root_partuuid=$(blkid -s PARTUUID -o value "$root_partition")
-	sed -i "s/ROOT_PARTUUID/$root_partuuid/g" /boot/efi/EFI/refind/refind-custom.conf
-
 	if [[ $disk_encryption == "yes" ]]; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Setting kernel parameter"
-
 		root_uuid=$(blkid -s UUID -o value "$root_partition")
-		sed -i '/^options / s|"\(.*\)"|"& rd.luks.name='"$root_uuid"'=root root=/dev/mapper/root"|' /boot/efi/EFI/refind/refind-custom.conf
+
+		sed -i 's/root=/rd.luks.name='"$root_uuid"' root=/' /boot/EFI/refind/refind-custom.conf
+		sed -i 's|PARTUUID=ROOT_PARTUUID|/dev/mapper/root|g' /boot/EFI/refind/refind-custom.conf
+		#sed -i 's/subvol=@/& KERNEL_PARAMETER' /boot/EFI/refind/refind-custom.conf
+	else
+
+		root_partuuid=$(blkid -s PARTUUID -o value "$root_partition")
+		sed -i "s/ROOT_PARTUUID/$root_partuuid/g" /boot/EFI/refind/refind-custom.conf
 	fi
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up rEFInd theme"
 
-	mkdir -p /boot/efi/EFI/refind/themes/
-	mv /Archer-main/quiver/themes/refind-theme-regular/ /boot/efi/EFI/refind/themes/refind-theme-regular/
+	mkdir -p /boot/EFI/refind/themes/
+	mv /Archer-main/quiver/bootloader/themes/refind-theme-regular/ /boot/EFI/refind/themes/refind-theme-regular/
 }
 
 setup_grub() {
@@ -229,7 +230,7 @@ exec /usr/bin/efibootmgr -e 3 "\$@"
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing Grub theme"
 
-	mv /Archer-main/quiver/themes/arch-silence /boot/grub/themes/arch-silence
+	mv /Archer-main/quiver/bootloader/themes/arch-silence /boot/grub/themes/arch-silence
 	sed -i '/^[#]*GRUB_THEME=/c\GRUB_THEME="\/boot\/grub\/themes\/arch-silence\/theme.txt"' /etc/default/grub
 
 	echo -e "-------------------------------------------------------------------------"
@@ -252,8 +253,8 @@ exec /usr/bin/efibootmgr -e 3 "\$@"
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Setting encryption kernel parameters"
 		
-		device_UUID=$(blkid | grep "$encrypted_root_partition" | grep -oP ' UUID="\K[^"]+')
-		sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 rd.luks.name=$device_UUID=root root=\/dev\/mapper\/root\"/" /etc/default/grub
+		device_uuid=$(blkid -s UUID -o value "$encrypted_root_partition")
+		sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 rd.luks.name=$device_uuid=root root=\/dev\/mapper\/root\"/" /etc/default/grub
 	fi
 
 	echo -e "-------------------------------------------------------------------------"
@@ -814,7 +815,7 @@ install_packages
 setup_environment
 bash_config
 
-[[ $bootloader == "grub" ]] && backup_kernel
+backup_kernel
 [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "snapper" ]] && snapper_setup
 [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "yabsnap" ]] && yabsnap_setup
 [[ $snapshot_layout == "snapper" ]] && snapper_setup
