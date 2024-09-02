@@ -204,6 +204,11 @@ setup_refind() {
 
 	mkdir -p /boot/EFI/refind/themes/
 	mv /Archer-main/quiver/bootloader/themes/refind-theme-regular/ /boot/EFI/refind/themes/refind-theme-regular/
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Copying bootloader tools"
+
+	mv /Archer-main/quiver/bootloader/*.efi /boot/EFI/tools
 }
 
 setup_grub() {
