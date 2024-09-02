@@ -15,6 +15,11 @@ $(tput sgr0)
                            Arch install script"
 
 echo -e "-------------------------------------------------------------------------"
+echo -e "Generating rEFInd config using mkrlconf"
+
+mkrlconf
+
+echo -e "-------------------------------------------------------------------------"
 echo -e "Setting keymap and locale system-wide"
 
 keyboard_keymap=$(localectl status | grep 'VC Keymap' | awk '{print $3}')

@@ -179,7 +179,10 @@ setup_refind() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up rEFInd boot entry"
 
-	# sed  /esp/EFI/refind/refind-custom.conf add UUID and kernel
+	sed -i "s/KERNEL_NAME/$kernel/g" /esp/EFI/refind/refind-custom.conf
+
+	root_partuuid=$(blkid -s PARTUUID -o value "$root_partition")
+	sed -i "s/ROOT_PARTUUID/$root_partuuid/g" /esp/EFI/refind/refind-custom.conf
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up rEFInd theme"
@@ -777,8 +780,8 @@ package_installer() {
 setup_pacman
 setup_system
 setup_paru_pipx
-setup_refind
-setup_grub
+[[ $bootloader == "refind" ]] && setup_refind
+[[ $bootloader == "grub" ]] && setup_grub
 
 setup_cpu
 setup_gpu
