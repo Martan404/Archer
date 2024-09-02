@@ -179,17 +179,28 @@ setup_refind() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up rEFInd boot entry"
 
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting kernel name"
+
 	sed -i "s/KERNEL_NAME/$kernel/g" /boot/efi/EFI/refind/refind-custom.conf
 	
 	if [[ $disk_encryption == "yes" ]]; then
 		
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Setting root path"
 		#root_partuuid=$(blkid -s PARTUUID -o value "$unencrypted_partition")
 		sed -i "s|PARTUUID=ROOT_PARTUUID|$root_partition|g" /boot/efi/EFI/refind/refind-custom.conf
 
-		device_UUID=$(blkid | grep "$unencrypted_partition" | grep -oP ' UUID="\K[^"]+')
-		sed -i '/^options / s/"\(.*\)"/"& '"rd.luks.name=$device_UUID=root"'/"' /boot/efi/EFI/refind/refind-custom.conf
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Setting kernel parameter"
+
+		root_uuid=$(blkid -s UUID -o value "$root_partition")
+		sed -i '/^options / s/"\(.*\)"/"& '"rd.luks.name=$root_uuid=root"'/"' /boot/efi/EFI/refind/refind-custom.conf
 
 	else
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Setting root path"
+
 		root_partuuid=$(blkid -s PARTUUID -o value "$root_partition")
 		sed -i "s/ROOT_PARTUUID/$root_partuuid/g" /boot/efi/EFI/refind/refind-custom.conf
 
