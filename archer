@@ -537,9 +537,8 @@ set_efi
 set_kernel
 set_swap
 
-touch archer-check
-
 format_drive
+touch archer-check
 setup_drive
 setup_environment
 

@@ -167,7 +167,7 @@ setup_refind() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing rEFInd packages"
 	
-	package_installer "refind refind-btrfs"
+	package_installer "refind refind-btrfs gptfdisk"
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up rEFInd"
