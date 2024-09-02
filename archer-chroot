@@ -184,26 +184,18 @@ setup_refind() {
 
 	sed -i "s/KERNEL_NAME/$kernel/g" /boot/efi/EFI/refind/refind-custom.conf
 	
-	if [[ $disk_encryption == "yes" ]]; then
-		
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Setting unecypted root path"
-		#root_partuuid=$(blkid -s PARTUUID -o value "$encrypted_root_partition")
-		sed -i "s|PARTUUID=ROOT_PARTUUID|$root_partition|g" /boot/efi/EFI/refind/refind-custom.conf
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting root path"
 
+	root_partuuid=$(blkid -s PARTUUID -o value "$root_partition")
+	sed -i "s/ROOT_PARTUUID/$root_partuuid/g" /boot/efi/EFI/refind/refind-custom.conf
+
+	if [[ $disk_encryption == "yes" ]]; then
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Setting kernel parameter"
 
 		root_uuid=$(blkid -s UUID -o value "$root_partition")
-		sed -i '/^options / s|"\(.*\)"|"& rd.luks.name='"$root_uuid"'=root"|' /boot/efi/EFI/refind/refind-custom.conf
-
-	else
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Setting root path"
-
-		root_partuuid=$(blkid -s PARTUUID -o value "$root_partition")
-		sed -i "s/ROOT_PARTUUID/$root_partuuid/g" /boot/efi/EFI/refind/refind-custom.conf
-
+		sed -i '/^options / s|"\(.*\)"|"& rd.luks.name='"$root_uuid"'=root root=/dev/mapper/root"|' /boot/efi/EFI/refind/refind-custom.conf
 	fi
 
 	echo -e "-------------------------------------------------------------------------"
@@ -822,7 +814,7 @@ install_packages
 setup_environment
 bash_config
 
-backup_kernel
+[[ $bootloader == "grub" ]] && backup_kernel
 [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "snapper" ]] && snapper_setup
 [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "yabsnap" ]] && yabsnap_setup
 [[ $snapshot_layout == "snapper" ]] && snapper_setup
