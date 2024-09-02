@@ -19,8 +19,8 @@ $(tput sgr0)
 -------------------------------------------------------------------------"
 }
 
-touch archer-check
-[[ -e "archer-check" ]] && echo -e "Rebooting computer to start fresh" && read -r -t 3 && systemctl reboot
+[[ -e "archer-check" ]] && echo -e "Rebooting computer to start fresh" && read -r -t 3 && shutdown -r now
+
 
 set_variables() {
 	echo -e "Enter hostname for System"
@@ -536,6 +536,8 @@ set_disk
 set_efi
 set_kernel
 set_swap
+
+touch archer-check
 
 format_drive
 setup_drive
