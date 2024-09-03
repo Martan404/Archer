@@ -423,7 +423,7 @@ setup_drive() {
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Mounting btrfs subvolumes and EFI partition"
-
+	
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@ "$root_partition" /mnt
 	#mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@root "$root_partition" /mnt/root
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@home "$root_partition" /mnt/home

@@ -175,6 +175,7 @@ setup_refind() {
 	refind-install
 	mv /Archer-main/quiver/configs/refind-custom.conf /boot/EFI/refind/refind-custom.conf
 	echo "include refind-custom.conf" >> /boot/EFI/refind/refind.conf
+	rm -rf /boot/refind_linux.conf
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up rEFInd boot entry"
@@ -189,8 +190,9 @@ setup_refind() {
 
 	if [[ $disk_encryption == "yes" ]]; then
 		root_uuid=$(blkid -s UUID -o value "$root_partition")
+		root_partuuid=$(blkid -s PARTUUID -o value "$root_partition")
 
-		sed -i 's/root=/rd.luks.name='"$root_uuid"' root=/' /boot/EFI/refind/refind-custom.conf
+		sed -i 's/root=/rd.luks.name='"$root_partuuid"' root=/' /boot/EFI/refind/refind-custom.conf
 		sed -i 's|PARTUUID=ROOT_PARTUUID|/dev/mapper/root|g' /boot/EFI/refind/refind-custom.conf
 		#sed -i 's/subvol=@/& KERNEL_PARAMETER' /boot/EFI/refind/refind-custom.conf
 	else
@@ -699,6 +701,11 @@ package_config() {
 
 	mv -v /Archer-main/quiver/hooks/* /etc/pacman.d/hooks/
 	chown -R :wheel /etc/pacman.d/hooks/*
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Rebuilding the initramfs image"
+
+	mkinitcpio -P
 
 	if [[ $bootloader == "grub" ]]; then
 		echo -e "-------------------------------------------------------------------------"
