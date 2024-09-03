@@ -302,7 +302,7 @@ setup_cpu() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting cpu kernel parameters"
 
-	[[ $bootloader == "refind" ]] && sed -i "s/\(options  \"[^\"]*\)\"/\1 $cpu_kernel_parameters\"/" refind-custom.conf
+	[[ $bootloader == "refind" ]] && sed -i "s/\(options  \"[^\"]*\)\"/\1 $cpu_kernel_parameters\"/" /boot/EFI/refind/refind-custom.conf
 	[[ $bootloader == "grub" ]] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $cpu_kernel_parameters\"/" /etc/default/grub
 }
 
@@ -357,7 +357,7 @@ setup_gpu() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting gpu kernel parameters"
 
-	[[ $bootloader == "refind" ]] && sed -i "s/\(options  \"[^\"]*\)\"/\1 $gpu_kernel_parameters\"/" refind-custom.conf
+	[[ $bootloader == "refind" ]] && sed -i "s/\(options  \"[^\"]*\)\"/\1 $gpu_kernel_parameters\"/" /boot/EFI/refind/refind-custom.conf
 	[[ $bootloader == "grub" ]] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $gpu_kernel_parameters\"/" /etc/default/grub
 }
 
@@ -455,7 +455,7 @@ setup_hibernation() {
 
 	swapfile_offset=$(btrfs inspect-internal map-swapfile -r /swap/swapfile)
 	
-	[[ $bootloader == "refind" ]] && sed -i "s/\(options  \"[^\"]*\)\"/\1 resume_offset=$swapfile_offset\"/" refind-custom.conf
+	[[ $bootloader == "refind" ]] && sed -i "s/\(options  \"[^\"]*\)\"/\1 resume_offset=$swapfile_offset\"/" /boot/EFI/refind/refind-custom.conf
 	[[ $bootloader == "grub" ]] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 resume_offset=$swapfile_offset\"/" /etc/default/grub
 
 	echo -e "-------------------------------------------------------------------------"
