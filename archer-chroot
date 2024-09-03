@@ -357,7 +357,7 @@ setup_gpu() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting gpu kernel parameters"
 
-	[[ $bootloader == "refind" ]] && sed -i "s/\(options  \"[^\"]*\)\"/\1 $cpu_kernel_parameters\"/" refind-custom.conf
+	[[ $bootloader == "refind" ]] && sed -i "s/\(options  \"[^\"]*\)\"/\1 $gpu_kernel_parameters\"/" refind-custom.conf
 	[[ $bootloader == "grub" ]] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $gpu_kernel_parameters\"/" /etc/default/grub
 }
 
