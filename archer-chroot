@@ -192,7 +192,7 @@ setup_refind() {
 		root_uuid=$(blkid -s UUID -o value "$root_partition")
 
 		sed -i 's|PARTUUID=ROOT_PARTUUID|'"$root_partition"'|g' /boot/EFI/refind/refind-custom.conf
-		sed -i "s/\(options  \"[^\"]*\)\"/\1 rd.luks.name=$root_uuid=root\"/" refind-custom.conf
+		sed -i "s/\(options  \"[^\"]*\)\"/\1 rd.luks.name=$root_uuid=root\"/" /boot/EFI/refind/refind-custom.conf
 	else
 
 		root_partuuid=$(blkid -s PARTUUID -o value "$root_partition")
