@@ -412,6 +412,10 @@ qemu_gpu() {
 	echo -e "Installing packages"
 
 	package_installer "qemu-guest-agent vulkan-virtio lib32-vulkan-virtio vulkan-mesa-layers lib32-vulkan-mesa-layers"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Fixing rEFInd resolution"
+	[[ $bootloader == "refind" ]] && sed -i '/^[^#]*resolution/ s/.*/resolution 1024 768/' /boot/EFI/refind/refind-custom.conf
 }
 
 setup_laptop() {
