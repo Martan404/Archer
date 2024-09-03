@@ -1,7 +1,0 @@
-#!/bin/bash
-
-root_partition="/dev/nvme0n1p2"
-
-
-test="testjajaja"
-sed -i "s/\(options  \"[^\"]*\)\"/\1 $test\"/" refind-custom.conf
