@@ -190,11 +190,9 @@ setup_refind() {
 
 	if [[ $disk_encryption == "yes" ]]; then
 		root_uuid=$(blkid -s UUID -o value "$root_partition")
-		root_partuuid=$(blkid -s PARTUUID -o value "$root_partition")
 
-		sed -i 's/root=/rd.luks.name='"$root_partuuid"' root=/' /boot/EFI/refind/refind-custom.conf
-		sed -i 's|PARTUUID=ROOT_PARTUUID|/dev/mapper/root|g' /boot/EFI/refind/refind-custom.conf
-		#sed -i 's/subvol=@/& KERNEL_PARAMETER' /boot/EFI/refind/refind-custom.conf
+		sed -i 's|PARTUUID=ROOT_PARTUUID|'"$root_partition"'|g' /boot/EFI/refind/refind-custom.conf
+		sed -i "s/\(options  \"[^\"]*\)\"/\1 rd.luks.uuid=$root_uuid=root\"/" refind-custom.conf
 	else
 
 		root_partuuid=$(blkid -s PARTUUID -o value "$root_partition")
@@ -304,8 +302,8 @@ setup_cpu() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting cpu kernel parameters"
 
-	# GET SED FOR rEFInd
-	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $cpu_kernel_parameters\"/" /etc/default/grub
+	[[ $bootloader == "refind" ]] && sed -i "s/\(options  \"[^\"]*\)\"/\1 $cpu_kernel_parameters\"/" refind-custom.conf
+	[[ $bootloader == "grub" ]] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $cpu_kernel_parameters\"/" /etc/default/grub
 }
 
 amd_cpu() {
@@ -359,8 +357,8 @@ setup_gpu() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting gpu kernel parameters"
 
-	# GET SED FOR rEFInd
-	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $gpu_kernel_parameters\"/" /etc/default/grub
+	[[ $bootloader == "refind" ]] && sed -i "s/\(options  \"[^\"]*\)\"/\1 $cpu_kernel_parameters\"/" refind-custom.conf
+	[[ $bootloader == "grub" ]] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $gpu_kernel_parameters\"/" /etc/default/grub
 }
 
 amd_gpu() {
@@ -456,8 +454,9 @@ setup_hibernation() {
 	echo -e "Setting swapfile offset for hibernation kernel parameter"
 
 	swapfile_offset=$(btrfs inspect-internal map-swapfile -r /swap/swapfile)
-	# GET SED FOR rEFInd
-	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 resume_offset=$swapfile_offset\"/" /etc/default/grub
+	
+	[[ $bootloader == "refind" ]] && sed -i "s/\(options  \"[^\"]*\)\"/\1 resume_offset=$swapfile_offset\"/" refind-custom.conf
+	[[ $bootloader == "grub" ]] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 resume_offset=$swapfile_offset\"/" /etc/default/grub
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Adding 'resume' hook for hibernation"
