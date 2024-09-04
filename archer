@@ -388,9 +388,9 @@ setup_drive() {
 	echo -e "Formatting root partition"
 
 	if [[ $disk_encryption == "yes" ]]; then
-
 		cryptsetup -v -q luksFormat "$root_partition"
 		cryptsetup open "$root_partition" root
+		
 		mkfs.btrfs -f -L "$hostname" /dev/mapper/root
 
 		encrypted_root_partition=$root_partition
@@ -503,7 +503,8 @@ arch_chroot() {
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Copying locale.gen"
-	cp /etc/locale.gen /mnt/Archer-main/quiver/locale.gen
+
+	cp /etc/locale.gen /mnt/etc/locale.gen
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Changing root into new system"

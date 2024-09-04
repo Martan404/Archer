@@ -66,7 +66,6 @@ setup_system() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting $default_locale as locale and $keyboard_keymap as keymap"
 
-	mv /Archer-main/quiver/locale.gen /etc/locale.gen
 	locale-gen
 
 	echo "LANG=$default_locale" >>/etc/locale.conf
@@ -173,7 +172,7 @@ setup_refind() {
 	echo -e "Setting up rEFInd"
 	
 	refind-install
-	mv /Archer-main/quiver/configs/refind-custom.conf /boot/EFI/refind/refind-custom.conf
+	mv /Archer-main/quiver/bootloader/refind-custom.conf /boot/EFI/refind/refind-custom.conf
 	echo "include refind-custom.conf" >> /boot/EFI/refind/refind.conf
 	rm -rf /boot/refind_linux.conf
 
@@ -206,9 +205,9 @@ setup_refind() {
 	mv /Archer-main/quiver/bootloader/themes/refind-theme-regular/ /boot/EFI/refind/themes/refind-theme-regular/
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Copying bootloader tools"
+	echo -e "Copying arch netboot"
 
-	mv /Archer-main/quiver/bootloader/*.efi /boot/EFI/tools
+	mv /Archer-main/quiver/bootloader/arch-netboot.efi /boot/arch-netboot.efi
 }
 
 setup_grub() {
@@ -301,9 +300,9 @@ setup_cpu() {
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting cpu kernel parameters"
-
-	[[ $bootloader == "refind" ]] && sed -i "s/\(options  \"[^\"]*\)\"/\1 $cpu_kernel_parameters\"/" /boot/EFI/refind/refind-custom.conf
-	[[ $bootloader == "grub" ]] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $cpu_kernel_parameters\"/" /etc/default/grub
+	
+	[[ $bootloader == "refind" ]] && [ -n "$cpu_kernel_parameters" ] && sed -i "s/\(options  \"[^\"]*\)\"/\1 $cpu_kernel_parameters\"/" /boot/EFI/refind/refind-custom.conf
+	[[ $bootloader == "grub" ]] && [ -n "$cpu_kernel_parameters" ] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $cpu_kernel_parameters\"/" /etc/default/grub
 }
 
 amd_cpu() {
@@ -357,8 +356,8 @@ setup_gpu() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting gpu kernel parameters"
 
-	[[ $bootloader == "refind" ]] && sed -i "s/\(options  \"[^\"]*\)\"/\1 $gpu_kernel_parameters\"/" /boot/EFI/refind/refind-custom.conf
-	[[ $bootloader == "grub" ]] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $gpu_kernel_parameters\"/" /etc/default/grub
+	[[ $bootloader == "refind" ]] && [ -n "$gpu_kernel_parameters" ] && sed -i "s/\(options  \"[^\"]*\)\"/\1 $gpu_kernel_parameters\"/" /boot/EFI/refind/refind-custom.conf
+	[[ $bootloader == "grub" ]] && [ -n "$gpu_kernel_parameters" ] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $gpu_kernel_parameters\"/" /etc/default/grub
 }
 
 amd_gpu() {
