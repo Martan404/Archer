@@ -357,7 +357,7 @@ format_drive() {
 	parted -s "$disk" mklabel gpt
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating EFI Partition"
+	echo -e "Creating EFI system partition"
 
 	parted -s "$disk" mkpart fat32 0% "$efi_size"
 	parted -s "$disk" set 1 esp on
@@ -380,9 +380,10 @@ format_drive() {
 
 setup_drive() {
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Formatting EFI partition"
+	echo -e "Formatting EFI system partition"
 
 	mkfs.fat -F32 "$efi_partition"
+	fatlabel "$efi_partition" "ESP"
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Formatting root partition"
@@ -502,9 +503,9 @@ arch_chroot() {
 	cd /mnt && curl -L https://github.com/Martan404/Archer/archive/master.tar.gz | tar -xz Archer-main && cd /
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Copying locale.gen"
+	echo -e "Copying locale.gen from archiso"
 
-	cp /etc/locale.gen /mnt/etc/locale.gen
+	cp /etc/locale.gen /mnt/etc
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Changing root into new system"
@@ -519,6 +520,7 @@ arch_chroot() {
 exit_install() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "System ready to boot, please remove the installation media before restarting"
+	[[ $bootloader == "refind" ]] && echo -e "To remove entries in the bootloader press the DELETE button"
 
 	read -r -p "Press any key to shutdown..."
 

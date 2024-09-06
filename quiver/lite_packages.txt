@@ -19,10 +19,11 @@ bash-completion
 bash-language-server
 blesh
 btop
+fastfetch
+kernel-modules-hook
 man-db
 man-pages
 micro
-fastfetch
 openssh
 pacman-contrib
 pacutils
