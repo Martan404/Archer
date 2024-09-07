@@ -166,27 +166,27 @@ setup_refind() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing rEFInd packages"
 	
-	package_installer "refind refind-btrfs gptfdisk"
+	package_installer "refind refind-btrfs python-pillow gptfdisk"
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up rEFInd"
 	
 	refind-install
 	mv /Archer-main/quiver/bootloader/refind-custom.conf /boot/EFI/refind/refind-custom.conf
-	echo "include refind-custom.conf" >> /boot/EFI/refind/refind.conf
+	echo -e "include refind-custom.conf\n" >> /boot/EFI/refind/refind.conf
 	rm -rf /boot/refind_linux.conf
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting up rEFInd boot entry"
+	echo -e "Setting up rEFInd-btrfs"
+
+	mv /Archer-main/quiver/bootloader/refind-btrfs.conf /etc/refind-btrfs.conf
+	systemctl enable refind-btrfs.service
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting kernel name"
+	echo -e "Setting up boot entry"
 
 	sed -i "s/KERNEL_NAME/$kernel/g" /boot/EFI/refind/refind-custom.conf
 	
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting root path"
-
 	if [[ $disk_encryption == "yes" ]]; then
 		root_uuid=$(blkid -s UUID -o value "$encrypted_root_partition")
 
@@ -517,54 +517,12 @@ bash_config() {
 	chown "$user":"$user" /home/"$user"/.bash_aliases
 }
 
-backup_kernel() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing rsync"
-
-	package_installer "rsync"
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating pacman hooks for kernel backup"
-
-	mkdir -p /.bootbackup/{preupdate,postupdate}
-
-	cat <<-END >/etc/pacman.d/hooks/00-bootbackup-preupdate.hook
-[Trigger]
-Operation = Upgrade
-Operation = Install
-Operation = Remove
-Type = Path
-Target = usr/lib/modules/*/vmlinuz
-
-[Action]
-Depends = rsync
-Description = Backing up /boot before updating...
-When = PreTransaction
-Exec = /usr/bin/rsync -a --delete /boot /.bootbackup/preupdate
-	END
-
-	cat <<-END >/etc/pacman.d/hooks/95-bootbackup-postupdate.hook
-[Trigger]
-Operation = Upgrade
-Operation = Install
-Operation = Remove
-Type = Path
-Target = usr/lib/modules/*/vmlinuz
-
-[Action]
-Depends = rsync
-Description = Backing up /boot after updating...
-When = PostTransaction
-Exec = /usr/bin/rsync -a --delete /boot /.bootbackup/postupdate
-	END
-}
-
 snapper_setup() {
 	if [[ $snapshot_layout == "snapper" ]]; then
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Installing Snapper packages"
 
-		package_installer "snapper snap-pac snapper-support snapper-rollback"
+		package_installer "snapper snap-pac snapper-support"
 		[[ $bootloader == "grub" ]] && package_installer "snap-pac-grub"
 
 		echo -e "-------------------------------------------------------------------------"
@@ -576,7 +534,7 @@ snapper_setup() {
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Installing Snapper packages"
 
-		package_installer "snapper snap-pac snapper-rollback"
+		package_installer "snapper snap-pac"
 		[[ $bootloader == "grub" ]] && package_installer "snap-pac-grub"
 
 		echo -e "-------------------------------------------------------------------------"
@@ -829,7 +787,6 @@ install_packages
 setup_environment
 bash_config
 
-backup_kernel
 [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "snapper" ]] && snapper_setup
 [[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "yabsnap" ]] && yabsnap_setup
 [[ $snapshot_layout == "snapper" ]] && snapper_setup
