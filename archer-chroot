@@ -627,8 +627,7 @@ snapshot_rollback() {
 	cat /Archer-main/quiver/scripts/rollback >/usr/local/bin/rollback
 	chmod a+x /usr/local/bin/rollback
 
-	sed -i "s/SNAPSHOT_LAYOUT/$snapshot_layout/g" /usr/local/bin/rollback
-	sed -i "s/SNAP_MANAGER/$snap_manager/g" /usr/local/bin/rollback
+	sed -i "s/ROOT_PARTITION/$root_partition/g" /usr/local/bin/rollback
 }
 
 package_config() {
