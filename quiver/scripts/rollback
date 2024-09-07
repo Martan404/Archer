@@ -1,6 +1,6 @@
 #!/bin/bash
 # shellcheck disable=SC2002,SC2162,SC2086
-root_partition="ROOT_PARTITION"
+hostname="HOSTNAME"
 
 echo -e "
 -------------------------------------------------------------------------
@@ -16,8 +16,8 @@ $(tput sgr0)
                         Snapshot rollback script
 -------------------------------------------------------------------------"
 
-root_uuid=$(sudo blkid -s UUID -o value "$root_partition")
-#snapshot_path=$(cat /proc/cmdline | grep -oP '(?<=subvol=)[^ ]*')
+root_uuid=$(lsblk -o UUID,LABEL | grep "$hostname" | awk '{print $1}')
+snapshot_path=$(cat /proc/cmdline | grep -oP '(?<=subvol=)[^ ]*')
 
 sudo echo -e "Mounting root on /mnt"
 
@@ -31,12 +31,14 @@ sudo mv /mnt/@ /mnt/@broken
 echo -e "-------------------------------------------------------------------------"
 echo -e "Setting current snapshot as new root"
 
-sudo btrfs subvolume snapshot / /mnt/@ && success="yes"
+#sudo btrfs subvolume snapshot / /mnt/@ && success="yes"
+#GRUB sudo btrfs subvolume snapshot /mnt/$snapshot_path
+sudo btrfs subvolume snapshot /$snapshot_path /mnt/@ && success="yes"
 
 echo -e "-------------------------------------------------------------------------"
 echo -e "Removing broken root"
 
-[[ $success == "yes" ]] && sudo rm -rf /mnt/@broken
+[[ $success == "yes" ]] && sudo rm -rf /mnt/@broken && echo "Removed"
 
 if [ -e "/mnt/@/var/lib/pacman/db.lck" ]; then
 
