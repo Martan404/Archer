@@ -17,8 +17,9 @@ $(tput sgr0)
 -------------------------------------------------------------------------"
 
 root_uuid=$(sudo blkid -s UUID -o value "$root_partition")
+#snapshot_path=$(cat /proc/cmdline | grep -oP '(?<=subvol=)[^ ]*')
 
-echo -e "Mounting root on /mnt"
+sudo echo -e "Mounting root on /mnt"
 
 sudo mount "/dev/disk/by-uuid/$root_uuid" /mnt
 
