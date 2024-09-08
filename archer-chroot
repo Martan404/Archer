@@ -605,9 +605,10 @@ yabsnap_setup() {
 	yabsnap create-config root
 
 	sed -i 's/source =/source = \//' /etc/yabsnap/configs/root.conf
-	sed -i 's/keep_preinstall = 1/keep_preinstall = 6/' /etc/yabsnap/configs/root.conf
 	sed -i 's/keep_user = 1/keep_user = 2/' /etc/yabsnap/configs/root.conf
+	sed -i 's/trigger_interval = 1 hour/trigger_interval = 5 minutes/' /etc/yabsnap/configs/root.conf
 	sed -i 's/keep_preinstall = 1/keep_preinstall = 10/' /etc/yabsnap/configs/root.conf
+	sed -i 's/keep_daily = 0/keep_daily = 7/' /etc/yabsnap/configs/root.conf
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Excluding /.snapshots from updatedb"

@@ -14,7 +14,7 @@ if pacman -Q yabsnap >/dev/null 2>&1; then
 
         # Only add unique entries
         if ! [[ " ${snapshot_list[*]} " == *" $snapshot_id "* ]]; then
-            snapshot_list=(" $snapshot_id" "$comment" "${snapshot_list[@]}")
+            snapshot_list=("$snapshot_id" "$comment" "${snapshot_list[@]}")
         fi
     done < <(find "/.snapshots/" -mindepth 1 -maxdepth 1 -type d)
 fi
@@ -32,7 +32,7 @@ if pacman -Q snapper >/dev/null 2>&1; then
 
         # Only add unique entries
         if ! [[ " ${snapshot_list[*]} " == *" $snapshot_id "* ]]; then
-            snapshot_list=(" $snapshot_id" "$description" "${snapshot_list[@]}")
+            snapshot_list=("$snapshot_id" "$description" "${snapshot_list[@]}")
         fi
     done < <(find "/.snapshots/" -mindepth 1 -maxdepth 1 -type d)
 fi
