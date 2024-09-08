@@ -392,7 +392,7 @@ setup_drive() {
 		while true; do
 			cryptsetup -v -q luksFormat "$root_partition"
 			cryptsetup open "$root_partition" root && break
-			echo -e "Wrong password. Set a new one"
+			echo -e "Unable to unlock partition. Set a new password"
 		done
 		
 		mkfs.btrfs -f -L "$hostname" /dev/mapper/root
