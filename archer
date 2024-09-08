@@ -389,8 +389,11 @@ setup_drive() {
 	echo -e "Formatting root partition"
 
 	if [[ $disk_encryption == "yes" ]]; then
-		cryptsetup -v -q luksFormat "$root_partition"
-		cryptsetup open "$root_partition" root
+		while true; do
+			cryptsetup -v -q luksFormat "$root_partition"
+			cryptsetup open "$root_partition" root && break
+			echo -e "Wrong password. Set a new one"
+		done
 		
 		mkfs.btrfs -f -L "$hostname" /dev/mapper/root
 

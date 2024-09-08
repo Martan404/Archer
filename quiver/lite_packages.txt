@@ -20,6 +20,7 @@ bash-language-server
 bash-preexec
 blesh
 btop
+dialog
 fastfetch
 kernel-modules-hook
 man-db
