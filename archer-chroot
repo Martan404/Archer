@@ -262,11 +262,6 @@ exec /usr/bin/efibootmgr -e 3 "\$@"
 	fi
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Fixing grub resolution"
-
-	sed -i '/^GRUB_GFXMODE=/s/=.*/=1920x1080,1280x720,1024x768,auto/' /etc/default/grub
-
-	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating windows-boot script"
 
 	cat <<-END >>/usr/local/bin/windows-boot
