@@ -23,7 +23,8 @@ if [[ $snapshot_path = "@" ]]; then
     exit
 fi
 
-sudo echo -e "Mounting root on /mnt" || exit
+sudo echo -e "Mounting root on /mnt"
+[[ "$EUID" -ne 0 ]] && exit
 sudo mount -t btrfs "/dev/disk/by-uuid/$root_uuid" /mnt
 
 if [[ -e /mnt/@prev-root ]]; then
@@ -40,7 +41,7 @@ sudo mv /mnt/@ /mnt/@prev-root
 echo -e "Setting current snapshot as new root"
 sudo btrfs subvolume snapshot /$snapshot_path /mnt/@
 
-if [ -e "/mnt/@/var/lib/pacman/db.lck" ]; then
+if [[ -e "/mnt/@/var/lib/pacman/db.lck" ]]; then
 	echo -e "Removing pacman db.lck"
 	sudo rm /mnt/@/var/lib/pacman/db.lck
 fi

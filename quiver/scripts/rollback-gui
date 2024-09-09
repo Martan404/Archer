@@ -58,11 +58,12 @@ done
 
 echo "Rolling back to $(tput setaf 4)[$selected_id] \"$selected_info\"$(tput sgr0)"
 
-sudo echo -e "Mounting root partition on /mnt" || exit
+sudo echo -e "Mounting root partition on /mnt"
+[[ "$EUID" -ne 0 ]] && exit
 root_uuid=$(lsblk -o UUID,LABEL | grep "$(</etc/hostname)" | awk '{print $1}')
 sudo mount -t btrfs "/dev/disk/by-uuid/$root_uuid" /mnt
 
-if [ -e /mnt/@prev-root ]; then
+if [[ -e /mnt/@prev-root ]]; then
     echo -e "Removing previous root"
     [[ -e "/mnt/@prev-root/var/lib/portables" ]] && sudo btrfs subvolume delete /mnt/@prev-root/var/lib/portables
     [[ -e "/mnt/@prev-root/var/lib/machines" ]] && sudo btrfs subvolume delete /mnt/@prev-root/var/lib/machines
@@ -80,7 +81,7 @@ echo -e "Setting $(tput setaf 4)[$selected_id] \"$selected_info\"$(tput sgr0) as
 
 sudo btrfs subvolume snapshot /mnt/"$snapshot_path" /mnt/@
 
-if [ -e "/mnt/@/var/lib/pacman/db.lck" ]; then
+if [[ -e "/mnt/@/var/lib/pacman/db.lck" ]]; then
     echo -e "Removing pacman db.lck"
     sudo rm /mnt/@/var/lib/pacman/db.lck
 fi
