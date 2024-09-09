@@ -127,7 +127,7 @@ ff02::2 		ip6-allrouters
 	sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /etc/sudoers
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating $user user account"
+	echo -e "Creating user $user"
 
 	groupadd -f git
 	useradd -m -G sys,wheel,rfkill,git -s /bin/bash "$user"
