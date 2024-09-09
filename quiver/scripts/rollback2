@@ -1,0 +1,54 @@
+#!/bin/bash
+# shellcheck disable=SC2002,SC2162,SC2086
+echo -e "
+-------------------------------------------------------------------------
+$(tput setaf 4)
+             █████╗ ██████╗  ██████╗██╗  ██╗███████╗██████╗
+            ██╔══██╗██╔══██╗██╔════╝██║  ██║██╔════╝██╔══██╗
+            ███████║██████╔╝██║     ███████║█████╗  ██████╔╝
+            ██╔══██║██╔══██╗██║     ██╔══██║██╔══╝  ██╔══██╗
+            ██║  ██║██║  ██║╚██████╗██║  ██║███████╗██║  ██║
+            ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+$(tput sgr0)
+-------------------------------------------------------------------------
+                        Snapshot rollback script
+-------------------------------------------------------------------------"
+
+root_uuid=$(lsblk -o UUID,LABEL | grep "$(< /etc/hostname)" | awk '{print $1}')
+snapshot_path=$(cat /proc/cmdline | grep -oP '(?<=subvol=)[^ ]*')
+#check for refind-btrfs
+
+sudo echo -e "Mounting root on /mnt"
+
+sudo mount -t btrfs "/dev/disk/by-uuid/$root_uuid" /mnt
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Moving previous root"
+
+sudo mv /mnt/@ /mnt/@prev-root
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Setting current snapshot as new root"
+
+sudo btrfs subvolume snapshot /$snapshot_path /mnt/@
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Removing previous root"
+
+sudo btrfs subvolume delete /mnt/@prev-root
+
+if [ -e "/mnt/@/var/lib/pacman/db.lck" ]; then
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Removing pacman db.lck"
+
+	sudo rm /mnt/@/var/lib/pacman/db.lck
+fi
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Unmounting /mnt"
+
+sudo umount -R /mnt
+
+read -p "Press any key to reboot..."
+reboot

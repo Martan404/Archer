@@ -58,12 +58,14 @@ done
 echo "Rolling back to $(tput setaf 4)[$selected_id] \"$selected_info\"$(tput sgr0)"
 
 sudo echo -e "Mounting root partition on /mnt" || exit
+
+# if /dev/mapper/root then do /dev/mapper/root
 root_uuid=$(lsblk -o UUID,LABEL | grep "$(</etc/hostname)" | awk '{print $1}')
-sudo mount "/dev/disk/by-uuid/$root_uuid" /mnt
+sudo mount -t btrfs "/dev/disk/by-uuid/$root_uuid" /mnt
 
 if [ -e /mnt/@prev-root ]; then
     echo -e "Removing previous root"
-    sudo rm -rf /mnt/@prev-root
+    sudo btrfs subvolume delete /mnt/@prev-root
 fi
 
 echo -e "Moving previous root"
@@ -81,7 +83,10 @@ if [ -e "/mnt/@/var/lib/pacman/db.lck" ]; then
     sudo rm /mnt/@/var/lib/pacman/db.lck
 fi
 
+#if cmdline subvol is not @ then rm prev here
+echo -e "-------------------------------------------------------------------------"
 echo -e "Unmounting /mnt"
+
 sudo umount -R /mnt
 
 read -p "Press any key to reboot..."
