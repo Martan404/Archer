@@ -29,8 +29,8 @@ sudo mount -t btrfs "/dev/disk/by-uuid/$root_uuid" /mnt
 
 if [[ -e /mnt/@prev-root ]]; then
     echo -e "Removing previous root"
-    [[ -e "/mnt/@prev-root/var/lib/portables" ]] && sudo btrfs subvolume delete /mnt/@prev-root/var/lib/portables
-    [[ -e "/mnt/@prev-root/var/lib/machines" ]] && sudo btrfs subvolume delete /mnt/@prev-root/var/lib/machines
+    [[ -e "/mnt/@prev-root/var/lib/portables" ]] && sudo btrfs subvolume delete /mnt/@prev-root/var/lib/portables >/dev/null 2>&1
+    [[ -e "/mnt/@prev-root/var/lib/machines" ]] && sudo btrfs subvolume delete /mnt/@prev-root/var/lib/machines >/dev/null 2>&1
     sudo btrfs subvolume delete /mnt/@prev-root
     sudo rm -rf /mnt/@prev-root
 fi
@@ -47,9 +47,9 @@ if [[ -e "/mnt/@/var/lib/pacman/db.lck" ]]; then
 fi
 
 echo -e "Removing previous root"
-[[ -e "/mnt/@prev-root/var/lib/portables" ]] && sudo btrfs subvolume delete /mnt/@prev-root/var/lib/portables
-[[ -e "/mnt/@prev-root/var/lib/machines" ]] && sudo btrfs subvolume delete /mnt/@prev-root/var/lib/machines
-sudo btrfs subvolume delete /mnt/@prev-root
+[[ -e "/mnt/@prev-root/var/lib/portables" ]] && sudo btrfs subvolume delete /mnt/@prev-root/var/lib/portables >/dev/null 2>&1
+[[ -e "/mnt/@prev-root/var/lib/machines" ]] && sudo btrfs subvolume delete /mnt/@prev-root/var/lib/machines >/dev/null 2>&1
+sudo btrfs subvolume delete /mnt/@prev-root 
 sudo rm -rf /mnt/@prev-root
 
 echo -e "Unmounting /mnt"
