@@ -24,7 +24,7 @@ if [[ $snapshot_path = "@" ]]; then
 fi
 
 sudo echo -e "Mounting root on /mnt"
-[[ "$EUID" -ne 0 ]] && exit
+[[ "$(sudo -n uptime 2>&1 | grep -c "load")" = 0 ]] && exit
 sudo mount -t btrfs "/dev/disk/by-uuid/$root_uuid" /mnt
 
 if [[ -e /mnt/@prev-root ]]; then

@@ -662,11 +662,6 @@ package_config() {
 	mv /Archer-main/quiver/hooks/* /etc/pacman.d/hooks/
 	chown -R :wheel /etc/pacman.d/hooks/*
 
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Rebuilding the initramfs image"
-
-	mkinitcpio -P
-
 	if [[ $bootloader == "grub" ]]; then
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Rebuilding GRUB configs"
