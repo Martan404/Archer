@@ -59,7 +59,8 @@ done
 echo "Rolling back to $(tput setaf 4)[$selected_id] \"$selected_info\"$(tput sgr0)"
 
 sudo echo -e "Mounting root partition on /mnt" || exit
-root_uuid=$(lsblk -o UUID,LABEL | grep "$(</etc/hostname)" | awk '{print $1}') && sudo mount -t btrfs "/dev/disk/by-uuid/$root_uuid" /mnt; sudo mount -t btrfs "/dev/disk/by-uuid/$root_uuid" /mnt
+root_uuid=$(lsblk -o UUID,LABEL | grep "$(</etc/hostname)" | awk '{print $1}')
+sudo mount -t btrfs "/dev/disk/by-uuid/$root_uuid" /mnt
 
 if [ -e /mnt/@prev-root ]; then
     echo -e "Removing previous root"

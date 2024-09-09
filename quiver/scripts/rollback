@@ -17,7 +17,7 @@ $(tput sgr0)
 root_uuid=$(lsblk -o UUID,LABEL | grep "$(< /etc/hostname)" | awk '{print $1}')
 snapshot_path=$(awk -F'subvol=' '{print $2}' /proc/cmdline | awk '{print $1}')
 
-if [ $snapshot_path = "@" ]; then
+if [[ $snapshot_path = "@" ]]; then
     echo "This script only works when you are booted in to a snapshot"
     read -p "Press any key to exit..."
     exit
@@ -26,7 +26,7 @@ fi
 sudo echo -e "Mounting root on /mnt" || exit
 sudo mount -t btrfs "/dev/disk/by-uuid/$root_uuid" /mnt
 
-if [ -e /mnt/@prev-root ]; then
+if [[ -e /mnt/@prev-root ]]; then
     echo -e "Removing previous root"
     [[ -e "/mnt/@prev-root/var/lib/portables" ]] && sudo btrfs subvolume delete /mnt/@prev-root/var/lib/portables
     [[ -e "/mnt/@prev-root/var/lib/machines" ]] && sudo btrfs subvolume delete /mnt/@prev-root/var/lib/machines
