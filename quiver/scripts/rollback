@@ -32,13 +32,16 @@ sudo mv /mnt/@ /mnt/@prev-root
 echo -e "Setting current snapshot as new root"
 sudo btrfs subvolume snapshot /$snapshot_path /mnt/@
 
-echo -e "Removing previous root"
-sudo btrfs subvolume delete /mnt/@prev-root
-
 if [ -e "/mnt/@/var/lib/pacman/db.lck" ]; then
 	echo -e "Removing pacman db.lck"
 	sudo rm /mnt/@/var/lib/pacman/db.lck
 fi
+
+echo -e "Removing previous root"
+sudo btrfs subvolume delete /mnt/@prev-root/var/lib/portables
+sudo btrfs subvolume delete /mnt/@prev-root/var/lib/machines
+sudo btrfs subvolume delete /mnt/@prev-root
+sudo rm -rf /mnt/@prev-root
 
 echo -e "Unmounting /mnt"
 sudo umount -R /mnt

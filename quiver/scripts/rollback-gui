@@ -59,12 +59,14 @@ done
 echo "Rolling back to $(tput setaf 4)[$selected_id] \"$selected_info\"$(tput sgr0)"
 
 sudo echo -e "Mounting root partition on /mnt" || exit
-root_uuid=$(lsblk -o UUID,LABEL | grep "$(</etc/hostname)" | awk '{print $1}') && sudo mount -t btrfs "/dev/disk/by-uuid/$root_uuid" /mnt
-sudo mount -t btrfs "/dev/disk/by-uuid/$root_uuid" /mnt
+root_uuid=$(lsblk -o UUID,LABEL | grep "$(</etc/hostname)" | awk '{print $1}') && sudo mount -t btrfs "/dev/disk/by-uuid/$root_uuid" /mnt; sudo mount -t btrfs "/dev/disk/by-uuid/$root_uuid" /mnt
 
 if [ -e /mnt/@prev-root ]; then
     echo -e "Removing previous root"
-    sudo btrfs subvolume delete /mnt/@prev-root || sudo rm -rf /mnt/@prev-root
+    sudo btrfs subvolume delete /mnt/@prev-root/var/lib/portables
+    sudo btrfs subvolume delete /mnt/@prev-root/var/lib/machines
+    sudo btrfs subvolume delete /mnt/@prev-root
+    sudo rm -rf /mnt/@prev-root
 fi
 
 echo -e "Moving previous root"
@@ -84,7 +86,10 @@ fi
 
 if [[ ! $subvol = "@" ]]; then
     echo -e "Removing previous root"
-    sudo btrfs subvolume delete /mnt/@prev-root || sudo rm -rf /mnt/@prev-root
+    sudo btrfs subvolume delete /mnt/@prev-root/var/lib/portables
+    sudo btrfs subvolume delete /mnt/@prev-root/var/lib/machines
+    sudo btrfs subvolume delete /mnt/@prev-root
+    sudo rm -rf /mnt/@prev-root
 fi
 
 echo -e "Unmounting /mnt"
