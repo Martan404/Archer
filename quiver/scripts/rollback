@@ -18,7 +18,7 @@ root_uuid=$(lsblk -o UUID,LABEL | grep "$(< /etc/hostname)" | awk '{print $1}')
 snapshot_path=$(awk -F'subvol=' '{print $2}' /proc/cmdline | awk '{print $1}')
 
 if [[ $snapshot_path = "@" ]]; then
-    echo "This script only works when you are booted in to a snapshot"
+    echo "This script only works when you are booted in to a snapshot. Use rollback-gui instead"
     read -p "Press any key to exit..."
     exit
 fi
