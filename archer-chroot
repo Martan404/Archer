@@ -657,7 +657,7 @@ package_config() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Moving pacman hooks"
 
-	mv -v /Archer-main/quiver/hooks/* /etc/pacman.d/hooks/
+	mv /Archer-main/quiver/hooks/* /etc/pacman.d/hooks/
 	chown -R :wheel /etc/pacman.d/hooks/*
 
 	echo -e "-------------------------------------------------------------------------"
