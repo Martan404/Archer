@@ -188,14 +188,14 @@ setup_refind() {
 	sed -i "s/KERNEL_NAME/$kernel/g" /boot/EFI/refind/refind-custom.conf
 	
 	if [[ $disk_encryption == "yes" ]]; then
-		root_uuid=$(blkid -s UUID -o value "$encrypted_root_partition")
+		root_disk_uuid=$(blkid -s UUID -o value "$encrypted_root_partition")
 
-		sed -i 's|PARTUUID=ROOT_PARTUUID|'"$root_partition"'|g' /boot/EFI/refind/refind-custom.conf
-		sed -i "s/\(options  \"[^\"]*\)\"/\1 rd.luks.name=$root_uuid=root\"/" /boot/EFI/refind/refind-custom.conf
+		sed -i "s|PARTUUID=ROOT_PARTUUID|$root_partition|g" /boot/EFI/refind/refind-custom.conf
+		sed -i "s/\(options  \"[^\"]*\)\"/\1 rd.luks.name=$root_disk_uuid=root\"/" /boot/EFI/refind/refind-custom.conf
 	else
 
-		root_partuuid=$(blkid -s PARTUUID -o value "$root_partition")
-		sed -i "s/ROOT_PARTUUID/$root_partuuid/g" /boot/EFI/refind/refind-custom.conf
+		root_disk_partuuid=$(blkid -s PARTUUID -o value "$root_partition")
+		sed -i "s|ROOT_PARTUUID|$root_disk_partuuid|g" /boot/EFI/refind/refind-custom.conf
 	fi
 
 	echo -e "-------------------------------------------------------------------------"
@@ -257,8 +257,8 @@ exec /usr/bin/efibootmgr -e 3 "\$@"
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Setting encryption kernel parameters"
 		
-		device_uuid=$(blkid -s UUID -o value "$encrypted_root_partition")
-		sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 rd.luks.name=$device_uuid=root root=\/dev\/mapper\/root\"/" /etc/default/grub
+		root_disk_uuid=$(blkid -s UUID -o value "$encrypted_root_partition")
+		sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 rd.luks.name=$root_disk_uuid=root root=\/dev\/mapper\/root\"/" /etc/default/grub
 	fi
 
 	echo -e "-------------------------------------------------------------------------"
@@ -450,11 +450,12 @@ setup_laptop() {
 setup_hibernation() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting swapfile offset for hibernation kernel parameter"
-
+	
+	swap_uuid=$(findmnt -no UUID -T /swap/swapfile)
 	swapfile_offset=$(btrfs inspect-internal map-swapfile -r /swap/swapfile)
 	
-	[[ $bootloader == "refind" ]] && sed -i "s/\(options  \"[^\"]*\)\"/\1 resume_offset=$swapfile_offset\"/" /boot/EFI/refind/refind-custom.conf
-	[[ $bootloader == "grub" ]] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 resume_offset=$swapfile_offset\"/" /etc/default/grub
+	[[ $bootloader == "refind" ]] && sed -i "s/\(options  \"[^\"]*\)\"/\1 resume=UUID=$swap_uuid resume_offset=$swapfile_offset\"/" /boot/EFI/refind/refind-custom.conf
+	[[ $bootloader == "grub" ]] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 resume=UUID=$swap_uuid resume_offset=$swapfile_offset\"/" /etc/default/grub
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Adding 'resume' hook for hibernation"
