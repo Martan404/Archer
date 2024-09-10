@@ -48,32 +48,32 @@ if pacman -Q snapper >/dev/null 2>&1; then
     done < <(find "/.snapshots/" -mindepth 1 -maxdepth 1 -type d)
 fi
 
-# Display dialog to select snapshot
-selected_id=$(dialog --clear \
-    --title "Snapshot rollback" \
-    --menu "Select the snapshot for rollback:" \
-    0 0 ${#snapshot_list[@]} \
-    "${snapshot_list[@]}" \
-    2>&1 >/dev/tty)
-clear
-[[ -z $selected_id ]] && exit
-
-# Retrieve the selected snapshot info from the array
-for ((i = 0; i < ${#snapshot_list[@]}; i += 2)); do
-    if [[ "${snapshot_list[$i]}" == "$selected_id" ]]; then
-        selected_info="${snapshot_list[$((i + 1))]}"
-        break
-    fi
-done
-
 while true; do
+    # Display dialog to select snapshot
+    selected_id=$(dialog --clear \
+        --title "Snapshot rollback" \
+        --menu "Select the snapshot for rollback:" \
+        0 0 ${#snapshot_list[@]} \
+        "${snapshot_list[@]}" \
+        2>&1 >/dev/tty)
+    clear
+    [[ -z $selected_id ]] && exit
+
+    # Retrieve the selected snapshot info from the array
+    for ((i = 0; i < ${#snapshot_list[@]}; i += 2)); do
+        if [[ "${snapshot_list[$i]}" == "$selected_id" ]]; then
+            selected_info="${snapshot_list[$((i + 1))]}"
+            break
+        fi
+    done
+
     echo "Rolling back to $(tput setaf 12)[$selected_id] \"$selected_info\"$(tput sgr0)"
     read -r -p "Is this correct? (Y/n) " yesNo
     case $yesNo in
-	    [yY1]) break ;;
-		[nN2]) exit ;;
-	esac
-clear
+        [yY1]) break ;;
+        [nN2]) ;;
+    esac
+    clear
 done
 
 echo -e "Mounting root partition on /mnt"
