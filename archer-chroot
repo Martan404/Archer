@@ -450,8 +450,8 @@ setup_hibernation() {
 	swap_uuid=$(findmnt -no UUID -T /swap/swapfile)
 	swapfile_offset=$(btrfs inspect-internal map-swapfile -r /swap/swapfile)
 
-	[[ $bootloader == "refind" ]] && sed -i "s/\(options  \"[^\"]*\)\"/\1 resume=UUID=$swap_uuid resume_offset=$swapfile_offset\"/" /boot/EFI/refind/refind-custom.conf
-	[[ $bootloader == "grub" ]] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 resume=UUID=$swap_uuid resume_offset=$swapfile_offset\"/" /etc/default/grub
+	[[ $bootloader == "refind" ]] && sed -i "s/\(options  \"[^\"]*\)\"/\1 resume_offset=$swapfile_offset resume=UUID=$swap_uuid\"/" /boot/EFI/refind/refind-custom.conf
+	[[ $bootloader == "grub" ]] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 resume_offset=$swapfile_offset resume=UUID=$swap_uuid\"/" /etc/default/grub
 
 	if [[ $disk_encryption != "yes" ]]; then
 		echo -e "-------------------------------------------------------------------------"

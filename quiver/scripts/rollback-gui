@@ -11,7 +11,8 @@ subvol=$(awk -F'subvol=' '{print $2}' /proc/cmdline | awk '{print $1}')
 
 # Check for Yabsnap
 if pacman -Q yabsnap >/dev/null 2>&1; then
-    snapshot_path="@snapshots/$selected_id/"
+    snap_manager="yabsnap"
+    
 
     while read -r folder_name; do
         snapshot_id=$(basename "$folder_name")
@@ -29,9 +30,7 @@ fi
 
 # Check for Snapper
 if pacman -Q snapper >/dev/null 2>&1; then
-   
-    btrfs subvolume list / | awk '{print $NF}' | grep -q '^@snapshots$' && snapshot_path="@snapshots/$selected_id/snapshot/"
-    btrfs subvolume list / | awk '{print $NF}' | grep -q '^.snapshots$' && snapshot_path=".snapshots/$selected_id/snapshot/"
+   snap_manager="snapper"
 
     while read -r folder_name; do
         snapshot_id=$(basename "$folder_name")
@@ -90,6 +89,13 @@ echo -e "Moving previous root"
 mv /mnt/@ /mnt/@prev-root
 
 echo -e "Setting $(tput setaf 4)[$selected_id] \"$selected_info\"$(tput sgr0) as new root"
+
+if [[ $snap_manager = "yabsnap" ]]; then
+    snapshot_path="@snapshots/$selected_id/"
+elif [[ $snap_manager = "snapper" ]]; then
+    btrfs subvolume list / | awk '{print $NF}' | grep -q '^@snapshots$' && snapshot_path="@snapshots/$selected_id/snapshot/"
+    btrfs subvolume list / | awk '{print $NF}' | grep -q '^.snapshots$' && snapshot_path=".snapshots/$selected_id/snapshot/"
+fi
 
 btrfs subvolume snapshot /mnt/"$snapshot_path" /mnt/@
 
