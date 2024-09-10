@@ -406,10 +406,6 @@ qemu_gpu() {
 	echo -e "Installing packages"
 
 	package_installer "qemu-guest-agent vulkan-virtio lib32-vulkan-virtio vulkan-mesa-layers lib32-vulkan-mesa-layers"
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Fixing rEFInd resolution"
-	[[ $bootloader == "refind" ]] && sed -i '/^[^#]*resolution/ s/.*/resolution 1024 768/' /boot/EFI/refind/refind-custom.conf
 }
 
 setup_laptop() {
@@ -453,14 +449,16 @@ setup_hibernation() {
 	
 	swap_uuid=$(findmnt -no UUID -T /swap/swapfile)
 	swapfile_offset=$(btrfs inspect-internal map-swapfile -r /swap/swapfile)
-	
+
 	[[ $bootloader == "refind" ]] && sed -i "s/\(options  \"[^\"]*\)\"/\1 resume=UUID=$swap_uuid resume_offset=$swapfile_offset\"/" /boot/EFI/refind/refind-custom.conf
 	[[ $bootloader == "grub" ]] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 resume=UUID=$swap_uuid resume_offset=$swapfile_offset\"/" /etc/default/grub
 
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Adding 'resume' hook for hibernation"
+	if [[ $disk_encryption != "yes" ]]; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Adding 'resume' hook for hibernation"
 
-	sed -i '/^HOOKS=(/ s/)/ resume)/' /etc/mkinitcpio.conf
+		sed -i '/^HOOKS=(/ s/)/ resume)/' /etc/mkinitcpio.conf
+	fi
 }
 
 install_packages() {
