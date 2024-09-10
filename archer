@@ -123,7 +123,7 @@ set_variables() {
 		esac
 	done
 
-	if [[ $snapshot_layout == "snapper" ]]; then
+	if [[ $snap_manager = "snapper" ]]; then
 
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Do you want to use the Arch standard or Snapper BTRFS layout?"
