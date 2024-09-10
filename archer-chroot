@@ -776,9 +776,8 @@ install_packages
 setup_environment
 bash_config
 
-[[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "snapper" ]] && snapper_setup
-[[ $snapshot_layout == "arch" ]] && [[ $snap_manager == "yabsnap" ]] && yabsnap_setup
-[[ $snapshot_layout == "snapper" ]] && snapper_setup
+[[ $snap_manager == "snapper" ]] && snapper_setup
+[[ $snap_manager == "yabsnap" ]] && yabsnap_setup
 snapshot_rollback
 
 package_config

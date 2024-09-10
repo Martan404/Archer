@@ -102,50 +102,50 @@ set_variables() {
 	done
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Do you want to use the Arch standard or Snapper BTRFS layout?"
-	echo -e "1. Arch"
+	echo -e "Do you want to use Yabsnap or Snapper for snapshots?"
+	echo -e "1. Yabsnap"
 	echo -e "2. Snapper"
 
 	while true; do
-		read -r -p "Select: " snapshot_subvol
+		read -r -p "Select: " snap_manager
 
-		case $snapshot_subvol in
+		case $snap_manager in
 		1)
+			snap_manager="yabsnap"
 			snapshot_subvol="@snapshots"
 			snapshot_layout="arch"
 			break
 			;;
 		2)
-			snapshot_subvol=".snapshots"
-			snapshot_layout="snapper"
+			snap_manager="snapper"
 			break
 			;;
 		esac
 	done
 
-	if [[ $snapshot_layout == "arch" ]]; then
+	if [[ $snapshot_layout == "snapper" ]]; then
+
 		echo -e "-------------------------------------------------------------------------"
-		echo -e "Do you want to use Yabsnap or Snapper for snapshots?"
-		echo -e "1. Yabsnap"
+		echo -e "Do you want to use the Arch standard or Snapper BTRFS layout?"
+		echo -e "1. Arch"
 		echo -e "2. Snapper"
 
 		while true; do
-			read -r -p "Select: " snap_manager
+			read -r -p "Select: " snapshot_subvol
 
-			case $snap_manager in
+			case $snapshot_subvol in
 			1)
-				snap_manager="yabsnap"
+				snapshot_subvol="@snapshots"
+				snapshot_layout="arch"
 				break
 				;;
 			2)
-				snap_manager="snapper"
+				snapshot_subvol=".snapshots"
+				snapshot_layout="snapper"
 				break
 				;;
 			esac
 		done
-
-	else
-		snap_manager="none"
 	fi
 }
 
