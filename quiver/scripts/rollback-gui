@@ -1,6 +1,11 @@
 #!/bin/bash
 # shellcheck disable=SC2162
 
+if [[ -z "$root_uuid" ]]; then
+    echo "This script needs to be run as root" >&2
+    exit 1
+fi
+
 root_uuid=$(lsblk -o UUID,LABEL | grep "$(</etc/hostname)" | awk '{print $1}')
 subvol=$(awk -F'subvol=' '{print $2}' /proc/cmdline | awk '{print $1}')
 
@@ -19,7 +24,7 @@ if pacman -Q yabsnap >/dev/null 2>&1; then
         if ! [[ " ${snapshot_list[*]} " == *" $snapshot_id "* ]]; then
             snapshot_list=("$snapshot_id" "$comment" "${snapshot_list[@]}")
         fi
-    done < <(sudo find "/.snapshots/" -mindepth 1 -maxdepth 1 -type d)
+    done < <(find "/.snapshots/" -mindepth 1 -maxdepth 1 -type d)
 fi
 
 # Check for Snapper
@@ -37,11 +42,8 @@ if pacman -Q snapper >/dev/null 2>&1; then
         if ! [[ " ${snapshot_list[*]} " == *" $snapshot_id "* ]]; then
             snapshot_list=("$snapshot_id" "$description" "${snapshot_list[@]}")
         fi
-    done < <(sudo find "/.snapshots/" -mindepth 1 -maxdepth 1 -type d)
+    done < <(find "/.snapshots/" -mindepth 1 -maxdepth 1 -type d)
 fi
-
-# Exit if not root
-[[ "$(sudo -n uptime 2>&1 | grep -c "load")" = 0 ]] && exit
 
 # Display dialog to select snapshot
 selected_id=$(dialog --clear \
@@ -61,45 +63,52 @@ for ((i = 0; i < ${#snapshot_list[@]}; i += 2)); do
     fi
 done
 
-echo "Rolling back to $(tput setaf 4)[$selected_id] \"$selected_info\"$(tput sgr0)"
-echo "Is this correct? (y/N)"
+while true; do
+    echo "Rolling back to $(tput setaf 4)[$selected_id] \"$selected_info\"$(tput sgr0)"
+    read -r -p "Is this correct? (Y/n) " yesNo
+    case $yesNo in
+	    [yY1]) break ;;
+		[nN2]) exit ;;
+	esac
+clear
+done
 
 echo -e "Mounting root partition on /mnt"
-sudo mount -t btrfs "/dev/disk/by-uuid/$root_uuid" /mnt
+mount -t btrfs "/dev/disk/by-uuid/$root_uuid" /mnt
 
 if [[ -e /mnt/@prev-root ]]; then
     echo -e "Removing previous root"
-    [[ -e "/mnt/@prev-root/var/lib/portables" ]] && sudo btrfs subvolume delete /mnt/@prev-root/var/lib/portables >/dev/null 2>&1
-    [[ -e "/mnt/@prev-root/var/lib/machines" ]] && sudo btrfs subvolume delete /mnt/@prev-root/var/lib/machines >/dev/null 2>&1
-    sudo btrfs subvolume delete /mnt/@prev-root
-    sudo rm -rf /mnt/@prev-root
+    [[ -e "/mnt/@prev-root/var/lib/portables" ]] && btrfs subvolume delete /mnt/@prev-root/var/lib/portables >/dev/null 2>&1
+    [[ -e "/mnt/@prev-root/var/lib/machines" ]] && btrfs subvolume delete /mnt/@prev-root/var/lib/machines >/dev/null 2>&1
+    btrfs subvolume delete /mnt/@prev-root
+    rm -rf /mnt/@prev-root
 fi
 
 echo -e "Moving previous root"
-sudo mv /mnt/@ /mnt/@prev-root
+mv /mnt/@ /mnt/@prev-root
 
 echo -e "Setting $(tput setaf 4)[$selected_id] \"$selected_info\"$(tput sgr0) as new root"
 
 [[ $snap_manager = "yabsnap" ]] && snapshot_path="@snapshots/$selected_id/"
 [[ $snap_manager = "snapper" ]] && snapshot_path="@snapshots/$selected_id/snapshot/"
 
-sudo btrfs subvolume snapshot /mnt/"$snapshot_path" /mnt/@
+btrfs subvolume snapshot /mnt/"$snapshot_path" /mnt/@
 
 if [[ -e "/mnt/@/var/lib/pacman/db.lck" ]]; then
     echo -e "Removing pacman db.lck"
-    sudo rm /mnt/@/var/lib/pacman/db.lck
+    rm /mnt/@/var/lib/pacman/db.lck
 fi
 
 if [[ $subvol != "@" ]]; then
     echo -e "Removing previous root"
-    [[ -e "/mnt/@prev-root/var/lib/portables" ]] && sudo btrfs subvolume delete /mnt/@prev-root/var/lib/portables >/dev/null 2>&1
-    [[ -e "/mnt/@prev-root/var/lib/machines" ]] && sudo btrfs subvolume delete /mnt/@prev-root/var/lib/machines >/dev/null 2>&1
-    sudo btrfs subvolume delete /mnt/@prev-root
-    sudo rm -rf /mnt/@prev-root
+    [[ -e "/mnt/@prev-root/var/lib/portables" ]] && btrfs subvolume delete /mnt/@prev-root/var/lib/portables >/dev/null 2>&1
+    [[ -e "/mnt/@prev-root/var/lib/machines" ]] && btrfs subvolume delete /mnt/@prev-root/var/lib/machines >/dev/null 2>&1
+    btrfs subvolume delete /mnt/@prev-root
+    rm -rf /mnt/@prev-root
 fi
 
 echo -e "Unmounting /mnt"
-sudo umount -R /mnt
+umount -R /mnt
 
 read -p "Press any key to reboot..."
 reboot
