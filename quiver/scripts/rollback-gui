@@ -1,7 +1,6 @@
 #!/bin/bash
 # shellcheck disable=SC2162
 
-set -x
 root_uuid=$(lsblk -o UUID,LABEL | grep "$(</etc/hostname)" | awk '{print $1}')
 subvol=$(awk -F'subvol=' '{print $2}' /proc/cmdline | awk '{print $1}')
 
@@ -20,7 +19,7 @@ if pacman -Q yabsnap >/dev/null 2>&1; then
         if ! [[ " ${snapshot_list[*]} " == *" $snapshot_id "* ]]; then
             snapshot_list=("$snapshot_id" "$comment" "${snapshot_list[@]}")
         fi
-    done < <(find "/.snapshots/" -mindepth 1 -maxdepth 1 -type d)
+    done < <(sudo find "/.snapshots/" -mindepth 1 -maxdepth 1 -type d)
 fi
 
 # Check for Snapper
@@ -38,8 +37,11 @@ if pacman -Q snapper >/dev/null 2>&1; then
         if ! [[ " ${snapshot_list[*]} " == *" $snapshot_id "* ]]; then
             snapshot_list=("$snapshot_id" "$description" "${snapshot_list[@]}")
         fi
-    done < <(find "/.snapshots/" -mindepth 1 -maxdepth 1 -type d)
+    done < <(sudo find "/.snapshots/" -mindepth 1 -maxdepth 1 -type d)
 fi
+
+# Exit if not root
+[[ "$(sudo -n uptime 2>&1 | grep -c "load")" = 0 ]] && exit
 
 # Display dialog to select snapshot
 selected_id=$(dialog --clear \
@@ -60,9 +62,9 @@ for ((i = 0; i < ${#snapshot_list[@]}; i += 2)); do
 done
 
 echo "Rolling back to $(tput setaf 4)[$selected_id] \"$selected_info\"$(tput sgr0)"
+echo "Is this correct? (y/N)"
 
-sudo echo -e "Mounting root partition on /mnt"
-[[ "$(sudo -n uptime 2>&1 | grep -c "load")" = 0 ]] && exit
+echo -e "Mounting root partition on /mnt"
 sudo mount -t btrfs "/dev/disk/by-uuid/$root_uuid" /mnt
 
 if [[ -e /mnt/@prev-root ]]; then
