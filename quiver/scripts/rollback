@@ -21,7 +21,7 @@ if [[ $snapshot_path = "@" ]]; then
     echo "This script requires you to be booted in to a snapshot. Use rollback-gui instead" >&2
     exit 1
 elif [[ "$EUID" -ne 0 ]]; then
-    echo "This script needs to be run as root" >&2
+    echo "This script requires to be run with root privileges" >&2
     exit 1
 fi
 
