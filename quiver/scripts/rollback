@@ -45,7 +45,8 @@ btrfs subvolume snapshot /mnt/$snapshot_path /mnt/@
 
 if [[ -e "/mnt/@prev-root/.snapshots" ]]; then
     echo -e "Moving snapshots directory from previous to new root"
-    mv /mnt/@prev-root/.snapshots /mnt/@/
+    mv /mnt/@prev-root/.snapshots /mnt/@/ \
+    2> >(grep -v "Device or resource is busy" >&2)
 fi
 
 if [[ -e "/mnt/@/var/lib/pacman/db.lck" ]]; then
