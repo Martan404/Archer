@@ -67,7 +67,7 @@ for ((i = 0; i < ${#snapshot_list[@]}; i += 2)); do
 done
 
 while true; do
-    echo "Rolling back to $(tput setaf 4)[$selected_id] \"$selected_info\"$(tput sgr0)"
+    echo "Rolling back to $(tput setaf 12)[$selected_id] \"$selected_info\"$(tput sgr0)"
     read -r -p "Is this correct? (Y/n) " yesNo
     case $yesNo in
 	    [yY1]) break ;;
@@ -90,7 +90,7 @@ fi
 echo -e "Moving previous root"
 mv /mnt/@ /mnt/@prev-root
 
-echo -e "Setting $(tput setaf 4)[$selected_id] \"$selected_info\"$(tput sgr0) as new root"
+echo -e "Copying snapshot to new root"
 
 if [[ $snap_manager = "yabsnap" ]]; then
     snapshot_path="@snapshots/$selected_id/"
@@ -102,10 +102,9 @@ fi
 
 btrfs subvolume snapshot /mnt/"$snapshot_path" /mnt/@
 
-if [[ -e "/mnt/@prev-root/.snapshots" ]]; then
-    echo -e "Moving snapshots directory from previous to new root"
-    mv /mnt/@prev-root/.snapshots /mnt/@/ \
-    2> >(grep -v "Device or resource is busy" >&2)
+if [[ -e "/mnt/@prev-root/.snapshots" && $snap_manager = "snapper" ]]; then
+    echo -e "Moving /.snapshots directory from previous to new root"
+    mv /mnt/@prev-root/.snapshots /mnt/@/
 fi
 
 if [[ -e "/mnt/@/var/lib/pacman/db.lck" ]]; then
