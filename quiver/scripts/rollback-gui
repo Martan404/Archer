@@ -94,10 +94,13 @@ if [[ $snap_manager = "yabsnap" ]]; then
     snapshot_path="@snapshots/$selected_id/"
 elif [[ $snap_manager = "snapper" ]]; then
     btrfs subvolume list / | awk '{print $NF}' | grep -q '^@snapshots$' && snapshot_path="@snapshots/$selected_id/snapshot/"
-    btrfs subvolume list / | awk '{print $NF}' | grep -q '^.snapshots$' && snapshot_path=".snapshots/$selected_id/snapshot/"
+    btrfs subvolume list / | awk '{print $NF}' | grep -q '^.snapshots$' && snapshot_path="@prev-root/.snapshots/$selected_id/snapshot/"
 fi
 
 btrfs subvolume snapshot /mnt/"$snapshot_path" /mnt/@
+
+echo -e "Moving snapshots directory from previous to new root"
+mv @prev-root/.snapshots @/
 
 if [[ -e "/mnt/@/var/lib/pacman/db.lck" ]]; then
     echo -e "Removing pacman db.lck"

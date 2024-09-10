@@ -43,6 +43,9 @@ mv /mnt/@ /mnt/@prev-root
 echo -e "Setting current snapshot as new root"
 btrfs subvolume snapshot /mnt/$snapshot_path /mnt/@
 
+echo -e "Moving snapshots directory from previous to new root"
+mv @prev-root/.snapshots @/
+
 if [[ -e "/mnt/@/var/lib/pacman/db.lck" ]]; then
 	echo -e "Removing pacman db.lck"
 	rm /mnt/@/var/lib/pacman/db.lck
