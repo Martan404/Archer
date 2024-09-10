@@ -29,7 +29,7 @@ fi
 echo -e "Mounting root on /mnt"
 mount -t btrfs "/dev/disk/by-uuid/$root_uuid" /mnt
 
-if [[ -e /mnt/@prev-root ]]; then
+if [[ -e "/mnt/@prev-root" ]]; then
     echo -e "Removing previous root"
     [[ -e "/mnt/@prev-root/var/lib/portables" ]] && btrfs subvolume delete /mnt/@prev-root/var/lib/portables >/dev/null 2>&1
     [[ -e "/mnt/@prev-root/var/lib/machines" ]] && btrfs subvolume delete /mnt/@prev-root/var/lib/machines >/dev/null 2>&1
@@ -43,8 +43,10 @@ mv /mnt/@ /mnt/@prev-root
 echo -e "Setting current snapshot as new root"
 btrfs subvolume snapshot /mnt/$snapshot_path /mnt/@
 
-echo -e "Moving snapshots directory from previous to new root"
-mv @prev-root/.snapshots @/
+if [[ -e "/mnt/@prev-root/.snapshots" ]]; then
+    echo -e "Moving snapshots directory from previous to new root"
+    mv @prev-root/.snapshots @/
+fi
 
 if [[ -e "/mnt/@/var/lib/pacman/db.lck" ]]; then
 	echo -e "Removing pacman db.lck"
