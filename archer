@@ -525,7 +525,7 @@ exit_install() {
 	echo -e "System ready to boot, please remove the installation media before restarting"
 	[[ $bootloader == "refind" ]] && echo -e "To remove entries in the bootloader press the DELETE button"
 
-	read -r -p "Press any key to shutdown..."
+	read -r -p "Press enter to shutdown..."
 
 	swapoff /mnt/swap/swapfile >/dev/null 2>&1
 	umount -l /mnt >/dev/null 2>&1

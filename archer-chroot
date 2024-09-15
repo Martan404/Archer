@@ -117,6 +117,17 @@ ff02::2 		ip6-allrouters
 	mkinitcpio -P
 
 	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting XDG Base Directory variables in /etc/security/pam_env.conf"
+
+	cat <<-END >>/etc/security/pam_env.conf
+EDITOR=micro
+XDG_CACHE_HOME	DEFAULT=@{HOME}/.cache
+XDG_CONFIG_HOME	DEFAULT=@{HOME}/.config
+XDG_DATA_HOME	DEFAULT=@{HOME}/.local/share
+XDG_STATE_HOME	DEFAULT=@{HOME}/.local/state
+	END
+
+	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up sudo permissions for wheel group"
 
 	sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
@@ -301,7 +312,7 @@ setup_cpu() {
 }
 
 amd_cpu() {
-	cpu_kernel_parameters=""
+	cpu_kernel_parameters="nowatchdog modprobe.blacklist=sp5100_tco"
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing packages"
@@ -310,7 +321,7 @@ amd_cpu() {
 }
 
 intel_cpu() {
-	cpu_kernel_parameters="intel_iommu=on iommu=pt"
+	cpu_kernel_parameters="intel_iommu=on iommu=pt nowatchdog modprobe.blacklist=iTCO_wdt"
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing packages"
