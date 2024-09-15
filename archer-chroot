@@ -16,7 +16,6 @@ root_partition=${root_partition}
 snap_manager=${snap_manager}
 disk_encryption=${disk_encryption}
 encrypted_root_partition=${encrypted_root_partition}
-TERM="xterm-256color"
 
 setup_pacman() {	
 	echo -e "-------------------------------------------------------------------------"
@@ -157,11 +156,11 @@ setup_paru_pipx() {
 	package_installer "git rust cmake" pacman
 
 	cd /home/"$user"/
-	sudo -Eu "$user" git clone https://aur.archlinux.org/paru-git.git
+	sudo -u "$user" git clone https://aur.archlinux.org/paru-git.git 2>&1 | sudo_supress
 	cd paru-git
 
 	while true; do
-		sudo -su "$user" makepkg -si --needed --noconfirm && break
+		sudo -u "$user" makepkg -si --needed --noconfirm 2>&1 | sudo_supress && break
 		echo "$(tput setaf 9)Paru build failed. Retrying...$(tput sgr0)"
 	done
 
@@ -722,6 +721,8 @@ set_password() {
 	done
 }
 
+sudo_supress() { grep -v "unable to find terminal name for device"; }
+
 package_installer() {
 	input_packages=$1
 	pkg_manager=$2
@@ -742,7 +743,7 @@ package_installer() {
 			pacman -S --needed --noconfirm $packages && break
 
 		else
-			echo "" | sudo -Su "$user" paru -S --needed --noconfirm $packages && break
+			sudo -u "$user" paru -S --needed --noconfirm $packages 2>&1 | sudo_supress && break
 		fi
 
 		echo "$(tput setaf 9)Package installation failed. Retrying... ($try_count/$max_tries)$(tput sgr0)"

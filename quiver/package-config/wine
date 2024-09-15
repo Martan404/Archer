@@ -2,7 +2,7 @@
 # shellcheck disable=SC2086
 
 echo -e "Installing Wine packages"
-sudo pacman -S wine-gecko wine-mono winetricks
+pacman -S wine-gecko wine-mono winetricks
 
 echo -e "Setting Wine to Win10"
 winetricks win10

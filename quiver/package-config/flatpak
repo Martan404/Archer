@@ -10,8 +10,7 @@ flatpak override --env=GTK_THEME=Breeze
 
 echo -e "Creating flatpak-setup desktop entry"
 
-sudo -u "$user" mkdir -p /home/"$user"/.config/autostart/
-sudo -u "$user" touch /home/"$user"/.config/autostart/flatpak-setup.desktop
+install --owner "$user" --mode 777 -d /home/"$user"/.config/autostart/
 
 cat <<EOF >>/home/"$user"/.config/autostart/flatpak-setup.desktop
 [Desktop Entry]
@@ -20,6 +19,7 @@ Icon=/usr/share/pixmaps/archlinux-logo.png
 StartupNotify=true
 Type=Application
 EOF
+chown "$user":"$user" /home/"$user"/.config/autostart/flatpak-setup.desktop
 
 echo -e "Setting up Flatpak install script"
 
