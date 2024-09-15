@@ -156,14 +156,11 @@ setup_paru_pipx() {
 	package_installer "git rust cmake" pacman
 
 	cd /home/"$user"/
-	sudo -u "$user" git clone https://aur.archlinux.org/paru-git.git
+	sudo -Su "$user" git clone https://aur.archlinux.org/paru-git.git
 	cd paru-git
 
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Building paru-git"
-	
 	while true; do
-		sudo -u "$user" makepkg -si --needed --noconfirm && break
+		sudo -Su "$user" makepkg -si --needed --noconfirm && break
 		echo "$(tput setaf 9)Paru build failed. Retrying...$(tput sgr0)"
 	done
 
@@ -486,7 +483,7 @@ install_packages() {
 
 setup_environment() {
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting up environment"
+	echo -e "Setting up desktop environment"
 
 	[[ $install_type == "lite" ]]
 	[[ $install_type == "kde" ]] && source "/Archer-main/quiver/kde_setup"
@@ -744,7 +741,7 @@ package_installer() {
 			pacman -S --needed --noconfirm $packages && break
 
 		else
-			sudo -u "$user" paru -S --needed --noconfirm $packages && break
+			sudo -Su "$user" paru -S --needed --noconfirm $packages && break
 		fi
 
 		echo "$(tput setaf 9)Package installation failed. Retrying... ($try_count/$max_tries)$(tput sgr0)"
