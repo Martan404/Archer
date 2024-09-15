@@ -156,8 +156,8 @@ setup_paru_pipx() {
 	package_installer "git rust cmake" pacman
 
 	cd /home/"$user"/
-	sudo -u "$user" git clone https://aur.archlinux.org/paru-bin.git
-	cd paru-bin
+	sudo -u "$user" git clone https://aur.archlinux.org/paru-git.git
+	cd paru-git
 
 	while true; do
 		sudo -u "$user" makepkg -si --needed --noconfirm && break
@@ -165,7 +165,7 @@ setup_paru_pipx() {
 	done
 
 	paru -Syu
-	cd .. && rm -rf paru-bin/ && cd /
+	cd .. && rm -rf paru-git/ && cd /
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing Python pipx"
