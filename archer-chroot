@@ -163,8 +163,7 @@ setup_paru_pipx() {
 	echo -e "Building paru-git"
 	
 	while true; do
-		sudo -u "$user" makepkg -si --needed --noconfirm | tee ./paru-logfile > /dev/null && break
-		cat ./paru-logfile
+		sudo -u "$user" makepkg -si --needed --noconfirm && break
 		echo "$(tput setaf 9)Paru build failed. Retrying...$(tput sgr0)"
 	done
 
