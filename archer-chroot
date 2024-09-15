@@ -16,6 +16,7 @@ root_partition=${root_partition}
 snap_manager=${snap_manager}
 disk_encryption=${disk_encryption}
 encrypted_root_partition=${encrypted_root_partition}
+TERM="xterm-256color"
 
 setup_pacman() {	
 	echo -e "-------------------------------------------------------------------------"
@@ -156,11 +157,11 @@ setup_paru_pipx() {
 	package_installer "git rust cmake" pacman
 
 	cd /home/"$user"/
-	sudo -Su "$user" git clone https://aur.archlinux.org/paru-git.git
+	sudo -u "$user" git clone https://aur.archlinux.org/paru-git.git
 	cd paru-git
 
 	while true; do
-		sudo -Su "$user" makepkg -si --needed --noconfirm && break
+		sudo -u "$user" makepkg -si --needed --noconfirm && break
 		echo "$(tput setaf 9)Paru build failed. Retrying...$(tput sgr0)"
 	done
 
@@ -741,7 +742,7 @@ package_installer() {
 			pacman -S --needed --noconfirm $packages && break
 
 		else
-			sudo -Su "$user" paru -S --needed --noconfirm $packages && break
+			echo "" | sudo -Su "$user" paru -S --needed --noconfirm $packages && break
 		fi
 
 		echo "$(tput setaf 9)Package installation failed. Retrying... ($try_count/$max_tries)$(tput sgr0)"
