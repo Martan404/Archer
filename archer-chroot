@@ -159,9 +159,13 @@ setup_paru_pipx() {
 	sudo -u "$user" git clone https://aur.archlinux.org/paru-git.git
 	cd paru-git
 
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Building paru-git"
+	
 	while true; do
-		sudo -u "$user" makepkg -si --needed --noconfirm && break
-		echo "$(tput setaf 9)Paru installation failed. Retrying...$(tput sgr0)"
+		sudo -u "$user" makepkg -si --needed --noconfirm | tee ./paru-logfile > /dev/null && break
+		cat ./paru-logfile
+		echo "$(tput setaf 9)Paru build failed. Retrying...$(tput sgr0)"
 	done
 
 	paru -Syu
