@@ -157,11 +157,11 @@ setup_paru_pipx() {
 	package_installer "git rust cmake" pacman
 
 	cd /home/"$user"/
-	sudo -u "$user" git clone https://aur.archlinux.org/paru-git.git
+	sudo -Eu "$user" git clone https://aur.archlinux.org/paru-git.git
 	cd paru-git
 
 	while true; do
-		sudo -u "$user" makepkg -si --needed --noconfirm && break
+		sudo -su "$user" makepkg -si --needed --noconfirm && break
 		echo "$(tput setaf 9)Paru build failed. Retrying...$(tput sgr0)"
 	done
 
