@@ -1,24 +1,12 @@
 #!/bin/bash
 # shellcheck disable=SC2154
 echo -e "-------------------------------------------------------------------------"
-echo -e "Installing konsave"
+echo -e "Installing archer-backup"
 
-export PATH=$PATH:/home/$user/.local/bin
+mv /Archer-main/quiver/scripts/archer-backup /usr/local/bin/archer-backup
+chmod a+x /usr/local/bin/archer-backup
 
-sudo -u "$user" pipx install konsave
-
-mv /Archer-main/quiver/configs/archer.knsv /home/"$user"/archer.knsv
-
-echo -e "-------------------------------------------------------------------------"
-echo -e "Setting up Plasma config boot script"
-
-sudo -u "$user" mkdir -p /home/"$user"/.config/plasma-workspace/env
-mv /Archer-main/quiver/scripts/plasma-setup /home/"$user"/.config/plasma-workspace/env/plasma-setup
-
-chmod a+x /home/"$user"/.config/plasma-workspace/env/plasma-setup
-chown "$user":"$user" /home/"$user"/.config/plasma-workspace/env/plasma-setup
-
-sed -i "s/UNIX_USER/$user/g" /home/"$user"/.config/plasma-workspace/env/plasma-setup
+sudo -u "$user" /usr/local/bin/archer-backup --restore /Archer-main/quiver/configs/Archer.tar.gz
 
 echo -e "-------------------------------------------------------------------------"
 echo -e "Setting SDDM theme"
