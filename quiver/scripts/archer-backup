@@ -12,11 +12,25 @@ cyan='\033[0;36m'
 white='\033[0;37m'
 clear='\033[0m' # Reset to default color
 
+# Get the directory and filename of the script
+script_dir=$(dirname "$(realpath "$0")")
+script_name=$(basename "$0")
+
 if [ "$EUID" -eq 0 ]; then 
     echo -e "[${red} Warning ${clear}] Running as root"
-    echo -e "[${red} Warning ${clear}] This will create and restore the backup in root home"
+    echo -e "[${red} Warning ${clear}] This will create or restore the backup in root home"
     read -r -p "Press enter to continue..."
 fi
+
+show_help() {
+    echo -e "Usage: $script_name [options]"
+    echo -e ""
+    echo -e "Options:"
+    echo -e "  -b, --backup [configuration_file]  Create a backup using the specified configuration file"
+    echo -e "  -r, --restore [archive_file]       Restore files from the specified archive file"
+    echo -e "  -c, --config                       Create a new default configuration file in the current directory"
+    echo -e "  -h, --help                         Display this help message"
+}
 
 backup() {
     local config_file="$1"
@@ -29,6 +43,8 @@ backup() {
 
     # Source the configuration file
     source "$config_file"
+    
+    # Set name for archive if none is provided
     [[ $NAME = "" ]] && NAME="Backup"
 
     # Function to add files to the archive
@@ -69,10 +85,6 @@ backup() {
     # Include the configuration file in the backup archive
     tar --append --file="$NAME.tar.gz" -- "$config_file"
 
-    # Get the directory and filename of the script
-    script_dir=$(dirname "$(realpath "$0")")
-    script_name=$(basename "$0")
-
     # Add the script itself to the archive
     tar --append --file="$NAME.tar.gz" --directory="$script_dir" --transform="s|^$script_dir/||" "$script_name"
 
@@ -92,9 +104,9 @@ restore() {
 }
 
 create_config() {
-    local config_file="./archer-backup.conf"
+    local config_file="./$script_name.conf"
     cat > "$config_file" <<EOL
-# $(basename "$0") configuration file
+# $script_name configuration file
 # Any array named _INCLUDE will be checked
 # Paths can be both files and directories
 
@@ -162,16 +174,6 @@ CONFIG_INCLUDE=(
 EOL
 
     echo -e "[${green} Done ${clear}] Configuration file created at $(realpath "$config_file")"
-}
-
-show_help() {
-    echo -e "Usage: $(basename "$0") [options]"
-    echo -e ""
-    echo -e "Options:"
-    echo -e "  -b, --backup [configuration_file]  Create a backup using the specified configuration file"
-    echo -e "  -r, --restore [archive_file]       Restore files from the specified archive file"
-    echo -e "  -c, --config                       Create a new default configuration file in the current directory"
-    echo -e "  -h, --help                         Display this help message"
 }
 
 # Parse command-line options
