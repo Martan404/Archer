@@ -22,7 +22,6 @@ blesh
 btop
 dialog
 fastfetch
-kernel-modules-hook
 man-db
 man-pages
 micro

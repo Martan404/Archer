@@ -91,7 +91,6 @@ fwupd
 gamemode
 gamescope
 gwenview
-kernel-modules-hook
 lib32-gamemode
 man-db
 man-pages

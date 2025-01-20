@@ -1,0 +1,14 @@
+#!/bin/bash
+# Archer config file
+
+echo -e "Enabling BTRFS Balance timer"
+systemctl enable btrfs-balance.timer
+
+echo -e "Enabling BTRFS Defrag timer"
+systemctl enable btrfs-defrag.timer
+
+echo -e "Enabling BTRFS Scrub timer"
+systemctl enable btrfs-scrub.timer
+
+echo -e "Enabling BTRFS Trim timer"
+systemctl enable btrfs-trim.timer
