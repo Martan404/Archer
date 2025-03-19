@@ -1,0 +1,36 @@
+# You can pick the repository which to download a package from like this: pacman -S chaotic-aur/dxvk-mingw-git
+# Some AUR helpers support it too, e.g: paru -S aur/firefox-hg
+
+# DRIVERS #
+networkmanager
+iwd
+wireless-regdb
+firewalld
+dosfstools
+exfatprogs
+ntfs-3g
+fatresize
+# DRIVERS #
+
+# SYSTEM #
+atuin
+autojump
+bash-completion
+bash-language-server
+bash-preexec
+blesh
+btop
+dialog
+fastfetch
+man-db
+man-pages
+micro
+openssh
+pacman-contrib
+pacutils
+rebuild-detector
+reflector
+shellcheck
+usbutils
+vivid
+# SYSTEM #

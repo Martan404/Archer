@@ -1,0 +1,167 @@
+escape_char /
+comment_char %
+
+% English language locale for Sweden
+% Source: Datorföreningen Stacken, Kungliga Tekniska högskolan
+% Address: Datorföreningen Stacken, c/o NADA, KTH, 100 44 Stockholm, Sweden
+% Contact: Mikael Auno
+% Email: auno+en_SE@stacken.kth.se
+
+% Language: en
+% Territory: SE
+% Revision: 0.3
+% Date: 2009-02-02
+% Updated: 2023-09-11
+
+% *TODO/Questions*
+%
+% As this is a locale for a language that is not used in general in domestic
+% communication in the given territory (but which is used widely by computer
+% enthusiasts in computer related situations), a couple of questions arise which
+% might otherwise seem obvious.
+%
+% LC_COLLATE: Is collation a property of the language or the territory? Names of
+% local people and local places will definitely be communicated between users
+% within a territory, but how should these names be sorted with respect to
+% characters specific to that territory.
+%
+% LC_NUMERIC: Is the format of numeric expressions a property of the language or
+% the territory?
+%
+% LC_NAME: Is the format of the name representation a property of the language
+% or the territory? In Swedish in Sweden one would write a name as "Thomas
+% Andersson" whereas in English in the US one would write "Mr. Thomas Andersson",
+% which would be correct for English in Sweden?
+
+LC_IDENTIFICATION
+title      "English locale for Sweden"
+source     "Datorf<U00F6>reningen Stacken, Kungliga Tekniska h<U00F6>gskolan"
+address    "Datorf<U00F6>reningen Stacken, c/o NADA, KTH, 100 44 Stockholm, Sweden"
+contact    "Mikael Auno"
+email      "auno+en_SE@stacken.kth.se"
+tel        ""
+fax        ""
+language   "en"
+territory  "SE"
+revision   "0.2"
+date       "2009-02-02"
+%
+category  "i18n:2012";LC_IDENTIFICATION
+category  "i18n:2012";LC_CTYPE
+category  "i18n:2012";LC_COLLATE
+category  "i18n:2012";LC_TIME
+category  "i18n:2012";LC_NUMERIC
+category  "i18n:2012";LC_MONETARY
+category  "i18n:2012";LC_MESSAGES
+category  "i18n:2012";LC_PAPER
+category  "i18n:2012";LC_NAME
+category  "i18n:2012";LC_ADDRESS
+category  "i18n:2012";LC_TELEPHONE
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "sv_SE"
+END LC_CTYPE
+
+LC_COLLATE
+copy "sv_SE"
+END LC_COLLATE
+
+LC_MONETARY
+copy "sv_SE"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "sv_SE"
+END LC_NUMERIC
+
+LC_TIME
+abday   "<U0053><U0075><U006E>";/
+        "<U004D><U006F><U006E>";/
+        "<U0054><U0075><U0065>";/
+        "<U0057><U0065><U0064>";/
+        "<U0054><U0068><U0075>";/
+        "<U0046><U0072><U0069>";/
+        "<U0053><U0061><U0074>"
+day     "<U0053><U0075><U006E><U0064><U0061><U0079>";/
+        "<U004D><U006F><U006E><U0064><U0061><U0079>";/
+        "<U0054><U0075><U0065><U0073><U0064><U0061><U0079>";/
+        "<U0057><U0065><U0064><U006E><U0065><U0073><U0064><U0061><U0079>";/
+        "<U0054><U0068><U0075><U0072><U0073><U0064><U0061><U0079>";/
+        "<U0046><U0072><U0069><U0064><U0061><U0079>";/
+        "<U0053><U0061><U0074><U0075><U0072><U0064><U0061><U0079>"
+abmon   "<U004A><U0061><U006E>";/
+        "<U0046><U0065><U0062>";/
+        "<U004D><U0061><U0072>";/
+        "<U0041><U0070><U0072>";/
+        "<U004D><U0061><U0079>";/
+        "<U004A><U0075><U006E>";/
+        "<U004A><U0075><U006C>";/
+        "<U0041><U0075><U0067>";/
+        "<U0053><U0065><U0070>";/
+        "<U004F><U0063><U0074>";/
+        "<U004E><U006F><U0076>";/
+        "<U0044><U0065><U0063>"
+mon     "<U004A><U0061><U006E><U0075><U0061><U0072><U0079>";/
+        "<U0046><U0065><U0062><U0072><U0075><U0061><U0072><U0079>";/
+        "<U004D><U0061><U0072><U0063><U0068>";/
+        "<U0041><U0070><U0072><U0069><U006C>";/
+        "<U004D><U0061><U0079>";/
+        "<U004A><U0075><U006E><U0065>";/
+        "<U004A><U0075><U006C><U0079>";/
+        "<U0041><U0075><U0067><U0075><U0073><U0074>";/
+        "<U0053><U0065><U0070><U0074><U0065><U006D><U0062><U0065><U0072>";/
+        "<U004F><U0063><U0074><U006F><U0062><U0065><U0072>";/
+        "<U004E><U006F><U0076><U0065><U006D><U0062><U0065><U0072>";/
+        "<U0044><U0065><U0063><U0065><U006D><U0062><U0065><U0072>"
+
+% sv_SE
+% Appropriate date and time representation (%a %e %b %Y %H:%M:%S)
+d_t_fmt     "<U0025><U0061><U0020><U0025><U0065><U0020><U0025><U0062>/
+<U0020><U0025><U0059><U0020><U0025><U0048><U003A><U0025><U004D><U003A>/
+<U0025><U0053>"
+
+% Appropriate date representation (%Y-%m-%d)
+d_fmt       "<U0025><U0059><U002D><U0025><U006D><U002D><U0025><U0064>"
+
+% Appropriate time representation (%H:%M:%S)
+t_fmt       "<U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053>"
+
+% Strings for AM/PM
+am_pm       "";""
+
+% Appropriate AM/PM time representation
+t_fmt_ampm  ""
+
+% Appropriate date representation (date(1), "%a %e %b %Y %H.%M.%S %Z")
+date_fmt    "<U0025><U0061><U0020><U0025><U0065><U0020><U0025><U0062>/
+<U0020><U0025><U0059><U0020><U0025><U0048><U003A><U0025><U004D><U003A>/
+<U0025><U0053><U0020><U0025><U005A>"
+
+first_weekday 2
+first_workday 2
+END LC_TIME
+
+LC_MESSAGES
+copy "en_US"
+END LC_MESSAGES
+
+LC_PAPER
+copy "sv_SE"
+END LC_PAPER
+
+LC_TELEPHONE
+copy "sv_SE"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "sv_SE"
+END LC_MEASUREMENT
+
+LC_NAME
+copy "sv_SE"
+END LC_NAME
+
+LC_ADDRESS
+copy "sv_SE"
+END LC_ADDRESS

@@ -1,0 +1,31 @@
+#!/bin/bash
+# shellcheck disable=SC2154,SC2002
+
+echo -e "Enabling Flatpak theming"
+
+flatpak override --filesystem=xdg-config/{Kvantum,gtkrc,gtkrc-2.0,gtk-3.0,gtk-4.0}
+flatpak override --filesystem={~/.themes,~/.icons,~/.fonts,~/.local/share/themes}
+flatpak override --env=GTK_THEME=Breeze
+
+
+echo -e "Creating flatpak-setup desktop entry"
+
+install --owner "$user" --mode 777 -d /home/"$user"/.config/autostart/
+
+cat <<EOF >>/home/"$user"/.config/autostart/flatpak-setup.desktop
+[Desktop Entry]
+Exec=konsole -e /usr/bin/flatpak-setup
+Icon=/usr/share/pixmaps/archlinux-logo.png
+StartupNotify=true
+Type=Application
+EOF
+chown "$user":"$user" /home/"$user"/.config/autostart/flatpak-setup.desktop
+
+echo -e "Setting up Flatpak install script"
+
+cat /Archer-main/quiver/scripts/flatpak-setup >/usr/bin/flatpak-setup
+chmod a+x /usr/bin/flatpak-setup
+
+packages=$(sed -n '/# FLATPAK/{:a;n;/# FLATPAK/b;p;ba}' "/Archer-main/quiver/${install_type}_packages.txt" | tr '\n' ' ')
+
+sed -i "s/UNIX_USER/$user/g; s/PACKAGE_LIST/$packages/g" /usr/bin/flatpak-setup

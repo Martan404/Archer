@@ -1,0 +1,113 @@
+# You can pick the repository which to download a package from like this: pacman -S chaotic-aur/dxvk-mingw-git
+# Some AUR helpers support it too, e.g: paru -S aur/firefox-hg
+
+# FLATPAK #
+com.discordapp.Discord
+com.github.Matoking.protontricks
+com.github.zocker_160.SyncThingy
+com.spotify.Client
+net.davidotek.pupgui2
+net.lutris.Lutris
+org.mozilla.firefox
+# FLATPAK #
+
+# DRIVERS #
+wayland
+wayland-protocols
+xorg-xwayland
+avahi
+networkmanager
+wireless-regdb
+firewalld
+nss-mdns
+bluez
+cups
+cups-pdf
+cups-pk-helper
+foomatic-db-ppds
+foomatic-db-engine
+foomatic-db-nonfree-ppds
+gst-plugin-pipewire
+pipewire-alsa
+pipewire-audio
+pipewire-ffado
+pipewire-jack
+pipewire-libcamera
+pipewire-pulse
+pipewire-roc
+pipewire-v4l2
+pipewire-x11-bell
+pipewire-zeroconf
+lib32-pipewire
+lib32-pipewire-jack
+lib32-pipewire-v4l2
+wireplumber
+gsfonts
+noto-fonts
+noto-fonts-cjk
+noto-fonts-emoji
+noto-fonts-extra
+ttf-bitstream-vera
+ttf-dejavu
+ttf-liberation
+ttf-ms-fonts
+ttf-nerd-fonts-symbols
+ttf-nerd-fonts-symbols-common
+ttf-nerd-fonts-symbols-mono
+dosfstools
+e2fsprogs
+exfatprogs
+f2fs-tools
+jfsutils
+ntfs-3g
+udftools
+xfsprogs
+fatresize
+libdvdcss
+# DRIVERS #
+
+# SYSTEM #
+bleachbit
+distrobox
+steam
+ark
+p7zip
+unrar
+atuin
+autojump
+bash-completion
+bash-language-server
+bash-preexec
+blesh
+btop
+btrfs-assistant
+btrfsmaintenance
+udisks2-btrfs
+code
+dialog
+fastfetch
+filelight
+fwupd
+gamemode
+gamescope
+gwenview
+lib32-gamemode
+man-db
+man-pages
+micro
+openssh
+pacman-contrib
+pacutils
+rebuild-detector
+reflector
+shellcheck
+spectacle
+usbutils
+vivid
+# SYSTEM #
+
+# DESKTOP #
+xdg-desktop-portal
+xdg-desktop-portal-kde
+xdg-desktop-portal-gtk
+# DESKTOP #

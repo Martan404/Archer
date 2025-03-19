@@ -1,0 +1,11 @@
+#!/bin/bash
+# shellcheck disable=SC2086
+
+echo -e "Installing Wine packages"
+pacman -S wine-gecko wine-mono winetricks
+
+echo -e "Setting Wine to Win10"
+winetricks win10
+
+echo -e "Installing Wine libraries and frameworks"
+winetricks -q d3dx10 d3dx9 dotnet35 dotnet40 dotnet45 dotnet48 dxvk vcrun2008 vcrun2010 vcrun2012 vcrun2019 vcrun6sp6

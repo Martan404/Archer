@@ -1,0 +1,127 @@
+#!/bin/bash
+# shellcheck disable=SC2162
+
+if [[ "$EUID" -ne 0 ]]; then
+    echo "This script requires to be run with root privileges" >&2
+    exit 1
+fi
+
+root_uuid=$(lsblk -o UUID,LABEL | grep "$(</etc/hostname)" | awk '{print $1}')
+subvol=$(awk -F'subvol=' '{print $2}' /proc/cmdline | awk '{print $1}')
+
+# Check for Yabsnap
+if pacman -Q yabsnap >/dev/null 2>&1; then
+    snap_manager="yabsnap"
+    
+
+    while read -r folder_name; do
+        snapshot_id=$(basename "$folder_name")
+        
+        # Get Yabsnap comment
+        yabsnap_json="/.snapshots/${snapshot_id}-meta.json"
+        comment=$(grep -oP '(?<="comment": ")[^"]*' "$yabsnap_json")
+
+        # Only add unique entries
+        if ! [[ " ${snapshot_list[*]} " == *" $snapshot_id "* ]]; then
+            snapshot_list=("$snapshot_id" "$comment" "${snapshot_list[@]}")
+        fi
+    done < <(find "/.snapshots/" -mindepth 1 -maxdepth 1 -type d)
+fi
+
+# Check for Snapper
+if pacman -Q snapper >/dev/null 2>&1; then
+    snap_manager="snapper"
+    btrfs subvolume list / | awk '{print $NF}' | grep -q '^@snapshots$' && snapper_layout="arch"
+    btrfs subvolume list / | awk '{print $NF}' | grep -q '^.snapshots$' && snapper_layout="snapper"
+
+    while read -r folder_name; do
+        snapshot_id=$(basename "$folder_name")
+
+        # Get Snapper description
+        snapper_xml=$(find "$folder_name" -maxdepth 1 -name "*.xml" -print -quit)
+        description=$(grep -oP '(?<=<description>).*?(?=</description>)' "$snapper_xml")
+
+        # Only add unique entries
+        if ! [[ " ${snapshot_list[*]} " == *" $snapshot_id "* ]]; then
+            snapshot_list=("$snapshot_id" "$description" "${snapshot_list[@]}")
+        fi
+    done < <(find "/.snapshots/" -mindepth 1 -maxdepth 1 -type d)
+fi
+
+while true; do
+    # Display dialog to select snapshot
+    selected_id=$(dialog --clear \
+        --title "Snapshot rollback" \
+        --menu "Select the snapshot for rollback:" \
+        0 0 ${#snapshot_list[@]} \
+        "${snapshot_list[@]}" \
+        2>&1 >/dev/tty)
+    clear
+    [[ -z $selected_id ]] && exit
+
+    # Retrieve the selected snapshot info from the array
+    for ((i = 0; i < ${#snapshot_list[@]}; i += 2)); do
+        if [[ "${snapshot_list[$i]}" == "$selected_id" ]]; then
+            selected_info="${snapshot_list[$((i + 1))]}"
+            break
+        fi
+    done
+
+    echo "Rolling back to $(tput setaf 12)[$selected_id] \"$selected_info\"$(tput sgr0)"
+    read -r -p "Is this correct? (Y/n) " yesNo
+    case $yesNo in
+        [yY1]) break ;;
+        [nN2]) ;;
+    esac
+    clear
+done
+
+echo -e "Mounting root partition on /mnt"
+mount -t btrfs "/dev/disk/by-uuid/$root_uuid" /mnt
+
+if [[ -e "/mnt/@prev-root" ]]; then
+    echo -e "Removing previous root"
+    [[ -e "/mnt/@prev-root/var/lib/portables" ]] && btrfs subvolume delete /mnt/@prev-root/var/lib/portables >/dev/null 2>&1
+    [[ -e "/mnt/@prev-root/var/lib/machines" ]] && btrfs subvolume delete /mnt/@prev-root/var/lib/machines >/dev/null 2>&1
+    btrfs subvolume delete /mnt/@prev-root
+    rm -rf /mnt/@prev-root
+fi
+
+echo -e "Moving previous root"
+mv /mnt/@ /mnt/@prev-root
+
+echo -e "Copying snapshot to new root"
+
+if [[ $snap_manager = "yabsnap" ]]; then
+    snapshot_path="@snapshots/$selected_id/"
+
+elif [[ $snap_manager = "snapper" ]]; then
+    [[ $snapper_layout = "arch" ]] && snapshot_path="@snapshots/$selected_id/snapshot/"
+    [[ $snapper_layout = "snapper" ]] && snapshot_path="@prev-root/.snapshots/$selected_id/snapshot/"
+fi
+
+btrfs subvolume snapshot /mnt/"$snapshot_path" /mnt/@
+
+if [[ -e "/mnt/@prev-root/.snapshots" && $snap_manager = "snapper" ]]; then
+    echo -e "Moving /.snapshots directory from previous to new root"
+    mv /mnt/@prev-root/.snapshots /mnt/@/
+fi
+
+if [[ -e "/mnt/@/var/lib/pacman/db.lck" ]]; then
+    echo -e "Removing pacman db.lck"
+    rm /mnt/@/var/lib/pacman/db.lck
+fi
+
+if [[ $subvol != "@" ]]; then
+    echo -e "Removing previous root"
+    [[ -e "/mnt/@prev-root/var/lib/portables" ]] && btrfs subvolume delete /mnt/@prev-root/var/lib/portables >/dev/null 2>&1
+    [[ -e "/mnt/@prev-root/var/lib/machines" ]] && btrfs subvolume delete /mnt/@prev-root/var/lib/machines >/dev/null 2>&1
+    btrfs subvolume delete /mnt/@prev-root
+    rm -rf /mnt/@prev-root
+fi
+
+echo -e "Unmounting /mnt"
+umount -R /mnt
+
+read -p "Press any key to reboot..."
+reboot

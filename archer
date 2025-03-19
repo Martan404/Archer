@@ -1,0 +1,552 @@
+#!/bin/bash
+# Main script 1/3
+show_logo() {
+	clear
+	archer_logo="
+-------------------------------------------------------------------------
+$(tput setaf 4)
+             █████╗ ██████╗  ██████╗██╗  ██╗███████╗██████╗
+            ██╔══██╗██╔══██╗██╔════╝██║  ██║██╔════╝██╔══██╗
+            ███████║██████╔╝██║     ███████║█████╗  ██████╔╝
+            ██╔══██║██╔══██╗██║     ██╔══██║██╔══╝  ██╔══██╗
+            ██║  ██║██║  ██║╚██████╗██║  ██║███████╗██║  ██║
+            ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+$(tput sgr0)
+-------------------------------------------------------------------------"
+	echo -ne "$archer_logo"
+	echo -e "
+                           Arch install script 
+-------------------------------------------------------------------------"
+}
+
+[[ -e "archer-check" ]] && echo -e "Rebooting computer to start fresh" && read -r -t 3 && shutdown -r now
+
+
+set_variables() {
+	echo -e "Enter hostname for System"
+
+	hostname=""
+	while [ -z "$hostname" ]; do
+		read -r -p "Name: " hostname
+	done
+	echo -e "Setting hostname to $hostname"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enter name for User"
+
+	user=""
+	while [ -z "$user" ]; do
+		read -r -p "Name: " user
+	done
+	echo "Setting user name to $user"
+
+	while true; do
+		echo -e "-------------------------------------------------------------------------"
+		read -r -p "Do you want to enable LUKS disk encryption? (Y/n) " disk_encryption
+
+		case $disk_encryption in
+		[yY1])
+			disk_encryption="yes"
+			break
+			;;
+		[nN2])
+			disk_encryption="no"
+			break
+			;;
+		esac
+	done
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "What type of installation do you want?"
+	echo -e "1. KDE"
+	echo -e "2. Hyprland"
+	echo -e "0. Lite"
+
+	while true; do
+		read -r -p "Select: " install_type
+
+		case $install_type in
+		0)
+			install_type="lite"
+			break
+			;;
+		1)
+			install_type="kde"
+			break
+			;;
+		2)
+			install_type="hyprland"
+			break
+			;;
+		esac
+	done
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "What bootloader do you want?"
+	echo -e "1. rEFInd"
+	echo -e "2. Grub"
+
+	while true; do
+		read -r -p "Select: " bootloader
+
+		case $bootloader in
+		1)
+			bootloader="refind"
+			break
+			;;
+		2)
+			bootloader="grub"
+			break
+			;;
+		esac
+	done
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Do you want to use Yabsnap or Snapper for snapshots?"
+	echo -e "1. Yabsnap"
+	echo -e "2. Snapper"
+
+	while true; do
+		read -r -p "Select: " snap_manager
+
+		case $snap_manager in
+		1)
+			snap_manager="yabsnap"
+			snapshot_subvol="@snapshots"
+			snapshot_layout="arch"
+			break
+			;;
+		2)
+			snap_manager="snapper"
+			break
+			;;
+		esac
+	done
+
+	if [[ $snap_manager = "snapper" ]]; then
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Do you want to use the Arch standard or Snapper BTRFS layout?"
+		echo -e "1. Arch"
+		echo -e "2. Snapper"
+
+		while true; do
+			read -r -p "Select: " snapshot_subvol
+
+			case $snapshot_subvol in
+			1)
+				snapshot_subvol="@snapshots"
+				snapshot_layout="arch"
+				break
+				;;
+			2)
+				snapshot_subvol=".snapshots"
+				snapshot_layout="snapper"
+				break
+				;;
+			esac
+		done
+	fi
+}
+
+check_keymap() {
+	existing_keymap=$(localectl status | grep 'VC Keymap' | awk '{print $3}')
+
+	if [ "$existing_keymap" == "(unset)" ] || [ "$existing_keymap" == "" ]; then
+		set_keymap
+
+	else
+		while true; do
+			echo -e "-------------------------------------------------------------------------"
+			read -r -p "$existing_keymap is currently used as keymap. Set it as default? (Y/n) " yesNo
+
+			case $yesNo in
+			[yY1])
+				keyboard_keymap=$existing_keymap
+				break
+				;;
+			[nN2])
+				set_keymap
+				break
+				;;
+			esac
+		done
+	fi
+}
+
+set_keymap() {
+	local status=1
+	while [ $status != 0 ]; do
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Listing available keyboard keymaps"
+
+		localectl list-keymaps | awk '{printf "%s  ", $0} END {print ""}'
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Enter keymap to use for system"
+		read -r -p "Name: " keyboard_keymap
+
+		localectl set-keymap "$keyboard_keymap"
+		status=$?
+	done
+
+	while true; do
+		read -r -p "Is $keyboard_keymap correct? (Y/n) " yesNo
+
+		case $yesNo in
+		[yY1]) break ;;
+		[nN2])
+			set_keymap
+			break
+			;;
+		esac
+	done
+}
+
+set_locale() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Uncomment and then save the locales you want enabled"
+
+	read -r -t 3
+	nano /etc/locale.gen
+	locale-gen
+	available_locales=$(localectl list-locales | awk '{printf "%s  ", $0} END {print ""}')
+
+	while true; do
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Choose default locale"
+		echo -e "Available: $available_locales"
+		echo -e "Optional: en_SE.UTF-8"
+
+		read -r -p "Default: " default_locale
+
+		if echo "$available_locales" | grep -qw "$default_locale"; then
+			break
+		elif [ "$default_locale" == "en_SE.UTF-8" ]; then
+			break
+		elif [ "$default_locale" == "locale.gen" ]; then
+			set_locale
+			break
+		else
+			echo "Invalid locale chosen. Try again"
+		fi
+	done
+
+	while true; do
+		read -r -p "Are you satisfied with your chosen locales? (Y/n) " yesNo
+
+		case $yesNo in
+		[yY1]) break ;;
+		[nN2])
+			set_locale
+			break
+			;;
+		esac
+	done
+}
+
+set_disk() {
+	local status=1
+	while [ $status != 0 ]; do
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Listing available disks to use for installation"
+
+		lsblk
+		fdisk -l | awk '$1=="Disk" && $2~"/dev/" {print $2" "$3" "$4}'
+
+		echo -e "Which disk do you want to use for installation?"
+		read -r -p "Disk: " disk
+
+		echo "p" | fdisk "$disk"
+		status=$?
+	done
+
+	while true; do
+		read -r -p "Is the disk $disk correct? (Y/n) " yesNo
+
+		case $yesNo in
+		[yY1]) break ;;
+		[nN2])
+			set_disk
+			break
+			;;
+		esac
+	done
+}
+
+set_efi() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Select size for EFI partition"
+	echo -e "1. 256MB"
+	echo -e "2. 512MB"
+	echo -e "3. 1GB"
+
+	while true; do
+		read -r -p "Size: " efi_size
+
+		case $efi_size in
+		1)
+			efi_size="257MiB"
+			break
+			;;
+		2)
+			efi_size="513MiB"
+			break
+			;;
+		3)
+			efi_size="1025MiB"
+			break
+			;;
+		esac
+	done
+}
+
+set_kernel() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Which kernel do you want to use?"
+
+	echo -e "1. Linux Zen"
+	echo -e "2. Linux"
+	echo -e "3. Linux LTS"
+	echo -e "4. Linux Hardened"
+
+	while true; do
+		read -r -p "Select: " kernel
+
+		case $kernel in
+		1)
+			kernel="linux-zen"
+			break
+			;;
+		2)
+			kernel="linux"
+			break
+			;;
+		3)
+			kernel="linux-lts"
+			break
+			;;
+		4)
+			kernel="linux-hardened"
+			break
+			;;
+		esac
+	done
+}
+
+set_swap() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enter size for swap file (GiB)"
+
+	while [ -z "$swapsize" ] || [[ ! "$swapsize" =~ ^[0-9]+$ ]]; do
+		read -r -p "Size: " swapsize
+
+		if [[ ! "$swapsize" =~ ^[0-9]+$ ]]; then
+			echo "Invalid input. Enter a valid number"
+			swapsize=""
+		fi
+	done
+
+	echo -e "Setting swap size to $swapsize GiB"
+}
+
+format_drive() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Wiping drive and setting up GPT partition table"
+
+	parted -s "$disk" mklabel gpt
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating EFI system partition"
+
+	parted -s "$disk" mkpart fat32 0% "$efi_size"
+	parted -s "$disk" set 1 esp on
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating root partition"
+
+	parted -s "$disk" mkpart btrfs "$efi_size" 100%
+
+	fdisk "$disk" <<<"p"
+
+	if [[ $disk == *"nvme"* || $disk == *"mmc"* ]]; then
+		efi_partition="${disk}p1"
+		root_partition="${disk}p2"
+	else
+		efi_partition="${disk}1"
+		root_partition="${disk}2"
+	fi
+}
+
+setup_drive() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Formatting EFI system partition"
+
+	mkfs.fat -F32 "$efi_partition"
+	fatlabel "$efi_partition" "ESP"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Formatting root partition"
+
+	if [[ $disk_encryption == "yes" ]]; then
+		while true; do
+			cryptsetup -v -q luksFormat "$root_partition"
+			cryptsetup open "$root_partition" root && break
+			echo -e "Unable to unlock partition. Set a new password"
+		done
+		
+		mkfs.btrfs -f -L "$hostname" /dev/mapper/root
+
+		encrypted_root_partition=$root_partition
+		root_partition="/dev/mapper/root"
+
+	else
+		mkfs.btrfs -f -L "$hostname" "$root_partition"
+	fi
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Mounting root and creating btrfs subvolumes"
+
+	mount "$root_partition" /mnt
+
+	btrfs subvolume create /mnt/@ # Root
+	#btrfs subvolume create /mnt/@root # Root home
+	btrfs subvolume create /mnt/@home # Home
+	btrfs subvolume create /mnt/@log # Log files
+	btrfs subvolume create /mnt/@pkg # Package cache
+	btrfs subvolume create /mnt/@tmp # Temp files
+	btrfs subvolume create /mnt/@cache # Cache files
+	btrfs subvolume create /mnt/@spool # Spool data
+	btrfs subvolume create /mnt/@srv # Web servers
+	[[ $snapshot_layout == "arch" ]] && btrfs subvolume create /mnt/"$snapshot_subvol" # Snapshots
+	btrfs subvolume create /mnt/@swap # Swapfile
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Unmounting root"
+
+	umount -R /mnt
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Mounting btrfs subvolumes and EFI partition"
+	
+	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@ "$root_partition" /mnt
+	#mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@root "$root_partition" /mnt/root
+	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@home "$root_partition" /mnt/home
+	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@log "$root_partition" /mnt/var/log
+	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@pkg "$root_partition" /mnt/var/cache/pacman/pkg
+	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@tmp "$root_partition" /mnt/var/tmp
+	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@cache "$root_partition" /mnt/var/cache
+	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@spool "$root_partition" /mnt/var/spool
+	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@srv "$root_partition" /mnt/srv
+	[[ $snapshot_layout == "arch" ]] && mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol="$snapshot_subvol" "$root_partition" /mnt/.snapshots
+	mount --mkdir -t btrfs -o noatime,subvol=@swap "$root_partition" /mnt/swap
+	mount --mkdir -o defaults,noatime "$efi_partition" /mnt/boot
+
+	#chmod 0750 /mnt/root
+	chmod 1777 /mnt/var/tmp
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating swap file"
+
+	btrfs filesystem mkswapfile --size "$swapsize"g --uuid clear /mnt/swap/swapfile
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Mounting swap file"
+
+	swapon /mnt/swap/swapfile
+}
+
+setup_environment() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling network time syncronization"
+
+	timedatectl set-ntp true
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting Pacman configurations"
+
+	sed -i '/^#Color/s/^#//' /etc/pacman.conf
+
+	sed -i '/^#ParallelDownloads/s/^#//' /etc/pacman.conf
+
+	sed -i '/^ParallelDownloads = .*/a ILoveCandy' /etc/pacman.conf
+
+	sed -i '/^#\[multilib\]/s/^#//' /etc/pacman.conf
+	sed -i '/^\[multilib\]$/,/^#Include/ s/^#//' /etc/pacman.conf
+
+	pacman -Sy
+}
+
+install_system() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing base and kernel packages"
+
+	while true; do
+		# shellcheck disable=SC2086
+		pacstrap -K /mnt base base-devel $kernel $kernel-headers linux-firmware util-linux btrfs-progs sudo iptables-nft && break
+
+		echo "$(tput setaf 9)Package installation failed. Retrying... $(tput sgr0)"
+	done
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Generating fstab"
+
+	genfstab -U /mnt >>/mnt/etc/fstab
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Configuring fstab"
+
+	sed -i 's/\(\/swap\)\(.*\)compress=zstd:3,ssd,discard=async,space_cache=v2\(.*\)/\1\2ssd\3/' /mnt/etc/fstab # Clean up btrfs swap partition
+	sed -i 's/,subvolid=...//g' /mnt/etc/fstab                                                                  # Remove subvolid for better snapshot support
+}
+
+arch_chroot() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Downloading Quiver"
+
+	cd /mnt && curl -L https://github.com/Martan404/Archer/archive/master.tar.gz | tar -xz Archer-main && cd /
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Copying locale.gen from archiso"
+
+	cp /etc/locale.gen /mnt/etc
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Changing root into new system"
+
+	export hostname && export user && export install_type && export bootloader && export kernel && export keyboard_keymap && export default_locale && 
+	export snapshot_layout && export snapshot_subvol && export root_partition && export snap_manager && export disk_encryption && export encrypted_root_partition
+
+	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot
+	rm -rf /mnt/Archer-main
+}
+
+exit_install() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "System ready to boot, please remove the installation media before restarting"
+	[[ $bootloader == "refind" ]] && echo -e "To remove entries in the bootloader press the DELETE button"
+
+	read -r -p "Press enter to shutdown..."
+
+	swapoff /mnt/swap/swapfile >/dev/null 2>&1
+	umount -l /mnt >/dev/null 2>&1
+	shutdown now && exit
+}
+
+show_logo
+set_variables
+check_keymap
+set_locale
+
+set_disk
+set_efi
+set_kernel
+set_swap
+
+format_drive
+touch archer-check
+setup_drive
+setup_environment
+
+install_system
+arch_chroot
+exit_install

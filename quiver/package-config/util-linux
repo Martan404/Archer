@@ -1,0 +1,5 @@
+#!/bin/bash
+# Archer config file
+
+echo -e "Enabling fstrim timer"
+systemctl enable fstrim.timer

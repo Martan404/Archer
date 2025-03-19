@@ -1,0 +1,11 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Type = Path
+Target = usr/lib/modules/*/vmlinuz
+
+[Action]
+Description = The kernel has been updated
+When = PostTransaction
+Exec = /usr/bin/echo -e "\e[1mPlease\e[34m reboot\e[0m\e[1m to complete the installation\e[0m"

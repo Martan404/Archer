@@ -1,0 +1,210 @@
+#!/bin/bash
+# Backup and Restore script for files and directories in the home directory
+
+# Color variables
+black='\033[0;30m'
+red='\033[0;31m'
+green='\033[0;32m'
+yellow='\033[0;33m'
+blue='\033[0;34m'
+magenta='\033[0;35m'
+cyan='\033[0;36m'
+white='\033[0;37m'
+clear='\033[0m' # Reset to default color
+
+# Get the directory and filename of the script
+script_dir=$(dirname "$(realpath "$0")")
+script_name=$(basename "$0")
+
+if [ "$EUID" -eq 0 ]; then 
+    echo -e "[${red} Warning ${clear}] Running as root"
+    echo -e "[${red} Warning ${clear}] This will create or restore the backup in root home"
+    read -r -p "Press enter to continue..."
+fi
+
+show_help() {
+    echo -e "Usage: $script_name [options]"
+    echo -e ""
+    echo -e "Options:"
+    echo -e "  -b, --backup [configuration_file]  Create a backup using the specified configuration file"
+    echo -e "  -r, --restore [archive_file]       Restore files from the specified archive file"
+    echo -e "  -c, --config                       Create a new default configuration file in the current directory"
+    echo -e "  -h, --help                         Display this help message"
+}
+
+backup() {
+    local config_file="$1"
+    
+    # Check if the configuration file exists in the provided path
+    if [[ ! -e "$config_file" ]]; then
+        echo -e "[${red} Error ${clear}] $config_file does not exist"
+        exit 1
+    fi
+
+    # Source the configuration file
+    source "$config_file"
+    
+    # Set name for archive if none is provided
+    [[ $NAME = "" ]] && NAME="Backup"
+
+    # Function to add files to the archive
+    add_to_archive() {
+        local path="$1"
+        if [[ -e "$path" ]]; then
+            local relative_path
+            relative_path=$(realpath --relative-to="$HOME" "$path")
+            
+            echo -e "[${blue} Add ${clear}] $path added to archive"
+            tar --append --file="$NAME.tar.gz" --directory="$HOME" --transform="s|^$HOME||" "$relative_path"
+        else
+            echo -e "[${yellow} Skip ${clear}] $path does not exist"
+        fi
+    }
+
+    # Function to process include arrays
+    process_include_array() {
+        local include_var_name=$1
+        local include_array=("${!include_var_name}")
+        for item in "${include_array[@]}"; do
+            if [[ $item == *\** ]]; then
+                for expanded_path in $item; do
+                    add_to_archive "$expanded_path"
+                done
+            else
+                add_to_archive "$item"
+            fi
+        done
+    }
+
+    # Detect and process all _INCLUDE arrays
+    for include_var in $(compgen -A variable | grep '_INCLUDE$'); do
+        echo -e "[${cyan} Check ${clear}] $include_var..."
+        process_include_array "$include_var[@]"
+    done
+
+    # Include the configuration file in the backup archive
+    tar --append --file="$NAME.tar.gz" -- "$config_file"
+
+    # Add the script itself to the archive
+    tar --append --file="$NAME.tar.gz" --directory="$script_dir" --transform="s|^$script_dir/||" "$script_name"
+
+    echo -e "[${green} Done ${clear}] Archive created at $(realpath "./$NAME.tar.gz")"
+}
+
+restore() {
+    local archive_file="$1"
+    if [[ -f "$archive_file" ]]; then
+        echo -e "[${blue} Copy ${clear}] Extracting files from $archive_file."
+        tar --extract --file="$archive_file" --directory="$HOME" --transform="s|^||" --no-same-owner
+        echo -e "[${green} Done ${clear}] Restore from $archive_file completed"
+    else
+        echo -e "[${red} Error ${clear}] $archive_file does not exist"
+        exit 1
+    fi
+}
+
+create_config() {
+    local config_file="./$script_name.conf"
+    cat > "$config_file" <<EOL
+# $script_name configuration file
+# Any array named _INCLUDE will be checked
+# Paths can be both files and directories
+
+NAME=""
+
+# Common paths
+CONFIG_DIR="\$HOME/.config"
+BIN_DIR="\$HOME/.local/bin"
+SHARE_DIR="\$HOME/.local/share"
+
+HOME_INCLUDE=(
+    "\$HOME/.fonts"
+    "\$HOME/.icons"
+    "\$HOME/.themes"
+)
+
+SHARE_INCLUDE=(
+    "\$SHARE_DIR/aurorae"
+    "\$SHARE_DIR/color-schemes"
+    "\$SHARE_DIR/fonts"
+    "\$SHARE_DIR/icons"
+    "\$SHARE_DIR/konsole"
+    "\$SHARE_DIR/kwin"
+    "\$SHARE_DIR/plasma"
+    "\$SHARE_DIR/wallpapers"
+)
+
+CONFIG_INCLUDE=(
+    "\$CONFIG_DIR/Kvantum"
+    "\$CONFIG_DIR/breezerc"
+    "\$CONFIG_DIR/dolphinrc"
+    "\$CONFIG_DIR/gtk-2.0"
+    "\$CONFIG_DIR/gtk-3.0"
+    "\$CONFIG_DIR/gtk-4.0"
+    "\$CONFIG_DIR/gtkrc"
+    "\$CONFIG_DIR/gtkrc-2.0"
+    "\$CONFIG_DIR/kate"
+    "\$CONFIG_DIR/katerc"
+    "\$CONFIG_DIR/kcminputrc"
+    "\$CONFIG_DIR/kdeglobals"
+    "\$CONFIG_DIR/kglobalshortcutsrc"
+    "\$CONFIG_DIR/khotkeysrc"
+    "\$CONFIG_DIR/klipperrc"
+    "\$CONFIG_DIR/konsolerc"
+    "\$CONFIG_DIR/krunnerrc"
+    "\$CONFIG_DIR/kscreenlockerrc"
+    "\$CONFIG_DIR/ksmserverrc"
+    "\$CONFIG_DIR/ksplashrc"
+    "\$CONFIG_DIR/kwinrc"
+    "\$CONFIG_DIR/kwinrulesrc"
+    "\$CONFIG_DIR/latte"
+    "\$CONFIG_DIR/lattedockrc"
+    "\$CONFIG_DIR/lightlyrc"
+    "\$CONFIG_DIR/oxygenrc"
+    "\$CONFIG_DIR/plasma-org.kde.plasma.desktop-appletsrc"
+    "\$CONFIG_DIR/plasmarc"
+    "\$CONFIG_DIR/plasmashellrc"
+)
+
+# Code OSS settings
+#CODE_OSS_INCLUDE=("\$CONFIG_DIR/Code - OSS/User/settings.json")
+
+# Firefox customization
+#FIREFOX_INCLUDE=("\$HOME/.mozilla/firefox/*.default-release/chrome")
+EOL
+
+    echo -e "[${green} Done ${clear}] Configuration file created at $(realpath "$config_file")"
+}
+
+# Parse command-line options
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -b|--backup)
+            shift
+            backup "$1"
+            exit 0
+            ;;
+        -r|--restore)
+            shift
+            restore "$1"
+            exit 0
+            ;;
+        -c|--config)
+            create_config
+            exit 0
+            ;;
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        *)
+            echo -e "[${red} Error ${clear}] Invalid option"
+            show_help
+            exit 1
+            ;;
+    esac
+done
+
+echo -e "[${red} Error ${clear}] No option provided"
+show_help
+exit 1

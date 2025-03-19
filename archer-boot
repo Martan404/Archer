@@ -1,0 +1,46 @@
+#!/bin/bash
+# Main script 3/3
+# shellcheck disable=SC2086
+echo -e "
+-------------------------------------------------------------------------
+$(tput setaf 4)
+             █████╗ ██████╗  ██████╗██╗  ██╗███████╗██████╗
+            ██╔══██╗██╔══██╗██╔════╝██║  ██║██╔════╝██╔══██╗
+            ███████║██████╔╝██║     ███████║█████╗  ██████╔╝
+            ██╔══██║██╔══██╗██║     ██╔══██║██╔══╝  ██╔══██╗
+            ██║  ██║██║  ██║╚██████╗██║  ██║███████╗██║  ██║
+            ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+$(tput sgr0)
+-------------------------------------------------------------------------
+                           Arch install script"
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Generating rEFInd config using mkrlconf"
+
+mkrlconf
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Setting keymap and locale system-wide"
+
+keyboard_keymap=$(localectl status | grep 'VC Keymap' | awk '{print $3}')
+localectl set-keymap "$keyboard_keymap"
+
+default_locale=$(locale | awk -F= '/^LANG=/{print $2}')
+localectl set-locale $default_locale
+
+if pacman -Q firewalld >/dev/null 2>&1; then
+    echo -e "-------------------------------------------------------------------------"
+    echo -e "Setting up Firewalld rules"
+
+    firewall-cmd
+    firewall-cmd --permanent --zone=internal --change-interface=lo
+    firewall-cmd --permanent --zone=trusted --change-interface=virbr0
+    firewall-cmd --permanent --zone=trusted --change-interface=waydroid0
+fi
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Cleaning up script"
+
+systemctl disable --now archer-boot.service
+rm -f /etc/systemd/system/archer-boot.service
+rm -f ${BASH_SOURCE[0]}

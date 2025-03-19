@@ -1,0 +1,23 @@
+#!/bin/bash
+# Archer config file
+
+echo -e "Setting Discord to use local login credentials"
+sed -i 's/Exec=\/usr\/bin\/discord/Exec=\/usr\/bin\/discord --password-store=basic/' /opt/discord/discord.desktop
+
+echo -e "Removing Discord internal update check"
+install --owner "$user" --mode 777 -d /home/"$user"/.config/discord
+
+cat <<-END > /home/"$user"/.config/discord/settings.json
+{
+  "IS_MAXIMIZED": false,
+  "IS_MINIMIZED": false,
+  "SKIP_HOST_UPDATE": true,
+  "WINDOW_BOUNDS": {
+    "x": 40,
+    "y": 40,
+    "width": 940,
+    "height": 570
+  }
+}
+END
+chown "$user":"$user" /home/"$user"/.config/discord/settings.json

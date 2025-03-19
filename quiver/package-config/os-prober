@@ -1,0 +1,7 @@
+#!/bin/bash
+# Archer config file
+
+echo -e "Enabling Grub OS prober"
+
+sed -i '/^[#]*GRUB_DISABLE_OS_PROBER=/s/true/false/' /etc/default/grub
+sed -i '/^#GRUB_DISABLE_OS_PROBER/s/^#//' /etc/default/grub

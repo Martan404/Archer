@@ -1,0 +1,6 @@
+#!/bin/bash
+# Archer config file
+
+echo -e "Enabling openssh daemon and disable root login"
+systemctl enable sshd.service
+echo "PermitRootLogin no" > /etc/ssh/sshd_config.d/20-deny_root.conf

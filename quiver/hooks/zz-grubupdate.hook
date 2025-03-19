@@ -1,0 +1,12 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Type = Package
+Target = grub
+
+[Action]
+Description = Grub has been updated
+Depends = grub
+When = PostTransaction
+Exec = /usr/bin/echo -e "\e[1mRun\e[34m grub-update\e[0m\e[1m to complete the installation\e[0m"

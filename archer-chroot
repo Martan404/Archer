@@ -1,0 +1,785 @@
+#!/bin/bash
+# Main script 2/3
+# shellcheck disable=SC2002,SC2164,SC2269,SC1090,SC1091
+
+# Declaring exported variables from first script
+hostname=${hostname}
+user=${user}
+install_type=${install_type}
+bootloader=${bootloader}
+kernel=${kernel}
+keyboard_keymap=${keyboard_keymap}
+default_locale=${default_locale}
+snapshot_layout=${snapshot_layout}
+snapshot_subvol=${snapshot_subvol}
+root_partition=${root_partition}
+snap_manager=${snap_manager}
+disk_encryption=${disk_encryption}
+encrypted_root_partition=${encrypted_root_partition}
+
+setup_pacman() {	
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling multilib repository"
+
+	sed -i '/^#\[multilib\]/s/^#//' /etc/pacman.conf
+	sed -i '/^\[multilib\]$/,/^#Include/ s/^#//' /etc/pacman.conf
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling parallel downloads"
+
+	sed -i '/^#ParallelDownloads/s/^#//' /etc/pacman.conf
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating pacman hook directory"
+
+	sed -i '/^#HookDir/s/^#//' /etc/pacman.conf
+	mkdir -p /etc/pacman.d/hooks/
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Adding candy and color to pacman"
+
+	sed -i '/^ParallelDownloads = .*/a ILoveCandy' /etc/pacman.conf
+	sed -i '/^#Color/s/^#//' /etc/pacman.conf
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Updating pacman databases"
+
+	pacman -Syu --noconfirm
+}
+
+setup_system() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting time zone"
+
+	ln -sf /usr/share/zoneinfo/Europe/Stockholm /etc/localtime
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Generating /etc/adjtime"
+
+	hwclock --systohc
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling network time syncronization"
+
+	systemctl enable systemd-timesyncd.service
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting $default_locale as locale and $keyboard_keymap as keymap"
+
+	locale-gen
+
+	echo "LANG=$default_locale" >>/etc/locale.conf
+	echo "KEYMAP=$keyboard_keymap" >>/etc/vconsole.conf
+
+	if [ "$default_locale" == "en_SE.UTF-8" ]; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Enabling en_SE locale"
+
+		grep -q '^en_US\.UTF-8 UTF-8' /etc/locale.gen || sed -i 's/^#en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
+		grep -q '^sv_SE\.UTF-8 UTF-8' /etc/locale.gen || sed -i 's/^#sv_SE.UTF-8/sv_SE.UTF-8/' /etc/locale.gen
+
+		mv /Archer-main/quiver/configs/en_SE /usr/share/i18n/locales/en_SE && sed -i '/^[#]*en_US\.UTF-8/i\en_SE\.UTF-8 UTF-8' /etc/locale.gen
+		locale-gen
+	fi
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting hostname to $hostname"
+
+	echo "$hostname" >>/etc/hostname
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Configuring /etc/hosts"
+
+	cat <<-END >>/etc/hosts
+127.0.0.1 		localhost $hostname.localdomain
+::1 			localhost ip6-localhost ip6-loopback
+ff02::1 		ip6-allnodes
+ff02::2 		ip6-allrouters
+	END
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling btrfs module in mkinitcpio.conf"
+
+	sed -i 's/^MODULES=()/MODULES=(btrfs)/' /etc/mkinitcpio.conf
+
+	if [[ $disk_encryption == "yes" ]]; then 
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Enabling encryption hooks in mkinitcpio.conf"
+
+		sed -i '/^HOOKS=/ s/\(base\)/\1 systemd/' /etc/mkinitcpio.conf
+		sed -i '/^HOOKS=/ s/\(keyboard\)/\1 sd-vconsole/' /etc/mkinitcpio.conf
+		sed -i '/^HOOKS=/ s/\(filesystems\)/sd-encrypt \1/' /etc/mkinitcpio.conf
+	fi
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Rebuilding the initramfs image"
+
+	mkinitcpio -P
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting XDG Base Directory variables in /etc/security/pam_env.conf"
+
+	cat <<-END >>/etc/security/pam_env.conf
+EDITOR=micro
+XDG_CACHE_HOME	DEFAULT=@{HOME}/.cache
+XDG_CONFIG_HOME	DEFAULT=@{HOME}/.config
+XDG_DATA_HOME	DEFAULT=@{HOME}/.local/share
+XDG_STATE_HOME	DEFAULT=@{HOME}/.local/state
+	END
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting up sudo permissions for wheel group"
+
+	sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Temporarily removing password requirement for wheel group"
+
+	sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /etc/sudoers
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating user $user"
+
+	groupadd -f git
+	useradd -m -G sys,wheel,rfkill,git -s /bin/bash "$user"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Adding ~/.local/bin PATH to /etc/profile.d/custom-path.sh"
+
+	echo "export PATH=\$PATH:\$HOME/.local/bin" >>/etc/profile.d/custom-path.sh
+}
+
+setup_paru_pipx() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing Paru AUR helper"
+
+	package_installer "git rust cmake" pacman
+
+	cd /home/"$user"/
+	sudo -u "$user" git clone https://aur.archlinux.org/paru-git.git 2>&1 | sudo_quiet
+	cd paru-git
+
+	while true; do
+		sudo -u "$user" makepkg -si --needed --noconfirm 2>&1 | sudo_quiet && break
+		echo "$(tput setaf 9)Paru build failed. Retrying...$(tput sgr0)"
+	done
+
+	paru -Syu
+	cd .. && rm -rf paru-git/ && cd /
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing Python pipx"
+
+	package_installer "python-pipx"
+}
+
+setup_refind() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing rEFInd packages"
+	
+	package_installer "refind refind-btrfs python-pillow gptfdisk"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting up rEFInd"
+	
+	refind-install
+	mv /Archer-main/quiver/bootloader/refind-custom.conf /boot/EFI/refind/refind-custom.conf
+	echo -e "include refind-custom.conf\n" >> /boot/EFI/refind/refind.conf
+	rm -rf /boot/refind_linux.conf
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting up rEFInd-btrfs"
+
+	mv /Archer-main/quiver/bootloader/refind-btrfs.conf /etc/refind-btrfs.conf
+	systemctl enable refind-btrfs.service
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting up boot entry"
+
+	sed -i "s/KERNEL_NAME/$kernel/g" /boot/EFI/refind/refind-custom.conf
+	
+	if [[ $disk_encryption == "yes" ]]; then
+		root_disk_uuid=$(blkid -s UUID -o value "$encrypted_root_partition")
+
+		sed -i "s|PARTUUID=ROOT_PARTUUID|$root_partition|g" /boot/EFI/refind/refind-custom.conf
+		sed -i "s/\(options  \"[^\"]*\)\"/\1 rd.luks.name=$root_disk_uuid=root\"/" /boot/EFI/refind/refind-custom.conf
+	else
+
+		root_disk_partuuid=$(blkid -s PARTUUID -o value "$root_partition")
+		sed -i "s|ROOT_PARTUUID|$root_disk_partuuid|g" /boot/EFI/refind/refind-custom.conf
+	fi
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting up rEFInd theme"
+
+	mkdir -p /boot/EFI/refind/themes/
+	mv /Archer-main/quiver/bootloader/themes/refind-theme-regular/ /boot/EFI/refind/themes/refind-theme-regular/
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Copying arch netboot"
+
+	mv /Archer-main/quiver/bootloader/arch-netboot.efi /boot/arch-netboot.efi
+}
+
+setup_grub() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing Grub packages"
+
+	package_installer "grub-btrfs efibootmgr inotify-tools"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating efibootmgr wrapper script to prevent fail"
+
+	cat <<-END >/usr/local/bin/efibootmgr
+#!/bin/sh
+exec /usr/bin/efibootmgr -e 3 "\$@"
+	END
+	chmod +x /usr/local/bin/efibootmgr
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Configuring Grub"
+
+	grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck
+	grub-mkconfig -o /boot/grub/grub.cfg
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing Grub theme"
+
+	mv /Archer-main/quiver/bootloader/themes/arch-silence /boot/grub/themes/arch-silence
+	sed -i '/^[#]*GRUB_THEME=/c\GRUB_THEME="\/boot\/grub\/themes\/arch-silence\/theme.txt"' /etc/default/grub
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling GRUB-btrfsd snapshot daemon"
+
+	systemctl enable grub-btrfsd
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Disabling snapshot listing in pacman for grub-btrfs"
+
+	sed -i '/^[#]*GRUB_BTRFS_SHOW_SNAPSHOTS_FOUND=/s/true/false/' /etc/default/grub-btrfs/config
+	sed -i '/^#GRUB_BTRFS_SHOW_SNAPSHOTS_FOUND/s/^#//' /etc/default/grub-btrfs/config
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Removing 'quiet' kernel parameter"
+
+	sed -i '/GRUB_CMDLINE_LINUX_DEFAULT/s/ quiet//g' /etc/default/grub
+
+	if [[ $disk_encryption == "yes" ]]; then 
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Setting encryption kernel parameters"
+		
+		root_disk_uuid=$(blkid -s UUID -o value "$encrypted_root_partition")
+		sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 rd.luks.name=$root_disk_uuid=root root=\/dev\/mapper\/root\"/" /etc/default/grub
+	fi
+}
+
+setup_cpu() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Checking CPU"
+
+	lscpu_output=$(lscpu)
+	read -r -t 1
+
+	if [[ $lscpu_output == *"AuthenticAMD"* ]]; then
+		echo -e "Found AMD"
+		amd_cpu
+
+	elif [[ $lscpu_output == *"GenuineIntel"* ]]; then
+		echo -e "Found Intel"
+		intel_cpu
+	fi
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting cpu kernel parameters"
+	
+	[[ $bootloader == "refind" ]] && [ -n "$cpu_kernel_parameters" ] && sed -i "s/\(options  \"[^\"]*\)\"/\1 $cpu_kernel_parameters\"/" /boot/EFI/refind/refind-custom.conf
+	[[ $bootloader == "grub" ]] && [ -n "$cpu_kernel_parameters" ] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $cpu_kernel_parameters\"/" /etc/default/grub
+}
+
+amd_cpu() {
+	cpu_kernel_parameters="nowatchdog modprobe.blacklist=sp5100_tco"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing packages"
+
+	package_installer "amd-ucode"
+}
+
+intel_cpu() {
+	cpu_kernel_parameters="intel_iommu=on iommu=pt nowatchdog modprobe.blacklist=iTCO_wdt"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing packages"
+
+	package_installer "intel-ucode thermald"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling thermald service"
+
+	systemctl enable thermald.service
+}
+
+setup_gpu() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Checking GPU"
+
+	lspci_output=$(lspci | grep VGA)
+	lspci_output_full=$(lspci)
+	read -r -t 1
+
+	if [[ $lspci_output == *"Radeon"* ]] || [[ $lspci_output == *"AMD"* ]]; then
+		echo -e "Found AMD"
+		amd_gpu
+
+	elif [[ $lspci_output == *"Integrated Graphics Controller"* ]] || [[ $lspci_output == *"Intel Corporation HD"* ]] || [[ $lspci_output == *"Intel Corporation UHD"* ]]; then
+		echo -e "Found Intel"
+		intel_gpu
+
+	elif [[ $lspci_output == *"NVIDIA"* ]] || [[ $lspci_output == *"GeForce"* ]]; then
+		echo -e "Found NVIDIA"
+		nvidia_gpu
+
+	elif [[ ${lspci_output} =~ (Virtio|QEMU) ]] || [[ ${lspci_output_full} =~ (Virtio|QEMU) ]]; then
+		echo "Found QEMU"
+		qemu_gpu
+	fi
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting gpu kernel parameters"
+
+	[[ $bootloader == "refind" ]] && [ -n "$gpu_kernel_parameters" ] && sed -i "s/\(options  \"[^\"]*\)\"/\1 $gpu_kernel_parameters\"/" /boot/EFI/refind/refind-custom.conf
+	[[ $bootloader == "grub" ]] && [ -n "$gpu_kernel_parameters" ] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $gpu_kernel_parameters\"/" /etc/default/grub
+}
+
+amd_gpu() {
+	gpu_kernel_parameters="radeon.si_support=0 radeon.cik_support=0 amdgpu.si_support=1 amdgpu.cik_support=1"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing packages"
+
+	package_installer "vulkan-radeon lib32-vulkan-radeon mesa lib32-mesa libva-mesa-driver mesa-vdpau lib32-mesa-vdpau"
+}
+
+nvidia_gpu() {
+	gpu_kernel_parameters="nvidia_drm.modeset=1 nvidia_drm.fbdev=1 nvidia.NVreg_PreserveVideoMemoryAllocations=1"
+
+	if [[ $lspci_output == *"RTX"* ]]; then
+		echo -e "Found RTX card. Installing nvidia-open-dkms"
+		nvidia_version="nvidia-open-dkms"
+	else
+		nvidia_version="nvidia-dkms"
+	fi
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing packages"
+
+	package_installer "$nvidia_version nvidia-utils lib32-nvidia-utils nvidia-settings mesa libva-mesa-driver vulkan-mesa-layers lib32-vulkan-mesa-layers"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling support for suspend/wakeup"
+
+	systemctl enable nvidia-suspend.service
+	systemctl enable nvidia-hibernate.service
+	systemctl enable nvidia-resume.service
+}
+
+intel_gpu() {
+	gpu_kernel_parameters=""
+
+	# Need a way to test for new and old gpu and also if cpu
+	# QuickSync # LEGACY intel-media-driver intel-media-sdk # TIGER LAKE(2020+) libva-intel-driver vpl-gpu-rt
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing packages"
+
+	package_installer "vulkan-intel lib32-vulkan-intel mesa lib32-mesa libva-mesa-driver vulkan-mesa-layers lib32-vulkan-mesa-layers"
+}
+
+qemu_gpu() {
+	gpu_kernel_parameters=""
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing packages"
+
+	package_installer "qemu-guest-agent vulkan-virtio lib32-vulkan-virtio vulkan-mesa-layers lib32-vulkan-mesa-layers"
+}
+
+setup_laptop() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing laptop-detect package"
+
+	package_installer "laptop-detect"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Checking if device is laptop"
+
+	laptop-detect
+	laptop_status=$?
+
+	if [ $laptop_status = 0 ]; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Installing laptop packages"
+
+		package_installer "auto-cpufreq"
+
+		systemctl mask power-profiles-daemon.service
+		systemctl enable auto-cpufreq.service
+
+	elif [ $laptop_status = 1 ]; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Device not recognized as laptop"
+
+	elif [ $laptop_status = 2 ]; then
+		laptop-detect -v
+	fi
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Uninstalling laptop-detect package"
+
+	pacman -Rs --noconfirm laptop-detect
+}
+
+setup_hibernation() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting swapfile offset for hibernation kernel parameter"
+	
+	swap_uuid=$(findmnt -no UUID -T /swap/swapfile)
+	swapfile_offset=$(btrfs inspect-internal map-swapfile -r /swap/swapfile)
+
+	[[ $bootloader == "refind" ]] && sed -i "s/\(options  \"[^\"]*\)\"/\1 resume_offset=$swapfile_offset resume=UUID=$swap_uuid\"/" /boot/EFI/refind/refind-custom.conf
+	[[ $bootloader == "grub" ]] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 resume_offset=$swapfile_offset resume=UUID=$swap_uuid\"/" /etc/default/grub
+
+	if [[ $disk_encryption != "yes" ]]; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Adding 'resume' hook for hibernation"
+
+		sed -i '/^HOOKS=(/ s/)/ resume)/' /etc/mkinitcpio.conf
+	fi
+}
+
+install_packages() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing system packages"
+
+	[[ $install_type == "lite" ]] && package_installer "/Archer-main/quiver/lite_packages.txt"
+	[[ $install_type == "kde" ]] && package_installer "/Archer-main/quiver/kde_packages.txt"
+	[[ $install_type == "hyprland" ]] && package_installer "/Archer-main/quiver/hyprland_packages.txt"
+}
+
+setup_environment() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting up desktop environment"
+
+	[[ $install_type == "lite" ]]
+	[[ $install_type == "kde" ]] && source "/Archer-main/quiver/kde_setup"
+	[[ $install_type == "hyprland" ]] && source "/Archer-main/quiver/hyprland_setup"
+}
+
+bash_config() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Configuring /etc/bash.bashrc"
+
+	cat /Archer-main/quiver/bashrc/bash.bashrc >>/etc/bash.bashrc
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Configuring /etc/bash.bash_aliases"
+
+	cat /Archer-main/quiver/bashrc/bash.bash_aliases >/etc/bash.bash_aliases
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Configuring /home/$user/.bashrc"
+
+	sed -i '/PS1/d' /home/"$user"/.bashrc
+	sed -i '/alias/d' /home/"$user"/.bashrc
+
+	cat /Archer-main/quiver/bashrc/user.bashrc >>/home/"$user"/.bashrc
+	chown "$user":"$user" /home/"$user"/.bashrc
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Copying /home/$user/.bashrc to /root/.bashrc"
+
+	ln -s /home/"$user"/.bashrc /root/.bashrc
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Configuring /home/$user/.bash_aliases"
+
+	cat /Archer-main/quiver/bashrc/user.bash_aliases >>/home/"$user"/.bash_aliases
+	chown "$user":"$user" /home/"$user"/.bash_aliases
+}
+
+snapper_setup() {
+	if [[ $snapshot_layout == "snapper" ]]; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Installing Snapper packages"
+
+		package_installer "snapper snap-pac snapper-support"
+		[[ $bootloader == "grub" ]] && package_installer "snap-pac-grub"
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Creating Snapper root config"
+
+		snapper --no-dbus -c root create-config /
+
+	elif [[ $snapshot_layout == "arch" ]]; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Installing Snapper packages"
+
+		package_installer "snapper snap-pac"
+		[[ $bootloader == "grub" ]] && package_installer "snap-pac-grub"
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Removing /.snapshots"
+
+		umount /.snapshots
+		rm -r /.snapshots
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Creating Snapper root config"
+
+		snapper --no-dbus -c root create-config /
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Removing snapper /.snapshots subvolume"
+
+		btrfs subvolume delete /.snapshots
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Remounting $snapshot_subvol subvolume"
+
+		mount --mkdir -o subvol="$snapshot_subvol" "$root_partition" /.snapshots
+		mount -a
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Setting new ./snapshots permissions"
+
+		chmod 750 /.snapshots
+		chown -R :wheel /.snapshots/
+	fi
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Configuring timeline cleanup"
+
+	sed -i 's/^NUMBER_LIMIT="50"/NUMBER_LIMIT="10"/' /etc/snapper/configs/root
+	sed -i 's/^TIMELINE_LIMIT_HOURLY="10"/TIMELINE_LIMIT_HOURLY="0"/' /etc/snapper/configs/root
+	sed -i 's/^TIMELINE_LIMIT_DAILY="10"/TIMELINE_LIMIT_DAILY="0"/' /etc/snapper/configs/root
+	sed -i 's/^TIMELINE_LIMIT_WEEKLY="10"/TIMELINE_LIMIT_WEEKLY="0"/' /etc/snapper/configs/root
+	sed -i 's/^TIMELINE_LIMIT_MONTHLY="10"/TIMELINE_LIMIT_MONTHLY="0"/' /etc/snapper/configs/root
+	sed -i 's/^TIMELINE_LIMIT_YEARLY="10"/TIMELINE_LIMIT_YEARLY="0"/' /etc/snapper/configs/root
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Adding wheel group to snapper permissions"
+
+	sed -i 's/^ALLOW_GROUPS=""/ALLOW_GROUPS="wheel"/' /etc/snapper/configs/root
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Excluding /.snapshots from updatedb"
+
+	echo "PRUNENAMES = \".snapshots\"" >>/etc/updatedb.conf
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling Snapper Boot, Timeline and Cleanup timers"
+
+	systemctl enable snapper-boot.timer
+	systemctl enable snapper-timeline.timer
+	systemctl enable snapper-cleanup.timer
+}
+
+yabsnap_setup() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing Yabsnap"
+
+	package_installer "yabsnap"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating Yabsnap root config"
+
+	yabsnap create-config root
+
+	sed -i 's/source =/source = \//' /etc/yabsnap/configs/root.conf
+	sed -i 's/keep_user = 1/keep_user = 2/' /etc/yabsnap/configs/root.conf
+	sed -i 's/trigger_interval = 1 hour/trigger_interval = 5 minutes/' /etc/yabsnap/configs/root.conf
+	sed -i 's/keep_preinstall = 1/keep_preinstall = 10/' /etc/yabsnap/configs/root.conf
+	sed -i 's/keep_daily = 0/keep_daily = 7/' /etc/yabsnap/configs/root.conf
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Excluding /.snapshots from updatedb"
+
+	echo "PRUNENAMES = \".snapshots\"" >>/etc/updatedb.conf
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling Yabsnap service"
+
+	systemctl enable yabsnap.timer
+}
+
+snapshot_rollback() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting up Snapshot rollback script"
+
+	cat /Archer-main/quiver/scripts/rollback >/usr/local/bin/rollback
+	chmod a+x /usr/local/bin/rollback
+	cat /Archer-main/quiver/scripts/rollback-gui >/usr/local/bin/rollback-gui
+	chmod a+x /usr/local/bin/rollback-gui
+}
+
+package_config() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Configuring installed packages"
+
+	installed_packages=$(pacman -Q)
+
+	while IFS= read -r line; do
+
+		package_name=$(echo "$line" | awk '{print $1}')
+
+		if [[ -f "/Archer-main/quiver/package-config/$package_name" ]]; then
+			echo -e "-------------------------------------------------------------------------"
+			echo "Found $package_name config"
+
+			source "/Archer-main/quiver/package-config/$package_name"
+		fi
+	done <<<"$installed_packages"
+
+	if [ "$install_type" != "lite" ]; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Configuring not installed packages"
+
+		find "/Archer-main/quiver/package-config/" -type f -name '_*' | while IFS= read -r config_path; do source "$config_path"; done
+	fi
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Moving pacman hooks"
+
+	mv /Archer-main/quiver/hooks/* /etc/pacman.d/hooks/
+	chown -R :wheel /etc/pacman.d/hooks/*
+
+	if [[ $bootloader == "grub" ]]; then
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Rebuilding GRUB configs"
+	
+		grub-mkconfig -o /boot/grub/grub.cfg
+	fi
+}
+
+boot_script() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting up boot script"
+
+	cat /Archer-main/archer-boot >/usr/bin/archer-boot
+	chmod a+x /usr/bin/archer-boot
+
+	cat <<-END >/etc/systemd/system/archer-boot.service
+[Unit]
+Description=Archer boot setup script
+		 
+[Service]
+ExecStart=/usr/bin/archer-boot
+		 
+[Install]
+WantedBy=multi-user.target
+	END
+
+	systemctl enable archer-boot.service
+}
+
+set_password() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Restoring password requierment for wheel group"
+
+	sed -i 's/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /etc/sudoers
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Set root password"
+
+	status=1
+	while [ $status != 0 ]; do
+		passwd
+		status=$?
+	done
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Set user password"
+
+	status=1
+	while [ $status != 0 ]; do
+		passwd "$user"
+		status=$?
+	done
+}
+
+sudo_quiet() { grep -v "unable to find terminal name for device"; }
+
+package_installer() {
+	input_packages=$1
+	pkg_manager=$2
+	max_tries=3
+	try_count=0
+
+	if [[ "$input_packages" == *.txt ]]; then
+		packages=$(grep -v '^#' "$input_packages" | grep -v '^$' | grep -v '\.')
+	else
+		packages=$input_packages
+	fi
+
+	while [ "$try_count" -lt "$max_tries" ]; do
+		try_count=$((try_count + 1))
+
+		# shellcheck disable=SC2086
+		if [ "$pkg_manager" == "pacman" ]; then
+			pacman -S --needed --noconfirm $packages && break
+
+		else
+			sudo -u "$user" paru -S --needed --noconfirm $packages 2>&1 | sudo_quiet && break
+		fi
+
+		echo "$(tput setaf 9)Package installation failed. Retrying... ($try_count/$max_tries)$(tput sgr0)"
+	done
+
+	if [ "$try_count" == "$max_tries" ]; then
+		echo "$(tput setaf 9)Package installation failed after $try_count attempts$(tput sgr0)"
+
+		echo -e "Choose option"
+		echo -e "1. Try again"
+		echo -e "2. Exit"
+
+		while true; do
+			read -r -p "Select: " choice
+
+			case $choice in
+			[yY1])
+				try_count=0
+				package_installer "$packages" "$pkg_manager"
+				break
+				;;
+			[nN2])
+				echo "$(tput setaf 9)Exiting...$(tput sgr0)"
+				exit
+				;;
+			esac
+		done
+	fi
+}
+
+setup_pacman
+setup_system
+setup_paru_pipx
+[[ $bootloader == "refind" ]] && setup_refind
+[[ $bootloader == "grub" ]] && setup_grub
+
+setup_cpu
+setup_gpu
+setup_laptop
+setup_hibernation
+
+install_packages
+setup_environment
+bash_config
+
+[[ $snap_manager == "snapper" ]] && snapper_setup
+[[ $snap_manager == "yabsnap" ]] && yabsnap_setup
+snapshot_rollback
+
+package_config
+boot_script
+set_password
+exit

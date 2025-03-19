@@ -1,0 +1,6 @@
+#!/bin/bash
+# Archer config file
+
+echo -e "Configuring fastfetch"
+install --owner "$user" --mode 777 -D /Archer-main/quiver/configs/fastfetch-config.jsonc --target-directory /home/"$user"/.config/fastfetch/
+install --owner "$user" --mode 777 -D /Archer-main/quiver/configs/fastfetch-config-small.jsonc --target-directory /home/"$user"/.config/fastfetch/

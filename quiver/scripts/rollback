@@ -1,0 +1,65 @@
+#!/bin/bash
+# shellcheck disable=SC2002,SC2162,SC2086
+echo -e "
+-------------------------------------------------------------------------
+$(tput setaf 4)
+             █████╗ ██████╗  ██████╗██╗  ██╗███████╗██████╗
+            ██╔══██╗██╔══██╗██╔════╝██║  ██║██╔════╝██╔══██╗
+            ███████║██████╔╝██║     ███████║█████╗  ██████╔╝
+            ██╔══██║██╔══██╗██║     ██╔══██║██╔══╝  ██╔══██╗
+            ██║  ██║██║  ██║╚██████╗██║  ██║███████╗██║  ██║
+            ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+$(tput sgr0)
+-------------------------------------------------------------------------
+                        Snapshot rollback script
+-------------------------------------------------------------------------"
+
+root_uuid=$(lsblk -o UUID,LABEL | grep "$(< /etc/hostname)" | awk '{print $1}')
+snapshot_path=$(awk -F'subvol=' '{print $2}' /proc/cmdline | awk '{print $1}')
+
+if [[ $snapshot_path = "@" ]]; then
+    echo "This script requires you to be booted in to a snapshot. Use rollback-gui instead" >&2
+    exit 1
+elif [[ "$EUID" -ne 0 ]]; then
+    echo "This script needs to be run with root privileges" >&2
+    exit 1
+fi
+
+echo -e "Mounting root on /mnt"
+mount -t btrfs "/dev/disk/by-uuid/$root_uuid" /mnt
+
+if [[ -e "/mnt/@prev-root" ]]; then
+    echo -e "Removing previous root"
+    [[ -e "/mnt/@prev-root/var/lib/portables" ]] && btrfs subvolume delete /mnt/@prev-root/var/lib/portables >/dev/null 2>&1
+    [[ -e "/mnt/@prev-root/var/lib/machines" ]] && btrfs subvolume delete /mnt/@prev-root/var/lib/machines >/dev/null 2>&1
+    btrfs subvolume delete /mnt/@prev-root
+    rm -rf /mnt/@prev-root
+fi
+
+echo -e "Moving previous root"
+mv /mnt/@ /mnt/@prev-root
+
+echo -e "Setting current snapshot as new root"
+btrfs subvolume snapshot /mnt/$snapshot_path /mnt/@
+
+if [[ -e "/mnt/@prev-root/.snapshots" ]]; then
+    echo -e "Moving snapshots directory from previous to new root"
+    mv /mnt/@prev-root/.snapshots /mnt/@/
+fi
+
+if [[ -e "/mnt/@/var/lib/pacman/db.lck" ]]; then
+	echo -e "Removing pacman db.lck"
+	rm /mnt/@/var/lib/pacman/db.lck
+fi
+
+echo -e "Removing previous root"
+[[ -e "/mnt/@prev-root/var/lib/portables" ]] && btrfs subvolume delete /mnt/@prev-root/var/lib/portables >/dev/null 2>&1
+[[ -e "/mnt/@prev-root/var/lib/machines" ]] && btrfs subvolume delete /mnt/@prev-root/var/lib/machines >/dev/null 2>&1
+btrfs subvolume delete /mnt/@prev-root 
+rm -rf /mnt/@prev-root
+
+echo -e "Unmounting /mnt"
+umount -R /mnt
+
+read -p "Press any key to reboot..."
+reboot
