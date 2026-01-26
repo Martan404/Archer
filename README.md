@@ -1,4 +1,4 @@
-# Archer
+# Archer, an Arch install script
 
 Archer is an Arch install script. It follows the steps outlined in the ArchWiki [installation guide](https://wiki.archlinux.org/title/Installation_guide) with some liberty to make the script work reliably. This is just a way for me to quickly reinstall Arch according to my preferences. Feel free to fork the project, customize it and make it your own.
 

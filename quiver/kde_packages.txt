@@ -2,19 +2,16 @@
 # Some AUR helpers support it too, e.g: paru -S aur/firefox-hg
 
 # FLATPAK #
-com.bitwarden.desktop
 com.discordapp.Discord
 com.github.Matoking.protontricks
 com.github.zocker_160.SyncThingy
 com.spotify.Client
-com.usebottles.bottles
 net.davidotek.pupgui2
 net.lutris.Lutris
 org.gtk.Gtk3theme.Breeze
 org.kde.kdenlive
 org.kde.krita
-org.kde.ktorrent
-org.kde.okular
+org.qbittorrent.qBittorrent
 org.mozilla.firefox
 # FLATPAK #
 
@@ -92,6 +89,7 @@ btrfsmaintenance
 udisks2-btrfs
 code
 dialog
+fail2ban
 fastfetch
 filelight
 fwupd
@@ -181,6 +179,8 @@ sddm
 sddm-kcm
 system-config-printer
 systemsettings
+vlc
+vlc-plugins-all
 xdg-desktop-portal
 xdg-desktop-portal-kde
 xdg-desktop-portal-gtk

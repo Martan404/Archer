@@ -88,16 +88,6 @@ setup_system() {
 	echo "$hostname" >>/etc/hostname
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Configuring /etc/hosts"
-
-	cat <<-END >>/etc/hosts
-127.0.0.1 		localhost $hostname.localdomain
-::1 			localhost ip6-localhost ip6-loopback
-ff02::1 		ip6-allnodes
-ff02::2 		ip6-allrouters
-	END
-
-	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling btrfs module in mkinitcpio.conf"
 
 	sed -i 's/^MODULES=()/MODULES=(btrfs)/' /etc/mkinitcpio.conf
@@ -120,11 +110,11 @@ ff02::2 		ip6-allrouters
 	echo -e "Setting XDG Base Directory variables in /etc/security/pam_env.conf"
 
 	cat <<-END >>/etc/security/pam_env.conf
-EDITOR=micro
-XDG_CACHE_HOME	DEFAULT=@{HOME}/.cache
-XDG_CONFIG_HOME	DEFAULT=@{HOME}/.config
-XDG_DATA_HOME	DEFAULT=@{HOME}/.local/share
-XDG_STATE_HOME	DEFAULT=@{HOME}/.local/state
+EDITOR=nano
+XDG_CACHE_HOME	DEFAULT=\${HOME}/.cache
+XDG_CONFIG_HOME	DEFAULT=\${HOME}/.config
+XDG_DATA_HOME	DEFAULT=\${HOME}/.local/share
+XDG_STATE_HOME	DEFAULT=\${HOME}/.local/state
 	END
 
 	echo -e "-------------------------------------------------------------------------"
@@ -352,28 +342,33 @@ setup_gpu() {
 }
 
 amd_gpu() {
-	gpu_kernel_parameters="radeon.si_support=0 radeon.cik_support=0 amdgpu.si_support=1 amdgpu.cik_support=1"
+	gpu_kernel_parameters=""
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing packages"
 
-	package_installer "vulkan-radeon lib32-vulkan-radeon mesa lib32-mesa libva-mesa-driver mesa-vdpau lib32-mesa-vdpau"
+	package_installer "mesa vulkan-radeon xf86-video-amdgpu"
 }
 
 nvidia_gpu() {
 	gpu_kernel_parameters="nvidia_drm.modeset=1 nvidia_drm.fbdev=1 nvidia.NVreg_PreserveVideoMemoryAllocations=1"
 
 	if [[ $lspci_output == *"RTX"* ]]; then
-		echo -e "Found RTX card. Installing nvidia-open-dkms"
-		nvidia_version="nvidia-open-dkms"
+		nvidia_driver="nvidia-open-dkms nvidia-utils"
+	
+	elif [[ $lspci_output == *"GTX"* ]]; then
+		echo -e "Found GTX card. Installing nvidia-580xx-dkms"
+		nvidia_driver="nvidia-580xx-dkms nvidia-580xx-settings nvidia-580xx-utils"
+
 	else
-		nvidia_version="nvidia-dkms"
+		echo -e "Installing Nouveau driver"
+		nvidia_driver="mesa"
 	fi
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing packages"
 
-	package_installer "$nvidia_version nvidia-utils lib32-nvidia-utils nvidia-settings mesa libva-mesa-driver vulkan-mesa-layers lib32-vulkan-mesa-layers"
+	package_installer "$nvidia_driver"
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling support for suspend/wakeup"
@@ -392,7 +387,7 @@ intel_gpu() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing packages"
 
-	package_installer "vulkan-intel lib32-vulkan-intel mesa lib32-mesa libva-mesa-driver vulkan-mesa-layers lib32-vulkan-mesa-layers"
+	package_installer "mesa vulkan-intel"
 }
 
 qemu_gpu() {
@@ -401,7 +396,7 @@ qemu_gpu() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing packages"
 
-	package_installer "qemu-guest-agent vulkan-virtio lib32-vulkan-virtio vulkan-mesa-layers lib32-vulkan-mesa-layers"
+	package_installer "qemu-guest-agent vulkan-virtio lib32-vulkan-virtio"
 }
 
 setup_laptop() {

@@ -207,7 +207,7 @@ set_locale() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Uncomment and then save the locales you want enabled"
 
-	read -r -t 3
+	read -r -p "Press enter to continue"
 	nano /etc/locale.gen
 	locale-gen
 	available_locales=$(localectl list-locales | awk '{printf "%s  ", $0} END {print ""}')
@@ -336,7 +336,7 @@ set_kernel() {
 
 set_swap() {
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enter size for swap file (GiB)"
+	echo -e "Enter size for swap file (GiB). At least same amount as RAM is recommended"
 
 	while [ -z "$swapsize" ] || [[ ! "$swapsize" =~ ^[0-9]+$ ]]; do
 		read -r -p "Size: " swapsize

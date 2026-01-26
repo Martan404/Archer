@@ -31,6 +31,8 @@ install_flatpak() {
     	echo "$(tput setaf 9)Package installation failed. Retrying...$(tput sgr0)"
 	done
 
+
+	# Setup flatpaks
 	if [[ $(flatpak list) == *"com.github.GradienceTeam.Gradience"* ]]; then
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Setting Adwaita color to match Breeze Dark"
@@ -42,24 +44,7 @@ install_flatpak() {
 	
 		flatpak remove -y --noninteractive com.github.GradienceTeam.Gradience
 	fi
-
-	if [[ $(flatpak list) == *"org.mozilla.firefox"* ]]; then
-		
-		flatpak run org.mozilla.firefox --headless &
-		read -r -t 1
-		flatpak kill org.mozilla.firefox
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Moving Betterfox user.js to Firefox"
-
-		cd /home/$user/.var/app/org.mozilla.firefox/.mozilla/firefox/*default-release/
-		mv /home/$user/.user.js ./user.js
-		cd /
-		
-	else
-		rm -f /home/$user/.user.js
-	fi
-
+	
 	echo -e "-------------------------------------------------------------------------"
 	read -r -t 5 -p "Rebooting in 5 seconds..."
 

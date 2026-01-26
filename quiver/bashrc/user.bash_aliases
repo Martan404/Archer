@@ -7,7 +7,7 @@ archer-help() {
     grep "^alias" ~/.bash_aliases | awk -F= '{sub("^alias[ \t]*", ""); print $1}'
 }
 
-alias update='paru -Syu && pipx --global upgrade-all'
+alias update='paru -Sy --needed archlinux-keyring; paru -Su; flatpak update; pipx --global upgrade-all'
 alias package-cache-cleanup='paru -Scd'
 alias sudo-password-unlock='faillock --user $USER --reset'
 alias pacman-refresh-mirrors='sudo reflector --age 48 --country "$(curl ifconfig.co/country-iso)" --fastest 5 --latest 20 --sort rate --save /etc/pacman.d/mirrorlist'
@@ -18,16 +18,7 @@ alias last-boot-log='journalctl -b -1 -r'
 alias last-boot-log-systemd-user='journalctl --user -b -1 -u init.scope --since 00:00 -g Stop --no-pager'
 alias last-boot-log-systemd-root='journalctl -b -1 -u init.scope --since 00:00 -g Stop --no-pager'
 
-alias windows-boot='sudo windows-boot'
 alias logout="shopt -q login_shell && logout || qdbus org.kde.ksmserver /KSMServer logout 0 0 1"
-
-gitui() {
-    key="${1:-$HOME/.ssh/YOUR-SSH-KEY}"
-    eval "$(ssh-agent)"
-    ssh-add "$key" 
-    command gitui "${@:2}" 
-    eval "$(ssh-agent -k)"
-}
 
 # Fix unmountable ntfs partitions
 ntfs-fix-partition() { sudo ntfsfix --clear-dirty --clear-bad-sectors "$1"; }
