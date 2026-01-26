@@ -14,10 +14,6 @@ alias pacman-refresh-mirrors='sudo reflector --age 48 --country "$(curl ifconfig
 alias pacman-db-unlock='sudo rm /var/lib/pacman/db.lck'
 alias pacman-clean-orphan-packages='sudo pacman -Rns $(pacman -Qtdq)'
 
-alias last-boot-log='journalctl -b -1 -r'
-alias last-boot-log-systemd-user='journalctl --user -b -1 -u init.scope --since 00:00 -g Stop --no-pager'
-alias last-boot-log-systemd-root='journalctl -b -1 -u init.scope --since 00:00 -g Stop --no-pager'
-
 alias logout="shopt -q login_shell && logout || qdbus org.kde.ksmserver /KSMServer logout 0 0 1"
 
 # Fix unmountable ntfs partitions
