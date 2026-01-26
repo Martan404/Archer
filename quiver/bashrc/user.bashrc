@@ -1,5 +1,7 @@
 
 # Check /etc/bash.bashrc for more configuration
+
+# Get user aliases
 [[ -r ~/.bash_aliases ]] && source ~/.bash_aliases
 
 # Add ~/System/scripts to PATH

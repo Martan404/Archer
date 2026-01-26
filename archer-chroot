@@ -49,7 +49,7 @@ setup_pacman() {
 
 setup_system() {
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting time zone"
+	echo -e "Setting time zone to Stockholm"
 
 	ln -sf /usr/share/zoneinfo/Europe/Stockholm /etc/localtime
 
