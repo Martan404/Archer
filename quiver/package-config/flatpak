@@ -10,7 +10,7 @@ flatpak override --env=GTK_THEME=Breeze
 
 echo -e "Creating flatpak-setup desktop entry"
 
-install --owner "$user":"$user" --mode 777 -d /home/"$user"/.config/autostart/
+install --owner "$user" --group "$user" --mode 777 -d /home/"$user"/.config/autostart/
 
 cat <<EOF >>/home/"$user"/.config/autostart/flatpak-setup.desktop
 [Desktop Entry]
