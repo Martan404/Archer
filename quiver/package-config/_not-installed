@@ -6,9 +6,3 @@ if ! pacman -Q steam > /dev/null 2>&1; then
     echo -e "Installing steam-devices package for Steam Flatpak"
     package_installer "steam-devices" 
 fi
-
-if ! pacman -Q firefox > /dev/null 2>&1; then
-    echo -e "Preparing Betterfox user.js for flatpak version"
-    mv /Archer-main/quiver/configs/betterfox-userjs /home/"$user"/.user.js
-	chown "$user":"$user" /home/"$user"/.user.js
-fi
