@@ -145,12 +145,9 @@ setup_paru_pipx() {
 
 	package_installer "git rust cmake" pacman
 
-	# Fix git
-	git config --global --unset http.proxy
-	git config --global --unset https.proxy
-
 	cd /home/"$user"/
-	sudo -u "$user" git clone https://aur.archlinux.org/paru-git.git 2>&1 | sudo_quiet
+	git clone https://aur.archlinux.org/paru-git.git
+	chown -R "$user":"$user" ./paru-git
 	cd paru-git
 
 	while true; do
