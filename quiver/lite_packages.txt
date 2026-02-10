@@ -18,7 +18,7 @@ autojump
 bash-completion
 bash-language-server
 bash-preexec
-blesh
+blesh-git
 btop
 dialog
 fastfetch

@@ -146,7 +146,7 @@ setup_paru_pipx() {
 	package_installer "git rust cmake" pacman
 
 	cd /home/"$user"/
-	git clone https://aur.archlinux.org/paru-git.git
+	sudo git clone https://aur.archlinux.org/paru-git.git
 	chown -R "$user":"$user" ./paru-git
 	cd paru-git
 
