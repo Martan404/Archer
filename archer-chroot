@@ -146,9 +146,8 @@ setup_paru_pipx() {
 	package_installer "git rust cmake" pacman
 
 	cd /home/"$user"/
-	sudo git clone https://aur.archlinux.org/paru-git.git
-	chown -R "$user":"$user" ./paru-git
-	cd paru-git
+	sudo -u "$user" git clone https://aur.archlinux.org/paru.git 2>&1 | sudo_quiet
+	cd paru
 
 	while true; do
 		sudo -u "$user" makepkg -si --needed --noconfirm 2>&1 | sudo_quiet && break
