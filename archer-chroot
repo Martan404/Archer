@@ -521,8 +521,7 @@ snapper_setup() {
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Installing Snapper packages"
 
-		package_installer "snapper snap-pac snapper-support"
-		[[ $bootloader == "grub" ]] && package_installer "snap-pac-grub"
+		package_installer "snapper snap-pac snapper-support snap-pac-grub"
 
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Creating Snapper root config"
@@ -533,8 +532,7 @@ snapper_setup() {
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Installing Snapper packages"
 
-		package_installer "snapper snap-pac"
-		[[ $bootloader == "grub" ]] && package_installer "snap-pac-grub"
+		package_installer "snapper snap-pac snap-pac-grub"
 
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Removing /.snapshots"
@@ -774,21 +772,19 @@ setup_system
 setup_paru_pipx
 [[ $bootloader == "refind" ]] && setup_refind
 [[ $bootloader == "grub" ]] && setup_grub
-
 setup_cpu
 setup_gpu
 setup_laptop
 setup_hibernation
 
 install_packages
-setup_environment
-bash_config
-
 [[ $snap_manager == "snapper" ]] && snapper_setup
 [[ $snap_manager == "yabsnap" ]] && yabsnap_setup
 snapshot_rollback
-
+setup_environment
+bash_config
 package_config
+
 boot_script
 set_password
 exit
