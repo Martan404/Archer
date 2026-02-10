@@ -42,6 +42,17 @@ setup_pacman() {
 	sed -i '/^#Color/s/^#//' /etc/pacman.conf
 
 	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling Chaotic-AUR repo"
+
+	pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
+	pacman-key --lsign-key 3056513887B78AEB
+	pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
+
+	echo "[chaotic-aur]" >> /etc/pacman.conf
+	echo "Include = /etc/pacman.d/chaotic-mirrorlist" >> /etc/pacman.conf
+
+
+	echo -e "-------------------------------------------------------------------------"
 	echo -e "Updating pacman databases"
 
 	pacman -Syu --noconfirm
@@ -143,20 +154,23 @@ setup_paru_pipx() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing Paru AUR helper"
 
-	package_installer "git rust cmake" pacman
+	if ! package_installer "paru-git" pacman; then
 
-	cd /home/"$user"/
-	sudo -u "$user" git clone https://aur.archlinux.org/paru.git 2>&1 | sudo_quiet
-	cd paru
+		package_installer "git rust cmake" pacman
 
-	while true; do
-		sudo -u "$user" makepkg -si --needed --noconfirm 2>&1 | sudo_quiet && break
-		echo "$(tput setaf 9)Paru build failed. Retrying...$(tput sgr0)"
-	done
+		cd /home/"$user"/
+		sudo -u "$user" git clone https://aur.archlinux.org/paru.git 2>&1 | sudo_quiet
+		cd paru
+
+		while true; do
+			sudo -u "$user" makepkg -si --needed --noconfirm 2>&1 | sudo_quiet && break
+			echo "$(tput setaf 9)Paru build failed. Retrying...$(tput sgr0)"
+		done
+		cd .. && rm -rf paru/ && cd /
+	fi
 
 	paru -Syu
-	cd .. && rm -rf paru-git/ && cd /
-
+	
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing Python pipx"
 
