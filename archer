@@ -83,19 +83,19 @@ set_variables() {
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "What bootloader do you want?"
-	echo -e "1. rEFInd"
-	echo -e "2. Grub"
+	echo -e "1. Grub"
+	echo -e "2. rEFInd"
 
 	while true; do
 		read -r -p "Select: " bootloader
 
 		case $bootloader in
 		1)
-			bootloader="refind"
+			bootloader="grub"
 			break
 			;;
 		2)
-			bootloader="grub"
+			bootloader="refind"
 			break
 			;;
 		esac
@@ -493,7 +493,7 @@ install_system() {
 	genfstab -U /mnt >>/mnt/etc/fstab
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Configuring fstab"
+	echo -e "Configuring fstab"https://github.com/Martan404/Archer/
 
 	sed -i 's/\(\/swap\)\(.*\)compress=zstd:3,ssd,discard=async,space_cache=v2\(.*\)/\1\2ssd\3/' /mnt/etc/fstab # Clean up btrfs swap partition
 	sed -i 's/,subvolid=...//g' /mnt/etc/fstab                                                                  # Remove subvolid for better snapshot support
@@ -506,7 +506,7 @@ arch_chroot() {
 	cd /mnt && curl -L https://github.com/Martan404/Archer/archive/master.tar.gz | tar -xz Archer-main && cd /
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Copying locale.gen from archiso"
+	echo -e "Copying locale.gen from iso"
 
 	cp /etc/locale.gen /mnt/etc
 

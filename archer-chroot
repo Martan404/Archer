@@ -49,9 +49,9 @@ setup_pacman() {
 
 setup_system() {
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting time zone to Stockholm"
+	echo -e "Setting time zone to UTC"
 
-	ln -sf /usr/share/zoneinfo/Europe/Stockholm /etc/localtime
+	ln -sf /usr/share/zoneinfo/UTC /etc/localtime
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Generating /etc/adjtime"
@@ -144,6 +144,10 @@ setup_paru_pipx() {
 	echo -e "Installing Paru AUR helper"
 
 	package_installer "git rust cmake" pacman
+
+	# Fix git
+	git config --global --unset http.proxy
+	git config --global --unset https.proxy
 
 	cd /home/"$user"/
 	sudo -u "$user" git clone https://aur.archlinux.org/paru-git.git 2>&1 | sudo_quiet
