@@ -65,6 +65,8 @@ set_variables() {
             if [[ "$luks_password" != "$luks_password_confirm" ]]; then
                 echo "Passwords do not match"
                 continue
+            else
+                break
             fi
         done
     else
