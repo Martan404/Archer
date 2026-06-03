@@ -32,6 +32,9 @@ install_flatpak() {
 	done
 
 
+    echo -e "Fix game controller remote access pop up spam in KDE Plasma"
+    flatpak permission-set kde-authorized remote-desktop "" yes
+
 	# Setup flatpaks
 	if [[ $(flatpak list) == *"com.github.GradienceTeam.Gradience"* ]]; then
 		echo -e "-------------------------------------------------------------------------"
@@ -41,10 +44,10 @@ install_flatpak() {
 
 		flatpak run --command=gradience-cli com.github.GradienceTeam.Gradience download -n "Breeze Dark"
 		flatpak run --command=gradience-cli com.github.GradienceTeam.Gradience apply -n "Breeze Dark" --gtk both
-	
+
 		flatpak remove -y --noninteractive com.github.GradienceTeam.Gradience
 	fi
-	
+
 	echo -e "-------------------------------------------------------------------------"
 	read -r -t 5 -p "Rebooting in 5 seconds..."
 
