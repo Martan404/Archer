@@ -37,8 +37,6 @@ set_variables() {
         confirmed=$(confirm "Is this correct?")
     done
 
-	echo -e "Setting hostname to $hostname"
-
 	confirmed=0
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enter name for User"
@@ -50,8 +48,6 @@ set_variables() {
 
         confirmed=$(confirm "Is this correct?")
     done
-
-	echo "Setting user name to $user"
 
 	confirmed=0
 	echo -e "-------------------------------------------------------------------------"
@@ -233,7 +229,7 @@ set_efi() {
         selected_idx=$(list "Select EFI partition size" "${efi_sizes[@]}")
         efi_size="${efi_sizes[$selected_idx]}"
 
-        confirmed=$(confirm "Use EFI size $efi_size?")
+        confirmed=$(confirm "Use $efi_size EFI size?")
     done
 }
 
@@ -259,7 +255,7 @@ set_kernel() {
              3) kernel="linux-hardened" ;;
          esac
          echo
-         confirmed=$(confirm "Use kernel $kernel?")
+         confirmed=$(confirm "Use $kernel kernel?")
      done
 }
 
@@ -268,7 +264,7 @@ set_swap() {
 	confirmed=0
     swapsize=""
 
-    echo "Enter size for swap file (GiB). At least same amount as RAM is recommended"
+    echo "Enter size for swap file (GiB). Minimum same as RAM recommended"
 
     while [ "$confirmed" != 1 ]; do
 
@@ -303,7 +299,7 @@ review_installation() {
     echo -e "-------------------------------------------------------------------------"
 
     while [ "$confirmed" != 1 ]; do
-        proceed=$(proceed "Proceed with installation?")
+        proceed=$(confirm "Proceed with installation?")
         confirmed=$(confirm "Are you sure?")
     done
 
