@@ -21,7 +21,7 @@ $(tput sgr0)
 
 [[ -e "archer-check" ]] && echo -e "Rebooting computer to start fresh" && read -r -t 3 && shutdown -r now
 
-echo -e "Getting UI toolkit"
+echo -e "Getting bash TUI toolkit"
 # shellcheck disable=SC1090
 source <(curl -qsS https://bash-tui-toolkit.timo-reymann.de/latest/bundle.bash)
 
