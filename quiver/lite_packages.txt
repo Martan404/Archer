@@ -17,7 +17,6 @@ atuin
 autojump
 bash-completion
 bash-language-server
-bash-preexec
 blesh-git
 btop
 dialog
