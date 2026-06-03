@@ -16,7 +16,7 @@ clear='\033[0m' # Reset to default color
 script_dir=$(dirname "$(realpath "$0")")
 script_name=$(basename "$0")
 
-if [ "$EUID" -eq 0 ]; then 
+if [ "$EUID" -eq 0 ]; then
     echo -e "[${red} Warning ${clear}] Running as root"
     echo -e "[${red} Warning ${clear}] This will create or restore the backup in root home"
     read -r -p "Press enter to continue..."
@@ -28,13 +28,13 @@ show_help() {
     echo -e "Options:"
     echo -e "  -b, --backup [configuration_file]  Create a backup using the specified configuration file"
     echo -e "  -r, --restore [archive_file]       Restore files from the specified archive file"
-    echo -e "  -c, --config                       Create a new default configuration file in the current directory"
+    echo -e "  -c, --config <name>                Create a configuration file in the current directory"
     echo -e "  -h, --help                         Display this help message"
 }
 
 backup() {
     local config_file="$1"
-    
+
     # Check if the configuration file exists in the provided path
     if [[ ! -e "$config_file" ]]; then
         echo -e "[${red} Error ${clear}] $config_file does not exist"
@@ -43,7 +43,7 @@ backup() {
 
     # Source the configuration file
     source "$config_file"
-    
+
     # Set name for archive if none is provided
     [[ $NAME = "" ]] && NAME="Backup"
 
@@ -53,7 +53,7 @@ backup() {
         if [[ -e "$path" ]]; then
             local relative_path
             relative_path=$(realpath --relative-to="$HOME" "$path")
-            
+
             echo -e "[${blue} Add ${clear}] $path added to archive"
             tar --append --file="$NAME.tar.gz" --directory="$HOME" --transform="s|^$HOME||" "$relative_path"
         else
@@ -104,13 +104,23 @@ restore() {
 }
 
 create_config() {
-    local config_file="./$script_name.conf"
+
+    local config_name="$1"
+
+    if [ -z "$config_name" ]; then
+        echo -e "[${red} Error ${clear}] No configuration name provided"
+        exit 1
+    fi
+
+    local config_file="./$config_name.conf"
+
     cat > "$config_file" <<EOL
 # $script_name configuration file
 # Any array named _INCLUDE will be checked
+# See examples at bottom for Firefox and Code OSS
 # Paths can be both files and directories
 
-NAME=""
+NAME="$config_name"
 
 # Common paths
 CONFIG_DIR="\$HOME/.config"
@@ -190,7 +200,8 @@ while [[ $# -gt 0 ]]; do
             exit 0
             ;;
         -c|--config)
-            create_config
+            shift
+            create_config "$1"
             exit 0
             ;;
         -h|--help)
