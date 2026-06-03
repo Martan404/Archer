@@ -101,7 +101,6 @@ gwenview
 lib32-gamemode
 man-db
 man-pages
-micro
 openssh
 pacman-contrib
 pacutils
