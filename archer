@@ -57,6 +57,16 @@ set_variables() {
     done
     if [ "$disk_encryption" == 1 ]; then
         disk_encryption="yes"
+        while true; do
+
+            luks_password=$(password "Enter LUKS password")
+            luks_password_confirm=$(password "Confirm LUKS password")
+
+            if [[ "$luks_password" != "$luks_password_confirm" ]]; then
+                echo "Passwords do not match"
+                continue
+            fi
+        done
     else
         disk_encryption="no"
     fi
@@ -170,7 +180,7 @@ set_locale() {
 
         more_locales=$(confirm "Add another locale?")
         if [ "$more_locales" == 0 ]; then
-            (IFS=", "; echo "Selected locales: ${selected_locales[*]}")
+            (IFS=" , "; echo "Selected locales: ${selected_locales[*]}")
 
             confirmed=$(confirm "Is this selection correct?")
 
@@ -281,7 +291,7 @@ set_swap() {
             echo "Invalid input. Enter a valid number"
             continue
         fi
-        confirmed=$(confirm "Use ${swapsize} GiB swap file?")
+        confirmed=$(confirm "Use ${swapsize}GiB swap file?")
     done
 }
 
@@ -321,6 +331,7 @@ review_installation() {
         efi_size=""
         swapsize=""
         disk_encryption=""
+        unset luks_password luks_password_confirm
         config_installation
     fi
 }
@@ -364,11 +375,13 @@ setup_drive() {
 	echo -e "Formatting root partition"
 
 	if [[ $disk_encryption == "yes" ]]; then
-		while true; do
-			cryptsetup -v -q luksFormat "$root_partition"
-			cryptsetup open "$root_partition" root && break
-			echo -e "Unable to unlock partition. Set a new password"
-		done
+
+        while true; do
+            printf '%s' "$luks_password" | cryptsetup -v -q luksFormat "$root_partition" - || continue
+    		printf '%s' "$luks_password" | cryptsetup open "$root_partition" root - || continue
+    		break
+    	done
+        unset luks_password luks_password_confirm
 
 		mkfs.btrfs -f -L "$hostname" /dev/mapper/root
 
