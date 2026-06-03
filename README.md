@@ -4,13 +4,13 @@ Archer is an Arch install script. It follows the steps outlined in the ArchWiki 
 
 ## SSH install
 
-From initial prompt run `ip a` to get the ip adress then `passwd` to set a password
+From initial prompt run `ip a` to get the ip address then `passwd` to set a password
 
-Enter new system with `ssh root@ip_adress` then run:
+Enter new system with `ssh root@ip_address` then run:
 ```
 bash <(curl -L https://raw.githubusercontent.com/Martan404/Archer/main/archer)
 ```
-*To fix old/broken keys run `ssh-keygen -R ip_adress`*
+*To fix old/broken keys run `ssh-keygen -R ip_address`*
 
 ## Regular install
 
