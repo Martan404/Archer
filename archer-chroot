@@ -158,7 +158,7 @@ setup_grub() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing Grub packages"
 
-	package_installer "grub-btrfs efibootmgr inotify-tools"
+	package_installer "grub-btrfs efibootmgr inotify-tools grub-netboot-archlinux"
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating efibootmgr wrapper script to prevent fail"
