@@ -358,8 +358,6 @@ format_drive() {
 
 	parted -s "$disk" mkpart btrfs "$efi_size" 100%
 
-	fdisk "$disk" <<<"p"
-
 	if [[ $disk == *"nvme"* || $disk == *"mmc"* ]]; then
 		efi_partition="${disk}p1"
 		root_partition="${disk}p2"
@@ -376,17 +374,17 @@ setup_drive() {
 	mkfs.fat -F32 "$efi_partition"
 	fatlabel "$efi_partition" "ESP"
 
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Formatting root partition"
-
 	if [[ $disk_encryption == "yes" ]]; then
 
-        while true; do
-            printf '%s' "$luks_password" | cryptsetup -v -q luksFormat "$root_partition" - || continue
-    		printf '%s' "$luks_password" | cryptsetup open "$root_partition" root - || continue
-    		break
-    	done
+        echo -e "-------------------------------------------------------------------------"
+        echo -e "Setting LUKS password"
+        printf '%s' "$luks_password" | cryptsetup -v -q luksFormat "$root_partition"
+        printf '%s' "$luks_password" | cryptsetup open "$root_partition" root
+
         unset luks_password luks_password_confirm
+
+        echo -e "-------------------------------------------------------------------------"
+        echo -e "Formatting root partition"
 
 		mkfs.btrfs -f -L "$hostname" /dev/mapper/root
 
@@ -394,6 +392,8 @@ setup_drive() {
 		root_partition="/dev/mapper/root"
 
 	else
+        echo -e "-------------------------------------------------------------------------"
+        echo -e "Formatting root partition"
 		mkfs.btrfs -f -L "$hostname" "$root_partition"
 	fi
 	echo -e "-------------------------------------------------------------------------"
