@@ -15,336 +15,272 @@ $(tput sgr0)
 -------------------------------------------------------------------------"
 	echo -ne "$archer_logo"
 	echo -e "
-                           Arch install script 
+                           Arch install script
 -------------------------------------------------------------------------"
 }
 
 [[ -e "archer-check" ]] && echo -e "Rebooting computer to start fresh" && read -r -t 3 && shutdown -r now
 
+echo -e "Getting UI toolkit"
+# shellcheck disable=SC1090
+source <(curl -qsS https://bash-tui-toolkit.timo-reymann.de/latest/bundle.bash)
 
 set_variables() {
+    confirmed=0
 	echo -e "Enter hostname for System"
 
 	hostname=""
-	while [ -z "$hostname" ]; do
-		read -r -p "Name: " hostname
-	done
+
+    while [ "$confirmed" != 1 ]; do
+        hostname=$(with_validate 'input "Hostname:"' validate_present)
+
+        confirmed=$(confirm "Is this correct?")
+    done
+
 	echo -e "Setting hostname to $hostname"
 
+	confirmed=0
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enter name for User"
 
 	user=""
-	while [ -z "$user" ]; do
-		read -r -p "Name: " user
-	done
+
+    while [ "$confirmed" != 1 ]; do
+        user=$(with_validate 'input "Name:"' validate_present)
+
+        confirmed=$(confirm "Is this correct?")
+    done
+
 	echo "Setting user name to $user"
 
-	while true; do
-		echo -e "-------------------------------------------------------------------------"
-		read -r -p "Do you want to enable LUKS disk encryption? (Y/n) " disk_encryption
-
-		case $disk_encryption in
-		[yY1])
-			disk_encryption="yes"
-			break
-			;;
-		[nN2])
-			disk_encryption="no"
-			break
-			;;
-		esac
-	done
-
+	confirmed=0
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "What type of installation do you want?"
-	echo -e "1. KDE"
-	echo -e "2. Hyprland"
-	echo -e "0. Lite"
+	while [ "$confirmed" != 1 ]; do
+        disk_encryption=$(confirm "Enable LUKS disk encryption?")
+        confirmed=$(confirm "Is this correct?")
+    done
+    if [ "$disk_encryption" == 1 ]; then
+        disk_encryption="yes"
+    else
+        disk_encryption="no"
+    fi
 
-	while true; do
-		read -r -p "Select: " install_type
-
-		case $install_type in
-		0)
-			install_type="lite"
-			break
-			;;
-		1)
-			install_type="kde"
-			break
-			;;
-		2)
-			install_type="hyprland"
-			break
-			;;
-		esac
-	done
-
+    confirmed=0
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "What bootloader do you want?"
-	echo -e "1. Grub"
-	echo -e "2. rEFInd"
+	echo -e "Select type of installation"
+	install_options=("KDE Plasma" "Lite")
+    while [ -z "${install_option}" ]; do
+        install_option=$(list "Selection:" "${install_options[@]}")
+        echo "Your choice: ${install_options[$install_option]}"
+    done
 
-	while true; do
-		read -r -p "Select: " bootloader
-
-		case $bootloader in
-		1)
-			bootloader="grub"
-			break
-			;;
-		2)
-			bootloader="refind"
-			break
-			;;
-		esac
-	done
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Do you want to use Yabsnap or Snapper for snapshots?"
-	echo -e "1. Yabsnap"
-	echo -e "2. Snapper"
-
-	while true; do
-		read -r -p "Select: " snap_manager
-
-		case $snap_manager in
-		1)
-			snap_manager="yabsnap"
-			snapshot_subvol="@snapshots"
-			snapshot_layout="arch"
-			break
-			;;
-		2)
-			snap_manager="snapper"
-			break
-			;;
-		esac
-	done
-
-	if [[ $snap_manager = "snapper" ]]; then
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Do you want to use the Arch standard or Snapper BTRFS layout?"
-		echo -e "1. Arch"
-		echo -e "2. Snapper"
-
-		while true; do
-			read -r -p "Select: " snapshot_subvol
-
-			case $snapshot_subvol in
-			1)
-				snapshot_subvol="@snapshots"
-				snapshot_layout="arch"
-				break
-				;;
-			2)
-				snapshot_subvol=".snapshots"
-				snapshot_layout="snapper"
-				break
-				;;
-			esac
-		done
-	fi
+    case $install_option in
+	0)
+		install_type="kde"
+		;;
+	1)
+		install_type="lite"
+		;;
+	esac
 }
 
 check_keymap() {
+    confirmed=0
 	existing_keymap=$(localectl status | grep 'VC Keymap' | awk '{print $3}')
 
 	if [ "$existing_keymap" == "(unset)" ] || [ "$existing_keymap" == "" ]; then
 		set_keymap
 
 	else
-		while true; do
-			echo -e "-------------------------------------------------------------------------"
-			read -r -p "$existing_keymap is currently used as keymap. Set it as default? (Y/n) " yesNo
+		echo -e "-------------------------------------------------------------------------"
+		confirmed=$(confirm "$existing_keymap is currently used as keymap. Set it as default?")
 
-			case $yesNo in
-			[yY1])
-				keyboard_keymap=$existing_keymap
-				break
-				;;
-			[nN2])
-				set_keymap
-				break
-				;;
-			esac
-		done
+		if [ "$confirmed" == 1 ]; then
+			keyboard_keymap=$existing_keymap
+		else
+			set_keymap
+		fi
+
 	fi
 }
 
 set_keymap() {
-	local status=1
-	while [ $status != 0 ]; do
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Listing available keyboard keymaps"
+    confirmed=0
+    while [ "$confirmed" != 1 ]; do
+        search=$(input "Search keymap keyword (20 results)")
 
-		localectl list-keymaps | awk '{printf "%s  ", $0} END {print ""}'
+        mapfile -t keymaps < <(
+            localectl list-keymaps | grep -i "$search" \
+            | head -n 20
+        )
 
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Enter keymap to use for system"
-		read -r -p "Name: " keyboard_keymap
+        # Try again if no results
+        if [ "${#keymaps[@]}" -eq 0 ]; then
+            continue
+        fi
 
-		localectl set-keymap "$keyboard_keymap"
-		status=$?
-	done
+        # Add "Search again" option at start
+        keymaps=("Search again" "${keymaps[@]}")
 
-	while true; do
-		read -r -p "Is $keyboard_keymap correct? (Y/n) " yesNo
+        selected_idx=$(list "Select keyboard layout" "${keymaps[@]}")
+        keyboard_keymap="${keymaps[$selected_idx]}"
 
-		case $yesNo in
-		[yY1]) break ;;
-		[nN2])
-			set_keymap
-			break
-			;;
-		esac
-	done
+        # Handle Search again
+        if [ "$keyboard_keymap" == "Search again" ]; then
+            continue
+        fi
+
+        confirmed=$(confirm "Is '$keyboard_keymap' correct?")
+    done
 }
 
 set_locale() {
+    confirmed=0
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Uncomment and then save the locales you want enabled"
+	echo -e "Select the locales you want enabled"
 
-	read -r -p "Press enter to continue"
-	nano /etc/locale.gen
-	locale-gen
-	available_locales=$(localectl list-locales | awk '{printf "%s  ", $0} END {print ""}')
+	selected_locales=()
+    confirmed=0
 
-	while true; do
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Choose default locale"
-		echo -e "Available: $available_locales"
+    while [ "$confirmed" != 1 ]; do
+        search=$(input "Search locale keyword (20 results)")
 
-		read -r -p "Default: " default_locale
+        mapfile -t locales < <(
+            grep -E '^[#]?[a-zA-Z]' /etc/locale.gen \
+            | sed 's/^#//' \
+            | grep -i "${search:-.}"\
+            | head -n 20
+        )
 
-		if echo "$available_locales" | grep -qw "$default_locale"; then
-			break
-		elif [ "$default_locale" == "locale.gen" ]; then
-			set_locale
-			break
-		else
-			echo "Invalid locale chosen. Try again"
-		fi
-	done
+        # Try again if no results
+        if [ "${#locales[@]}" -eq 0 ]; then
+            continue
+        fi
 
-	while true; do
-		read -r -p "Are you satisfied with your chosen locales? (Y/n) " yesNo
+        # Add "Search again" option at start
+        locales=("Search again" "${locales[@]}")
 
-		case $yesNo in
-		[yY1]) break ;;
-		[nN2])
-			set_locale
-			break
-			;;
-		esac
-	done
+        selected_idx=$(list "Select locale to add" "${locales[@]}")
+        chosen_locale="${locales[$selected_idx]}"
+
+        # Handle Search again
+        if [ "$chosen_locale" == "Search again" ]; then
+            continue
+        fi
+
+        selected_locales+=("$chosen_locale")
+
+        more_locales=$(confirm "Add another locale?")
+        if [ "$more_locales" == 0 ]; then
+            (IFS=", "; echo "Selected locales: ${selected_locales[*]}")
+
+            confirmed=$(confirm "Is this selection correct?")
+
+            if [ "$confirmed" == 0 ]; then
+                selected_locales=()
+            fi
+        fi
+    done
+
+    # Enable selected locales
+    for locale in "${selected_locales[@]}"; do
+        locale_name=$(echo "$locale" | awk '{print $1}')
+        sed -i "/^#\s*${locale_name} /s/^#\s*//" /etc/locale.gen
+    done
+
+    # Default locale selection
+    if [ "${#selected_locales[@]}" -gt 1 ]; then
+        selected_idx=$(list "Select default locale" "${selected_locales[@]}")
+        default_locale="${selected_locales[$selected_idx]}"
+    else
+        default_locale="${selected_locales[0]}"
+    fi
 }
 
 set_disk() {
-	local status=1
-	while [ $status != 0 ]; do
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Listing available disks to use for installation"
+    confirmed=0
+    while [ "$confirmed" != 1 ]; do
 
-		lsblk
-		fdisk -l | awk '$1=="Disk" && $2~"/dev/" {print $2" "$3" "$4}'
+        mapfile -t disks < <(
+            lsblk -dpno NAME,SIZE,MODEL
+        )
 
-		echo -e "Which disk do you want to use for installation?"
-		read -r -p "Disk: " disk
+        if [ "${#disks[@]}" -eq 0 ]; then
+            input "No disks found. Press enter to retry"
+            continue
+        fi
 
-		echo "p" | fdisk "$disk"
-		status=$?
-	done
+        selected_idx=$(list "Select installation disk" "${disks[@]}")
 
-	while true; do
-		read -r -p "Is the disk $disk correct? (Y/n) " yesNo
+        disk_path=$(echo "${disks[$selected_idx]}" | awk '{print $1}')
+        disk="$disk_path"
 
-		case $yesNo in
-		[yY1]) break ;;
-		[nN2])
-			set_disk
-			break
-			;;
-		esac
-	done
+        echo
+        echo "Disk info: "
+        lsblk "$disk"
+
+        confirmed=$(confirm "Is disk $disk correct?")
+    done
 }
 
 set_efi() {
+    confirmed=0
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Select size for EFI partition"
-	echo -e "1. 256MB"
-	echo -e "2. 512MB"
-	echo -e "3. 1GB"
+    efi_sizes=("256MiB" "512MiB" "1GiB")
 
-	while true; do
-		read -r -p "Size: " efi_size
+    while [ "$confirmed" != 1 ]; do
 
-		case $efi_size in
-		1)
-			efi_size="257MiB"
-			break
-			;;
-		2)
-			efi_size="513MiB"
-			break
-			;;
-		3)
-			efi_size="1025MiB"
-			break
-			;;
-		esac
-	done
+        selected_idx=$(list "Select EFI partition size" "${efi_sizes[@]}")
+        efi_size="${efi_sizes[$selected_idx]}"
+
+        confirmed=$(confirm "Use EFI size $efi_size?")
+    done
 }
 
 set_kernel() {
+    confirmed=0
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Which kernel do you want to use?"
 
-	echo -e "1. Linux Zen"
-	echo -e "2. Linux"
-	echo -e "3. Linux LTS"
-	echo -e "4. Linux Hardened"
+     kernel_options=(
+         "Linux Zen (linux-zen)"
+         "Linux (linux)"
+         "Linux LTS (linux-lts)"
+         "Linux Hardened (linux-hardened)"
+     )
 
-	while true; do
-		read -r -p "Select: " kernel
+     while [ "$confirmed" != 1 ]; do
 
-		case $kernel in
-		1)
-			kernel="linux-zen"
-			break
-			;;
-		2)
-			kernel="linux"
-			break
-			;;
-		3)
-			kernel="linux-lts"
-			break
-			;;
-		4)
-			kernel="linux-hardened"
-			break
-			;;
-		esac
-	done
+         selected_idx=$(list "Select kernel" "${kernel_options[@]}")
+
+         case $selected_idx in
+             0) kernel="linux-zen" ;;
+             1) kernel="linux" ;;
+             2) kernel="linux-lts" ;;
+             3) kernel="linux-hardened" ;;
+         esac
+         echo
+         confirmed=$(confirm "Use kernel $kernel?")
+     done
 }
 
 set_swap() {
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enter size for swap file (GiB). At least same amount as RAM is recommended"
+	confirmed=0
+    swapsize=""
 
-	while [ -z "$swapsize" ] || [[ ! "$swapsize" =~ ^[0-9]+$ ]]; do
-		read -r -p "Size: " swapsize
+    echo "Enter size for swap file (GiB). At least same amount as RAM is recommended"
 
-		if [[ ! "$swapsize" =~ ^[0-9]+$ ]]; then
-			echo "Invalid input. Enter a valid number"
-			swapsize=""
-		fi
-	done
+    while [ "$confirmed" != 1 ]; do
 
-	echo -e "Setting swap size to $swapsize GiB"
+        swapsize=$(with_validate 'input "Swap size (GiB):"' validate_present)
+
+        # must be numeric
+        if [[ ! "$swapsize" =~ ^[0-9]+$ ]]; then
+            echo "Invalid input. Enter a valid number"
+            continue
+        fi
+        confirmed=$(confirm "Use ${swapsize} GiB?")
+    done
 }
 
 format_drive() {
@@ -391,7 +327,7 @@ setup_drive() {
 			cryptsetup open "$root_partition" root && break
 			echo -e "Unable to unlock partition. Set a new password"
 		done
-		
+
 		mkfs.btrfs -f -L "$hostname" /dev/mapper/root
 
 		encrypted_root_partition=$root_partition
@@ -406,7 +342,7 @@ setup_drive() {
 	mount "$root_partition" /mnt
 
 	btrfs subvolume create /mnt/@ # Root
-	#btrfs subvolume create /mnt/@root # Root home
+	btrfs subvolume create /mnt/@root # Root home
 	btrfs subvolume create /mnt/@home # Home
 	btrfs subvolume create /mnt/@log # Log files
 	btrfs subvolume create /mnt/@pkg # Package cache
@@ -414,7 +350,7 @@ setup_drive() {
 	btrfs subvolume create /mnt/@cache # Cache files
 	btrfs subvolume create /mnt/@spool # Spool data
 	btrfs subvolume create /mnt/@srv # Web servers
-	[[ $snapshot_layout == "arch" ]] && btrfs subvolume create /mnt/"$snapshot_subvol" # Snapshots
+	btrfs subvolume create /mnt/@snapshots # Snapshots
 	btrfs subvolume create /mnt/@swap # Swapfile
 
 	echo -e "-------------------------------------------------------------------------"
@@ -424,9 +360,9 @@ setup_drive() {
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Mounting btrfs subvolumes and EFI partition"
-	
+
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@ "$root_partition" /mnt
-	#mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@root "$root_partition" /mnt/root
+	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@root "$root_partition" /mnt/root
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@home "$root_partition" /mnt/home
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@log "$root_partition" /mnt/var/log
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@pkg "$root_partition" /mnt/var/cache/pacman/pkg
@@ -434,11 +370,11 @@ setup_drive() {
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@cache "$root_partition" /mnt/var/cache
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@spool "$root_partition" /mnt/var/spool
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@srv "$root_partition" /mnt/srv
-	[[ $snapshot_layout == "arch" ]] && mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol="$snapshot_subvol" "$root_partition" /mnt/.snapshots
+	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@snapshots "$root_partition" /mnt/.snapshots
 	mount --mkdir -t btrfs -o noatime,subvol=@swap "$root_partition" /mnt/swap
 	mount --mkdir -o defaults,noatime "$efi_partition" /mnt/boot
 
-	#chmod 0750 /mnt/root
+	chmod 0750 /mnt/root
 	chmod 1777 /mnt/var/tmp
 
 	echo -e "-------------------------------------------------------------------------"
@@ -510,8 +446,7 @@ arch_chroot() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Changing root into new system"
 
-	export hostname && export user && export install_type && export bootloader && export kernel && export keyboard_keymap && export default_locale && 
-	export snapshot_layout && export snapshot_subvol && export root_partition && export snap_manager && export disk_encryption && export encrypted_root_partition
+	export hostname && export user && export install_type && export kernel && export keyboard_keymap && export default_locale && export root_partition && export disk_encryption && export encrypted_root_partition
 
 	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot
 	rm -rf /mnt/Archer-main
@@ -520,7 +455,6 @@ arch_chroot() {
 exit_install() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "System ready to boot, please remove the installation media before restarting"
-	[[ $bootloader == "refind" ]] && echo -e "To remove entries in the bootloader press the DELETE button"
 
 	read -r -p "Press enter to shutdown..."
 
