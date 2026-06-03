@@ -343,6 +343,8 @@ format_drive() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Wiping drive and setting up GPT partition table"
 
+	sgdisk --zap-all "$disk"
+	wipefs -a "$disk"
 	parted -s "$disk" mklabel gpt
 
 	echo -e "-------------------------------------------------------------------------"
