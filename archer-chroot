@@ -6,14 +6,10 @@
 hostname=${hostname}
 user=${user}
 install_type=${install_type}
-bootloader=${bootloader}
 kernel=${kernel}
 keyboard_keymap=${keyboard_keymap}
 default_locale=${default_locale}
-snapshot_layout=${snapshot_layout}
-snapshot_subvol=${snapshot_subvol}
 root_partition=${root_partition}
-snap_manager=${snap_manager}
 disk_encryption=${disk_encryption}
 encrypted_root_partition=${encrypted_root_partition}
 
@@ -155,54 +151,6 @@ setup_paru_pipx() {
 	package_installer "python-pipx"
 }
 
-setup_refind() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing rEFInd packages"
-
-	package_installer "refind refind-btrfs python-pillow gptfdisk"
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting up rEFInd"
-
-	refind-install
-	mv /Archer-main/quiver/bootloader/refind-custom.conf /boot/EFI/refind/refind-custom.conf
-	echo -e "include refind-custom.conf\n" >> /boot/EFI/refind/refind.conf
-	rm -rf /boot/refind_linux.conf
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting up rEFInd-btrfs"
-
-	mv /Archer-main/quiver/bootloader/refind-btrfs.conf /etc/refind-btrfs.conf
-	systemctl enable refind-btrfs.service
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting up boot entry"
-
-	sed -i "s/KERNEL_NAME/$kernel/g" /boot/EFI/refind/refind-custom.conf
-
-	if [[ $disk_encryption == "yes" ]]; then
-		root_disk_uuid=$(blkid -s UUID -o value "$encrypted_root_partition")
-
-		sed -i "s|PARTUUID=ROOT_PARTUUID|$root_partition|g" /boot/EFI/refind/refind-custom.conf
-		sed -i "s/\(options  \"[^\"]*\)\"/\1 rd.luks.name=$root_disk_uuid=root\"/" /boot/EFI/refind/refind-custom.conf
-	else
-
-		root_disk_partuuid=$(blkid -s PARTUUID -o value "$root_partition")
-		sed -i "s|ROOT_PARTUUID|$root_disk_partuuid|g" /boot/EFI/refind/refind-custom.conf
-	fi
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting up rEFInd theme"
-
-	mkdir -p /boot/EFI/refind/themes/
-	mv /Archer-main/quiver/bootloader/themes/refind-theme-regular/ /boot/EFI/refind/themes/refind-theme-regular/
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Copying arch netboot"
-
-	mv /Archer-main/quiver/bootloader/arch-netboot.efi /boot/arch-netboot.efi
-}
-
 setup_grub() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing Grub packages"
@@ -274,8 +222,7 @@ setup_cpu() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting cpu kernel parameters"
 
-	[[ $bootloader == "refind" ]] && [ -n "$cpu_kernel_parameters" ] && sed -i "s/\(options  \"[^\"]*\)\"/\1 $cpu_kernel_parameters\"/" /boot/EFI/refind/refind-custom.conf
-	[[ $bootloader == "grub" ]] && [ -n "$cpu_kernel_parameters" ] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $cpu_kernel_parameters\"/" /etc/default/grub
+	[ -n "$cpu_kernel_parameters" ] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $cpu_kernel_parameters\"/" /etc/default/grub
 }
 
 amd_cpu() {
@@ -329,8 +276,7 @@ setup_gpu() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting gpu kernel parameters"
 
-	[[ $bootloader == "refind" ]] && [ -n "$gpu_kernel_parameters" ] && sed -i "s/\(options  \"[^\"]*\)\"/\1 $gpu_kernel_parameters\"/" /boot/EFI/refind/refind-custom.conf
-	[[ $bootloader == "grub" ]] && [ -n "$gpu_kernel_parameters" ] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $gpu_kernel_parameters\"/" /etc/default/grub
+	[ -n "$gpu_kernel_parameters" ] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $gpu_kernel_parameters\"/" /etc/default/grub
 }
 
 amd_gpu() {
@@ -433,8 +379,7 @@ setup_hibernation() {
 	swap_uuid=$(findmnt -no UUID -T /swap/swapfile)
 	swapfile_offset=$(btrfs inspect-internal map-swapfile -r /swap/swapfile)
 
-	[[ $bootloader == "refind" ]] && sed -i "s/\(options  \"[^\"]*\)\"/\1 resume_offset=$swapfile_offset resume=UUID=$swap_uuid\"/" /boot/EFI/refind/refind-custom.conf
-	[[ $bootloader == "grub" ]] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 resume_offset=$swapfile_offset resume=UUID=$swap_uuid\"/" /etc/default/grub
+	sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 resume_offset=$swapfile_offset resume=UUID=$swap_uuid\"/" /etc/default/grub
 
 	if [[ $disk_encryption != "yes" ]]; then
 		echo -e "-------------------------------------------------------------------------"
@@ -495,81 +440,6 @@ bash_config() {
 
 	# Make sure home is fully owned by the user
 	chown -R "$user":"$user" /home/"$user"/
-}
-echo
-snapper_setup() {
-	if [[ $snapshot_layout == "snapper" ]]; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Installing Snapper packages"
-
-		package_installer "snapper snap-pac snapper-support snap-pac-grub"
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Creating Snapper root config"
-
-		snapper --no-dbus -c root create-config /
-
-	elif [[ $snapshot_layout == "arch" ]]; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Installing Snapper packages"
-
-		package_installer "snapper snap-pac snap-pac-grub"
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Removing /.snapshots"
-
-		umount /.snapshots
-		rm -r /.snapshots
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Creating Snapper root config"
-
-		snapper --no-dbus -c root create-config /
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Removing snapper /.snapshots subvolume"
-
-		btrfs subvolume delete /.snapshots
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Remounting $snapshot_subvol subvolume"
-
-		mount --mkdir -o subvol="$snapshot_subvol" "$root_partition" /.snapshots
-		mount -a
-
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Setting new ./snapshots permissions"
-
-		chmod 750 /.snapshots
-		chown -R :wheel /.snapshots/
-	fi
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Configuring timeline cleanup"
-
-	sed -i 's/^NUMBER_LIMIT="50"/NUMBER_LIMIT="10"/' /etc/snapper/configs/root
-	sed -i 's/^TIMELINE_LIMIT_HOURLY="10"/TIMELINE_LIMIT_HOURLY="0"/' /etc/snapper/configs/root
-	sed -i 's/^TIMELINE_LIMIT_DAILY="10"/TIMELINE_LIMIT_DAILY="0"/' /etc/snapper/configs/root
-	sed -i 's/^TIMELINE_LIMIT_WEEKLY="10"/TIMELINE_LIMIT_WEEKLY="0"/' /etc/snapper/configs/root
-	sed -i 's/^TIMELINE_LIMIT_MONTHLY="10"/TIMELINE_LIMIT_MONTHLY="0"/' /etc/snapper/configs/root
-	sed -i 's/^TIMELINE_LIMIT_YEARLY="10"/TIMELINE_LIMIT_YEARLY="0"/' /etc/snapper/configs/root
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Adding wheel group to snapper permissions"
-
-	sed -i 's/^ALLOW_GROUPS=""/ALLOW_GROUPS="wheel"/' /etc/snapper/configs/root
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Excluding /.snapshots from updatedb"
-
-	echo "PRUNENAMES = \".snapshots\"" >>/etc/updatedb.conf
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling Snapper Boot, Timeline and Cleanup timers"
-
-	systemctl enable snapper-boot.timer
-	systemctl enable snapper-timeline.timer
-	systemctl enable snapper-cleanup.timer
 }
 
 yabsnap_setup() {
@@ -641,12 +511,10 @@ package_config() {
 	mv /Archer-main/quiver/hooks/* /etc/pacman.d/hooks/
 	chown -R :wheel /etc/pacman.d/hooks/*
 
-	if [[ $bootloader == "grub" ]]; then
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Rebuilding GRUB configs"
 
 		grub-mkconfig -o /boot/grub/grub.cfg
-	fi
 }
 
 boot_script() {
@@ -751,16 +619,14 @@ package_installer() {
 setup_pacman
 setup_system
 setup_paru_pipx
-[[ $bootloader == "refind" ]] && setup_refind
-[[ $bootloader == "grub" ]] && setup_grub
+setup_grub
 setup_cpu
 setup_gpu
 setup_laptop
 setup_hibernation
 
 install_packages
-[[ $snap_manager == "snapper" ]] && snapper_setup
-[[ $snap_manager == "yabsnap" ]] && yabsnap_setup
+yabsnap_setup
 snapshot_rollback
 setup_environment
 bash_config
