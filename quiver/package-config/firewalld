@@ -3,3 +3,13 @@
 
 echo -e "Enabling firewalld service"
 systemctl enable firewalld.service
+
+# More configuration in archer-boot
+#
+# echo -e "-------------------------------------------------------------------------"
+#echo -e "Setting up Firewalld rules"
+
+#firewall-cmd
+#firewall-cmd --permanent --zone=internal --change-interface=lo
+#firewall-cmd --permanent --zone=trusted --change-interface=virbr0
+#firewall-cmd --permanent --zone=trusted --change-interface=waydroid0
