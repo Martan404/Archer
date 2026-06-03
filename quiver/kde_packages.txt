@@ -18,9 +18,11 @@ org.mozilla.firefox
 # DRIVERS #
 wayland
 wayland-protocols
+wl-clipboard
 xorg-xwayland
 avahi
 networkmanager
+networkmanager-openvpn
 wireless-regdb
 firewalld
 nss-mdns
@@ -73,6 +75,8 @@ libdvdcss
 # SYSTEM #
 bleachbit
 distrobox
+podman
+podman-compose
 steam
 ark
 p7zip
@@ -124,6 +128,7 @@ drkonqi
 ffmpegthumbs
 flatpak
 flatpak-kcm
+flatpak-xdg-utils
 kactivitymanagerd
 kcron
 kde-cli-tools
