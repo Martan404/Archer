@@ -182,7 +182,8 @@ set_locale() {
 
         more_locales=$(confirm "Add another locale?")
         if [ "$more_locales" == 0 ]; then
-            (IFS=" , "; echo "Selected locales: ${selected_locales[*]}")
+
+            echo "Selected locales: $(printf '%s | ' "${selected_locales[@]}" | sed 's/ | $//')"
 
             confirmed=$(confirm "Is this selection correct?")
 
@@ -201,9 +202,9 @@ set_locale() {
     # Default locale selection
     if [ "${#selected_locales[@]}" -gt 1 ]; then
         selected_idx=$(list "Select default locale" "${selected_locales[@]}")
-        default_locale="${selected_locales[$selected_idx]}"
+        default_locale="${selected_locales[$selected_idx]%% *}"
     else
-        default_locale="${selected_locales[0]}"
+        default_locale="${selected_locales[0]%% *}"
     fi
 }
 
