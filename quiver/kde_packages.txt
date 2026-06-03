@@ -4,10 +4,9 @@
 # FLATPAK #
 com.discordapp.Discord
 com.github.Matoking.protontricks
-com.github.zocker_160.SyncThingy
 com.spotify.Client
 net.davidotek.pupgui2
-net.lutris.Lutris
+io.github.Faugus.faugus-launcher
 org.gtk.Gtk3theme.Breeze
 org.kde.kdenlive
 org.kde.krita
@@ -179,8 +178,7 @@ polkit-kde-agent
 power-profiles-daemon
 powerdevil
 print-manager
-sddm
-sddm-kcm
+plasma-login-manager
 system-config-printer
 systemsettings
 vlc
