@@ -78,6 +78,9 @@ setup_system() {
 	echo "LANG=$default_locale" >>/etc/locale.conf
 	echo "KEYMAP=$keyboard_keymap" >>/etc/vconsole.conf
 
+    localectl set-locale "$default_locale"
+    localectl set-keymap "$keyboard_keymap"
+
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting hostname to $hostname"
 
