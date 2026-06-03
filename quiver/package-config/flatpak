@@ -13,7 +13,10 @@ flatpak permission-set kde-authorized remote-desktop "" yes
 
 echo -e "Creating flatpak-setup desktop entry"
 
-install --owner "$user" --group "$user" --mode 777 -d /home/"$user"/.config/autostart/
+mkdir -p /home/"$user"/.config/autostart/
+
+chown "$user":"$user" /home/"$user"/.config/autostart/
+chmod 755 //home/"$user"/.config/autostart/
 
 cat <<EOF >>/home/"$user"/.config/autostart/flatpak-setup.desktop
 [Desktop Entry]
