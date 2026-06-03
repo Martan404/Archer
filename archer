@@ -283,6 +283,46 @@ set_swap() {
     done
 }
 
+review_installation() {
+    confirmed=0
+    echo -e "-------------------------------------------------------------------------"
+    echo -e "REVIEW INSTALLATION CONFIGURATION"
+    echo -e "-------------------------------------------------------------------------"
+
+    echo "Hostname:        $hostname"
+    echo "User:            $user"
+    echo "Install:         $install_type"
+    echo "Kernel:          $kernel"
+    echo "Keymap:          $keyboard_keymap"
+    echo "Default locale:  $default_locale"
+    echo "Disk:            $disk"
+    echo "EFI size:        $efi_size"
+    echo "Swap size:       ${swapsize}GiB"
+    echo "Encryption:      $disk_encryption"
+
+    echo -e "-------------------------------------------------------------------------"
+
+    while [ "$confirmed" != 1 ]; do
+        proceed=$(proceed "Proceed with installation?")
+        confirmed=$(confirm "Are you sure?")
+    done
+
+    if [ "$proceed" == 0 ]; then
+        echo "Restarting configuration..."
+        hostname=""
+        user=""
+        install_type=""
+        kernel=""
+        keyboard_keymap=""
+        default_locale=""
+        disk=""
+        efi_size=""
+        swapsize=""
+        disk_encryption=""
+        config_installation
+    fi
+}
+
 format_drive() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Wiping drive and setting up GPT partition table"
@@ -463,15 +503,20 @@ exit_install() {
 	shutdown now && exit
 }
 
-show_logo
-set_variables
-check_keymap
-set_locale
+config_installation() {
+    show_logo
+    set_variables
+    check_keymap
+    set_locale
 
-set_disk
-set_efi
-set_kernel
-set_swap
+    set_disk
+    set_efi
+    set_kernel
+    set_swap
+}
+
+config_installation
+review_installation
 
 format_drive
 touch archer-check
