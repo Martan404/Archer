@@ -17,7 +17,7 @@ snap_manager=${snap_manager}
 disk_encryption=${disk_encryption}
 encrypted_root_partition=${encrypted_root_partition}
 
-setup_pacman() {	
+setup_pacman() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling multilib repository"
 
@@ -82,17 +82,6 @@ setup_system() {
 	echo "LANG=$default_locale" >>/etc/locale.conf
 	echo "KEYMAP=$keyboard_keymap" >>/etc/vconsole.conf
 
-	if [ "$default_locale" == "en_SE.UTF-8" ]; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Enabling en_SE locale"
-
-		grep -q '^en_US\.UTF-8 UTF-8' /etc/locale.gen || sed -i 's/^#en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
-		grep -q '^sv_SE\.UTF-8 UTF-8' /etc/locale.gen || sed -i 's/^#sv_SE.UTF-8/sv_SE.UTF-8/' /etc/locale.gen
-
-		mv /Archer-main/quiver/configs/en_SE /usr/share/i18n/locales/en_SE && sed -i '/^[#]*en_US\.UTF-8/i\en_SE\.UTF-8 UTF-8' /etc/locale.gen
-		locale-gen
-	fi
-
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting hostname to $hostname"
 
@@ -103,7 +92,7 @@ setup_system() {
 
 	sed -i 's/^MODULES=()/MODULES=(btrfs)/' /etc/mkinitcpio.conf
 
-	if [[ $disk_encryption == "yes" ]]; then 
+	if [[ $disk_encryption == "yes" ]]; then
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Enabling encryption hooks in mkinitcpio.conf"
 
@@ -116,17 +105,6 @@ setup_system() {
 	echo -e "Rebuilding the initramfs image"
 
 	mkinitcpio -P
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting XDG Base Directory variables in /etc/security/pam_env.conf"
-
-	cat <<-END >>/etc/security/pam_env.conf
-EDITOR=nano
-XDG_CACHE_HOME	DEFAULT=\${HOME}/.cache
-XDG_CONFIG_HOME	DEFAULT=\${HOME}/.config
-XDG_DATA_HOME	DEFAULT=\${HOME}/.local/share
-XDG_STATE_HOME	DEFAULT=\${HOME}/.local/state
-	END
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up sudo permissions for wheel group"
@@ -170,7 +148,7 @@ setup_paru_pipx() {
 	fi
 
 	paru -Syu
-	
+
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing Python pipx"
 
@@ -180,12 +158,12 @@ setup_paru_pipx() {
 setup_refind() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing rEFInd packages"
-	
+
 	package_installer "refind refind-btrfs python-pillow gptfdisk"
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up rEFInd"
-	
+
 	refind-install
 	mv /Archer-main/quiver/bootloader/refind-custom.conf /boot/EFI/refind/refind-custom.conf
 	echo -e "include refind-custom.conf\n" >> /boot/EFI/refind/refind.conf
@@ -201,7 +179,7 @@ setup_refind() {
 	echo -e "Setting up boot entry"
 
 	sed -i "s/KERNEL_NAME/$kernel/g" /boot/EFI/refind/refind-custom.conf
-	
+
 	if [[ $disk_encryption == "yes" ]]; then
 		root_disk_uuid=$(blkid -s UUID -o value "$encrypted_root_partition")
 
@@ -268,10 +246,10 @@ exec /usr/bin/efibootmgr -e 3 "\$@"
 
 	sed -i '/GRUB_CMDLINE_LINUX_DEFAULT/s/ quiet//g' /etc/default/grub
 
-	if [[ $disk_encryption == "yes" ]]; then 
+	if [[ $disk_encryption == "yes" ]]; then
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Setting encryption kernel parameters"
-		
+
 		root_disk_uuid=$(blkid -s UUID -o value "$encrypted_root_partition")
 		sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 rd.luks.name=$root_disk_uuid=root root=\/dev\/mapper\/root\"/" /etc/default/grub
 	fi
@@ -295,7 +273,7 @@ setup_cpu() {
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting cpu kernel parameters"
-	
+
 	[[ $bootloader == "refind" ]] && [ -n "$cpu_kernel_parameters" ] && sed -i "s/\(options  \"[^\"]*\)\"/\1 $cpu_kernel_parameters\"/" /boot/EFI/refind/refind-custom.conf
 	[[ $bootloader == "grub" ]] && [ -n "$cpu_kernel_parameters" ] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $cpu_kernel_parameters\"/" /etc/default/grub
 }
@@ -369,7 +347,7 @@ nvidia_gpu() {
 
 	if [[ $lspci_output == *"RTX"* ]]; then
 		nvidia_driver="nvidia-open-dkms nvidia-utils"
-	
+
 	elif [[ $lspci_output == *"GTX"* ]]; then
 		echo -e "Found GTX card. Installing nvidia-580xx-dkms"
 		nvidia_driver="nvidia-580xx-dkms nvidia-580xx-settings nvidia-580xx-utils"
@@ -451,7 +429,7 @@ setup_laptop() {
 setup_hibernation() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting swapfile offset for hibernation kernel parameter"
-	
+
 	swap_uuid=$(findmnt -no UUID -T /swap/swapfile)
 	swapfile_offset=$(btrfs inspect-internal map-swapfile -r /swap/swapfile)
 
@@ -514,8 +492,11 @@ bash_config() {
 
 	cat /Archer-main/quiver/bashrc/user.bash_aliases >>/home/"$user"/.bash_aliases
 	chown "$user":"$user" /home/"$user"/.bash_aliases
-}
 
+	# Make sure home is fully owned by the user
+	chown -R "$user":"$user" /home/"$user"/
+}
+echo
 snapper_setup() {
 	if [[ $snapshot_layout == "snapper" ]]; then
 		echo -e "-------------------------------------------------------------------------"
@@ -663,7 +644,7 @@ package_config() {
 	if [[ $bootloader == "grub" ]]; then
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Rebuilding GRUB configs"
-	
+
 		grub-mkconfig -o /boot/grub/grub.cfg
 	fi
 }
@@ -678,10 +659,10 @@ boot_script() {
 	cat <<-END >/etc/systemd/system/archer-boot.service
 [Unit]
 Description=Archer boot setup script
-		 
+
 [Service]
 ExecStart=/usr/bin/archer-boot
-		 
+
 [Install]
 WantedBy=multi-user.target
 	END

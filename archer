@@ -216,13 +216,10 @@ set_locale() {
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Choose default locale"
 		echo -e "Available: $available_locales"
-		echo -e "Optional: en_SE.UTF-8"
 
 		read -r -p "Default: " default_locale
 
 		if echo "$available_locales" | grep -qw "$default_locale"; then
-			break
-		elif [ "$default_locale" == "en_SE.UTF-8" ]; then
 			break
 		elif [ "$default_locale" == "locale.gen" ]; then
 			set_locale
