@@ -479,8 +479,8 @@ snapshot_rollback() {
 
 	cat /Archer-main/quiver/scripts/rollback >/usr/local/bin/rollback
 	chmod a+x /usr/local/bin/rollback
-	cat /Archer-main/quiver/scripts/rollback-gui >/usr/local/bin/rollback-gui
-	chmod a+x /usr/local/bin/rollback-gui
+	cat /Archer-main/quiver/scripts/rollback-tui >/usr/local/bin/rollback-tui
+	chmod a+x /usr/local/bin/rollback-tui
 }
 
 package_config() {
