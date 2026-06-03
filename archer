@@ -52,7 +52,7 @@ set_variables() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enable LUKS disk encryption?"
 	while [ "$confirmed" != 1 ]; do
-        disk_encryption=$(confirm "")
+        disk_encryption=$(confirm "Choice:")
         confirmed=$(confirm "Is this correct?")
     done
     if [ "$disk_encryption" == 1 ]; then
@@ -84,14 +84,15 @@ check_keymap() {
     confirmed=0
 	existing_keymap=$(localectl status | grep 'VC Keymap' | awk '{print $3}')
 
+    echo -e "-------------------------------------------------------------------------"
+	echo -e Select keyboard layout
+
 	if [ "$existing_keymap" == "(unset)" ] || [ "$existing_keymap" == "" ]; then
 		set_keymap
 
 	else
-		echo -e "-------------------------------------------------------------------------"
-		echo -e Select keyboard layout
-		confirmed=$(confirm "$existing_keymap is currently used as keymap. Set it as default?")
 
+		confirmed=$(confirm "$existing_keymap is currently used as keymap. Set it as default?")
 		if [ "$confirmed" == 1 ]; then
 			keyboard_keymap=$existing_keymap
 		else
@@ -252,7 +253,7 @@ set_kernel() {
 
      while [ "$confirmed" != 1 ]; do
 
-         selected_idx=$(list "List:" "${kernel_options[@]}")
+         selected_idx=$(list "Kernel:" "${kernel_options[@]}")
 
          case $selected_idx in
              0) kernel="linux-zen" ;;
@@ -260,7 +261,6 @@ set_kernel() {
              2) kernel="linux-lts" ;;
              3) kernel="linux-hardened" ;;
          esac
-         echo
          confirmed=$(confirm "Use $kernel kernel?")
      done
 }
@@ -270,18 +270,18 @@ set_swap() {
 	confirmed=0
     swapsize=""
 
-    echo "Enter size for swap file (GiB). Minimum same as RAM recommended"
+    echo "Enter size for SWAP file. Minimum same as RAM recommended"
 
     while [ "$confirmed" != 1 ]; do
 
-        swapsize=$(with_validate 'input "Swap size (GiB):"' validate_present)
+        swapsize=$(with_validate 'input "Size (GiB):"' validate_present)
 
         # must be numeric
         if [[ ! "$swapsize" =~ ^[0-9]+$ ]]; then
             echo "Invalid input. Enter a valid number"
             continue
         fi
-        confirmed=$(confirm "Use ${swapsize} GiB?")
+        confirmed=$(confirm "Use ${swapsize} GiB swap file?")
     done
 }
 
@@ -293,7 +293,7 @@ review_installation() {
 
     echo "Hostname:        $hostname"
     echo "User:            $user"
-    echo "Install:         $install_type"
+    echo "Install type:    $install_type"
     echo "Kernel:          $kernel"
     echo "Keymap:          $keyboard_keymap"
     echo "Default locale:  $default_locale"
