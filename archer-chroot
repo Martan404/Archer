@@ -9,6 +9,7 @@ install_type=${install_type}
 kernel=${kernel}
 keyboard_keymap=${keyboard_keymap}
 default_locale=${default_locale}
+timezone=${timezone}
 root_partition=${root_partition}
 disk_encryption=${disk_encryption}
 encrypted_root_partition=${encrypted_root_partition}
@@ -56,12 +57,26 @@ setup_pacman() {
 
 setup_system() {
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting time zone to UTC"
+	echo -e "Setting timezone to $timezone"
 
-	ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+	timedatectl set-timezone "$timezone"
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Generating /etc/adjtime"
+	echo -e "Creating NetworkManager script to get timezone automatically"
+
+	cat <<-END >/etc/NetworkManager/dispatcher.d/09-timezone
+#!/bin/sh
+case "\$2" in
+    up)
+        timedatectl set-timezone "\$(curl --fail https://ipapi.co/timezone)"
+    ;;
+esac
+END
+
+chmod +x /etc/NetworkManager/dispatcher.d/09-timezone
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting hardware clock"
 
 	hwclock --systohc
 
@@ -69,6 +84,7 @@ setup_system() {
 	echo -e "Enabling network time syncronization"
 
 	systemctl enable systemd-timesyncd.service
+	timedatectl set-ntp true
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting $default_locale as locale and $keyboard_keymap as keymap"
@@ -203,6 +219,11 @@ exec /usr/bin/efibootmgr -e 3 "\$@"
 
 		root_disk_uuid=$(blkid -s UUID -o value "$encrypted_root_partition")
 		sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 rd.luks.name=$root_disk_uuid=root root=\/dev\/mapper\/root\"/" /etc/default/grub
+
+        echo -e "-------------------------------------------------------------------------"
+        echo -e "Enabling cryptodisk support for grub-btrfs"
+
+        sed -i 's/^#GRUB_BTRFS_ENABLE_CRYPTODISK="true"/GRUB_BTRFS_ENABLE_CRYPTODISK="true"/' /etc/default/grub-btrfs/config
 	fi
 }
 
@@ -471,6 +492,10 @@ yabsnap_setup() {
 	echo -e "Enabling Yabsnap service"
 
 	systemctl enable yabsnap.timer
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Changing grub-btrfs title format"
+	sed -i 's|^#\?GRUB_BTRFS_TITLE_FORMAT=.*|GRUB_BTRFS_TITLE_FORMAT=("snapshot" "description")|' /etc/default/grub-btrfs/config
 }
 
 snapshot_rollback() {

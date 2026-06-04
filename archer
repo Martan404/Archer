@@ -208,6 +208,65 @@ set_locale() {
     fi
 }
 
+set_timezone() {
+    confirmed=0
+   	echo -e "-------------------------------------------------------------------------"
+	echo -e "Select timezone"
+    while [ "$confirmed" != 1 ]; do
+
+        timezone_options=(
+            "Automatic (IP detection)"
+            "Manual selection"
+        )
+
+        selected_idx=$(list "Method:" "${timezone_options[@]}")
+
+        if [ "$selected_idx" == 0 ]; then
+
+            timezone=$(
+                curl -fsSL https://geoip.chrisdown.name/ 2>/dev/null | sed -n 's/.*"time_zone":"\([^"]*\)".*/\1/p'
+            )
+
+            [ -z "$timezone" ] && timezone=$(
+                curl -fsSL https://api.ipbase.com/v1/json/ 2>/dev/null | sed -n 's/.*"time_zone":"\([^"]*\)".*/\1/p'
+            )
+
+            [ -z "$timezone" ] && timezone=$(
+                curl -fsSL https://reallyfreegeoip.org/json/ 2>/dev/null | sed -n 's/.*"time_zone":"\([^"]*\)".*/\1/p'
+            )
+        else
+            while true; do
+                search=$(input "Search timezone keyword (20 results)")
+
+                mapfile -t timezones < <(
+                    timedatectl list-timezones \
+                    | grep -i "$search" \
+                    | head -n 20
+                )
+
+                # Try again if no results
+                if [ "${#timezones[@]}" -eq 0 ]; then
+                    continue
+                fi
+
+                # Add Search again option
+                timezones=("Search again" "${timezones[@]}")
+
+                selected_idx=$(list "Select timezone" "${timezones[@]}")
+                timezone="${timezones[$selected_idx]}"
+
+                if [ "$timezone" == "Search again" ]; then
+                    continue
+                fi
+
+                break
+            done
+        fi
+
+        confirmed=$(confirm "Use timezone '$timezone'?")
+    done
+}
+
 set_disk() {
     confirmed=0
     echo -e "-------------------------------------------------------------------------"
@@ -509,7 +568,7 @@ arch_chroot() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Changing root into new system"
 
-	export hostname && export user && export install_type && export kernel && export keyboard_keymap && export default_locale && export root_partition && export disk_encryption && export encrypted_root_partition
+	export hostname && export user && export install_type && export kernel && export keyboard_keymap && export default_locale && export timezone && export root_partition && export disk_encryption && export encrypted_root_partition
 
 	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot
 	rm -rf /mnt/Archer-main
@@ -531,6 +590,7 @@ config_installation() {
     set_variables
     check_keymap
     set_locale
+    set_timezone
 
     set_disk
     set_efi
