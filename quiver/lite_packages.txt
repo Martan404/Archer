@@ -9,6 +9,7 @@ firewalld
 dosfstools
 exfatprogs
 ntfs-3g
+ntfsprogs
 fatresize
 # DRIVERS #
 

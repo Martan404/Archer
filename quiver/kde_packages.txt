@@ -32,6 +32,7 @@ cups-pk-helper
 foomatic-db-ppds
 foomatic-db-engine
 foomatic-db-nonfree-ppds
+geoclue
 gst-plugin-pipewire
 pipewire-alsa
 pipewire-audio
@@ -65,6 +66,7 @@ exfatprogs
 f2fs-tools
 jfsutils
 ntfs-3g
+ntfsprogs
 udftools
 xfsprogs
 fatresize
