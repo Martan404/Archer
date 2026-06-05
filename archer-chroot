@@ -64,6 +64,8 @@ setup_system() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating NetworkManager script to get timezone automatically"
 
+    mkdir -p /etc/NetworkManager/dispatcher.d/
+
 	cat <<-END >/etc/NetworkManager/dispatcher.d/09-timezone
 #!/bin/sh
 case "\$2" in
