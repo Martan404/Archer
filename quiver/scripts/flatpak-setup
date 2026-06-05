@@ -36,16 +36,9 @@ install_flatpak() {
     flatpak permission-set kde-authorized remote-desktop "" yes
 
 	# Setup flatpaks
-	if [[ $(flatpak list) == *"com.github.GradienceTeam.Gradience"* ]]; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Setting Adwaita color to match Breeze Dark"
-
-		mkdir -p "/home/$user/.var/app/com.github.GradienceTeam.Gradience/config/presets/curated"
-
-		flatpak run --command=gradience-cli com.github.GradienceTeam.Gradience download -n "Breeze Dark"
-		flatpak run --command=gradience-cli com.github.GradienceTeam.Gradience apply -n "Breeze Dark" --gtk both
-
-		flatpak remove -y --noninteractive com.github.GradienceTeam.Gradience
+	if [[ $(flatpak list) == *"com.flatpak.package.name"* ]]; then
+        # Example code to configure flatpaks
+        echo
 	fi
 
 	echo -e "-------------------------------------------------------------------------"
