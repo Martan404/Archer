@@ -1,0 +1,563 @@
+#!/bin/bash
+# Main script 1/3
+
+# Pre init
+[[ -e "archer-check" ]] && echo -e "Rebooting computer to start fresh" && read -r -t 3 && shutdown -r now
+
+echo -e "Getting bash TUI toolkit"
+# shellcheck disable=SC1090
+source <(curl -qsS https://bash-tui-toolkit.timo-reymann.de/latest/bundle.bash)
+
+show_logo() {
+	clear
+	archer_logo="
+-------------------------------------------------------------------------
+$(tput setaf 4)
+             █████╗ ██████╗  ██████╗██╗  ██╗███████╗██████╗
+            ██╔══██╗██╔══██╗██╔════╝██║  ██║██╔════╝██╔══██╗
+            ███████║██████╔╝██║     ███████║█████╗  ██████╔╝
+            ██╔══██║██╔══██╗██║     ██╔══██║██╔══╝  ██╔══██╗
+            ██║  ██║██║  ██║╚██████╗██║  ██║███████╗██║  ██║
+            ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+$(tput sgr0)
+-------------------------------------------------------------------------"
+	echo -ne "$archer_logo"
+	echo -e "
+                           Arch install script
+-------------------------------------------------------------------------"
+}
+
+set_variables() {
+    confirmed=0
+	echo -e "Enter hostname for system"
+
+	hostname=""
+
+    while [ "$confirmed" != 1 ]; do
+        hostname=$(with_validate 'input "Hostname:"' validate_present)
+
+        confirmed=$(confirm "Is this correct?")
+    done
+
+	confirmed=0
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enter name for user"
+    while [ "$confirmed" != 1 ]; do
+        user=$(with_validate 'input "User:"' validate_present)
+
+        confirmed=$(confirm "Is this correct?")
+    done
+
+	confirmed=0
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enable LUKS disk encryption?"
+	while [ "$confirmed" != 1 ]; do
+        disk_encryption=0
+        confirmed=1
+    done
+    if [ "$disk_encryption" == 1 ]; then
+        disk_encryption="yes"
+        while true; do
+
+            luks_password=$(password "Enter LUKS password")
+            luks_password_confirm=$(password "Confirm LUKS password")
+
+            if [[ "$luks_password" != "$luks_password_confirm" ]]; then
+                echo "Passwords do not match"
+                continue
+            else
+                break
+            fi
+        done
+    else
+        disk_encryption="no"
+    fi
+
+    confirmed=0
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Select type of installation"
+	install_options=("KDE Plasma" "Lite")
+    while [ "$confirmed" != 1 ]; do
+        install_option=$(list "Selection:" "${install_options[@]}")
+        confirmed=$(confirm "Is this correct?")
+    done
+
+    case $install_option in
+	0)
+		install_type="kde"
+		;;
+	1)
+		install_type="lite"
+		;;
+	esac
+}
+
+check_keymap() {
+    confirmed=0
+	existing_keymap=$(localectl status | grep 'VC Keymap' | awk '{print $3}')
+
+    echo -e "-------------------------------------------------------------------------"
+	echo -e Select keyboard layout
+
+	if [ "$existing_keymap" == "(unset)" ] || [ "$existing_keymap" == "" ]; then
+		set_keymap
+
+	else
+
+		confirmed=$(confirm "$existing_keymap is currently used as keymap. Set it as default?")
+		if [ "$confirmed" == 1 ]; then
+			keyboard_keymap=$existing_keymap
+		else
+			set_keymap
+		fi
+
+	fi
+}
+
+set_keymap() {
+    confirmed=0
+    while [ "$confirmed" != 1 ]; do
+        search=$(input "Search keymap keyword (20 results)")
+
+        mapfile -t keymaps < <(
+            localectl list-keymaps | grep -i "$search" \
+            | head -n 20
+        )
+
+        # Try again if no results
+        if [ "${#keymaps[@]}" -eq 0 ]; then
+            continue
+        fi
+
+        # Add "Search again" option at start
+        keymaps=("Search again" "${keymaps[@]}")
+
+        selected_idx=$(list "Select keymap" "${keymaps[@]}")
+        keyboard_keymap="${keymaps[$selected_idx]}"
+
+        # Handle Search again
+        if [ "$keyboard_keymap" == "Search again" ]; then
+            continue
+        fi
+
+        confirmed=$(confirm "Is '$keyboard_keymap' correct?")
+    done
+}
+
+set_locale() {
+    confirmed=0
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Select the locales you want enabled"
+
+	selected_locales=()
+    confirmed=0
+
+    while [ "$confirmed" != 1 ]; do
+        search=$(input "Search locale keyword (20 results)")
+
+        mapfile -t locales < <(
+            grep -E '^[#]?[a-zA-Z]' /etc/locale.gen \
+            | sed 's/^#//' \
+            | grep -i "${search:-.}"\
+            | head -n 20
+        )
+
+        # Try again if no results
+        if [ "${#locales[@]}" -eq 0 ]; then
+            continue
+        fi
+
+        # Add "Search again" option at start
+        locales=("Search again" "${locales[@]}")
+
+        selected_idx=$(list "Select locale to add" "${locales[@]}")
+        chosen_locale="${locales[$selected_idx]}"
+
+        # Handle Search again
+        if [ "$chosen_locale" == "Search again" ]; then
+            continue
+        fi
+
+        selected_locales+=("$chosen_locale")
+
+        more_locales=$(confirm "Add another locale?")
+        if [ "$more_locales" == 0 ]; then
+
+            echo "Selected locales: $(printf '%s | ' "${selected_locales[@]}" | sed 's/ | $//')"
+
+            confirmed=$(confirm "Is this selection correct?")
+
+            if [ "$confirmed" == 0 ]; then
+                selected_locales=()
+            fi
+        fi
+    done
+
+    # Enable selected locales
+    for locale in "${selected_locales[@]}"; do
+        locale_name=$(echo "$locale" | awk '{print $1}')
+        sed -i "/^#\s*${locale_name} /s/^#\s*//" /etc/locale.gen
+    done
+
+    # Default locale selection
+    if [ "${#selected_locales[@]}" -gt 1 ]; then
+        selected_idx=$(list "Select default locale" "${selected_locales[@]}")
+        default_locale="${selected_locales[$selected_idx]%% *}"
+    else
+        default_locale="${selected_locales[0]%% *}"
+    fi
+}
+
+set_timezone() {
+    confirmed=0
+   	echo -e "-------------------------------------------------------------------------"
+	echo -e "Select timezone"
+    while [ "$confirmed" != 1 ]; do
+
+        timezone_options=(
+            "Automatic (IP detection)"
+            "Manual selection"
+        )
+
+        selected_idx=$(list "Method:" "${timezone_options[@]}")
+
+        if [ "$selected_idx" == 0 ]; then
+
+            timezone=$(
+                curl -fsSL https://geoip.chrisdown.name/ 2>/dev/null | sed -n 's/.*"time_zone":"\([^"]*\)".*/\1/p'
+            )
+
+            [ -z "$timezone" ] && timezone=$(
+                curl -fsSL https://api.ipbase.com/v1/json/ 2>/dev/null | sed -n 's/.*"time_zone":"\([^"]*\)".*/\1/p'
+            )
+
+            [ -z "$timezone" ] && timezone=$(
+                curl -fsSL https://reallyfreegeoip.org/json/ 2>/dev/null | sed -n 's/.*"time_zone":"\([^"]*\)".*/\1/p'
+            )
+        else
+            while true; do
+                search=$(input "Search timezone keyword (20 results)")
+
+                mapfile -t timezones < <(
+                    timedatectl list-timezones \
+                    | grep -i "$search" \
+                    | head -n 20
+                )
+
+                # Try again if no results
+                if [ "${#timezones[@]}" -eq 0 ]; then
+                    continue
+                fi
+
+                # Add Search again option
+                timezones=("Search again" "${timezones[@]}")
+
+                selected_idx=$(list "Select timezone" "${timezones[@]}")
+                timezone="${timezones[$selected_idx]}"
+
+                if [ "$timezone" == "Search again" ]; then
+                    continue
+                fi
+
+                break
+            done
+        fi
+
+        confirmed=$(confirm "Use timezone '$timezone'?")
+    done
+}
+
+set_disk() {
+    confirmed=0
+    echo -e "-------------------------------------------------------------------------"
+	echo -e "Select the disk you want use for installation"
+
+    while [ "$confirmed" != 1 ]; do
+
+        mapfile -t disks < <(
+            lsblk -dpno NAME,SIZE,MODEL
+        )
+
+        if [ "${#disks[@]}" -eq 0 ]; then
+            input "No disks found. Press enter to retry"
+            continue
+        fi
+
+        selected_idx=$(list "Disks:" "${disks[@]}")
+
+        disk_path=$(echo "${disks[$selected_idx]}" | awk '{print $1}')
+        disk="$disk_path"
+
+        echo
+        echo "Disk info: "
+        lsblk "$disk"
+
+        confirmed=$(confirm "Is disk $disk correct?")
+    done
+}
+
+set_efi() {
+    confirmed=0
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Choose EFI partition size"
+    efi_sizes=("256MiB" "512MiB" "1GiB")
+
+    while [ "$confirmed" != 1 ]; do
+
+        selected_idx=$(list "Size:" "${efi_sizes[@]}")
+        efi_size="${efi_sizes[$selected_idx]}"
+
+        confirmed=$(confirm "Use $efi_size EFI size?")
+    done
+}
+
+set_kernel() {
+    confirmed=0
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Select which kernel to use"
+
+     kernel_options=(
+         "Linux Zen (linux-zen)"
+         "Linux (linux)"
+         "Linux LTS (linux-lts)"
+         "Linux Hardened (linux-hardened)"
+     )
+
+     while [ "$confirmed" != 1 ]; do
+
+         selected_idx=$(list "Kernel:" "${kernel_options[@]}")
+
+         case $selected_idx in
+             0) kernel="linux-zen" ;;
+             1) kernel="linux" ;;
+             2) kernel="linux-lts" ;;
+             3) kernel="linux-hardened" ;;
+         esac
+         confirmed=$(confirm "Use $kernel kernel?")
+     done
+}
+
+set_swap() {
+	echo -e "-------------------------------------------------------------------------"
+	confirmed=0
+    swapsize=""
+
+    echo "Enter size for SWAP file. Minimum same as RAM recommended"
+
+    while [ "$confirmed" != 1 ]; do
+
+        swapsize=$(with_validate 'input "Size (GiB):"' validate_present)
+
+        # must be numeric
+        if [[ ! "$swapsize" =~ ^[0-9]+$ ]]; then
+            echo "Invalid input. Enter a valid number"
+            continue
+        fi
+        confirmed=$(confirm "Use ${swapsize}GiB swap file?")
+    done
+}
+
+review_installation() {
+    confirmed=0
+    echo -e "-------------------------------------------------------------------------"
+    echo -e "REVIEW INSTALLATION CONFIGURATION"
+    echo -e "-------------------------------------------------------------------------"
+
+    echo "Hostname:        $hostname"
+    echo "User:            $user"
+    echo "Install type:    $install_type"
+    echo "Kernel:          $kernel"
+    echo "Keymap:          $keyboard_keymap"
+    echo "Default locale:  $default_locale"
+    echo "Disk:            $disk"
+    echo "EFI size:        $efi_size"
+    echo "Swap size:       ${swapsize}GiB"
+    echo "Encryption:      $disk_encryption"
+
+    echo -e "-------------------------------------------------------------------------"
+
+    while [ "$confirmed" != 1 ]; do
+        proceed=$(confirm "Proceed with installation?")
+        confirmed=$(confirm "Are you sure?")
+    done
+
+    if [ "$proceed" == 0 ]; then
+        echo "Restarting configuration..."
+        hostname=""
+        user=""
+        install_type=""
+        kernel=""
+        keyboard_keymap=""
+        default_locale=""
+        disk=""
+        efi_size=""
+        swapsize=""
+        disk_encryption=""
+        unset luks_password luks_password_confirm
+        config_installation
+    fi
+}
+
+format_drive() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Wiping drive and setting up GPT partition table"
+
+	umount /dev/mapper/root || true
+	cryptsetup luksClose root 2>/dev/null || true
+
+	sgdisk --zap-all "$disk"
+	wipefs -a "$disk"
+
+	parted -s "$disk" mklabel gpt
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating EFI system partition"
+
+	parted -s "$disk" mkpart fat32 0% "$efi_size"
+	parted -s "$disk" set 1 esp on
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating root partition"
+
+	parted -s "$disk" mkpart btrfs "$efi_size" 100%
+
+	if [[ $disk == *"nvme"* || $disk == *"mmc"* ]]; then
+		efi_partition="${disk}p1"
+		root_partition="${disk}p2"
+	else
+		efi_partition="${disk}1"
+		root_partition="${disk}2"
+	fi
+}
+
+setup_drive() {
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Mounting btrfs subvolumes and EFI partition"
+
+	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@ "$root_partition" /mnt
+	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@root "$root_partition" /mnt/root
+	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@home "$root_partition" /mnt/home
+	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@log "$root_partition" /mnt/var/log
+	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@pkg "$root_partition" /mnt/var/cache/pacman/pkg
+	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@tmp "$root_partition" /mnt/var/tmp
+	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@cache "$root_partition" /mnt/var/cache
+	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@spool "$root_partition" /mnt/var/spool
+	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@srv "$root_partition" /mnt/srv
+	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@snapshots "$root_partition" /mnt/.snapshots
+	mount --mkdir -t btrfs -o noatime,subvol=@swap "$root_partition" /mnt/swap
+	mount --mkdir -o defaults,noatime "$efi_partition" /mnt/boot
+
+	chmod 0750 /mnt/root
+	chmod 1777 /mnt/var/tmp
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating swap file"
+
+	btrfs filesystem mkswapfile --size "$swapsize"g --uuid clear /mnt/swap/swapfile
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Mounting swap file"
+
+	swapon /mnt/swap/swapfile
+}
+
+setup_environment() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling network time syncronization"
+
+	timedatectl set-ntp true
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting Pacman configurations"
+
+	sed -i '/^#Color/s/^#//' /etc/pacman.conf
+
+	sed -i '/^#ParallelDownloads/s/^#//' /etc/pacman.conf
+
+	sed -i '/^ParallelDownloads = .*/a ILoveCandy' /etc/pacman.conf
+
+	sed -i '/^#\[multilib\]/s/^#//' /etc/pacman.conf
+	sed -i '/^\[multilib\]$/,/^#Include/ s/^#//' /etc/pacman.conf
+
+	pacman -Sy
+}
+
+install_system() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing base and kernel packages"
+
+	while true; do
+		# shellcheck disable=SC2086
+		pacstrap -K /mnt base base-devel $kernel $kernel-headers linux-firmware util-linux btrfs-progs sudo nano iptables-nft && break
+
+		echo "$(tput setaf 9)Package installation failed. Retrying... $(tput sgr0)"
+	done
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Generating fstab"
+
+	genfstab -U /mnt >>/mnt/etc/fstab
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Configuring fstab"
+
+	sed -i 's/\(\/swap\)\(.*\)compress=zstd:3,ssd,discard=async,space_cache=v2\(.*\)/\1\2ssd\3/' /mnt/etc/fstab # Clean up btrfs swap partition
+	sed -i 's/,subvolid=...//g' /mnt/etc/fstab                                                                  # Remove subvolid for better snapshot support
+}
+
+arch_chroot() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Downloading Quiver"
+
+	cd /mnt && curl -L https://github.com/Martan404/Archer/archive/master.tar.gz | tar -xz Archer-main && cd /
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Copying locale.gen from iso"
+
+	cp /etc/locale.gen /mnt/etc
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Changing root into new system"
+
+	export hostname && export user && export install_type && export kernel && export keyboard_keymap && export default_locale && export timezone && export root_partition && export disk_encryption && export encrypted_root_partition
+
+	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot
+	rm -rf /mnt/Archer-main
+}
+
+exit_install() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "System ready to boot, please remove the installation media before restarting"
+
+	read -r -p "Press enter to shutdown..."
+
+	swapoff /mnt/swap/swapfile >/dev/null 2>&1
+	umount -l /mnt >/dev/null 2>&1
+	shutdown now && exit
+}
+
+config_installation() {
+    show_logo
+    set_variables
+    check_keymap
+    set_locale
+    set_timezone
+
+    set_disk
+    set_efi
+    set_kernel
+    set_swap
+}
+
+config_installation
+review_installation
+
+#format_drive
+touch archer-check
+setup_drive
+setup_environment
+
+install_system
+arch_chroot
+exit_install
