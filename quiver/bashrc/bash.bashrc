@@ -42,14 +42,8 @@ bind '"\e[B": history-search-forward'
 # Autojump
 [[ -r /etc/profile.d/autojump.sh ]] && source /etc/profile.d/autojump.sh
 
-# Add pipx to PATH
-eval "$(register-python-argcomplete pipx)"
-
 # Enter directory by only typing the name
 shopt -s autocd
 
-# Automatically do an ls after each cd
-cd() { builtin cd "${1:-~}" && ls; }
-
-# Check why a package is installed
-why() { pacman -Qi $1; }
+# Add pipx to PATH
+eval "$(register-python-argcomplete pipx)"

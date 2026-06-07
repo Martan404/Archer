@@ -2,6 +2,9 @@
 # /etc/bash.bash_aliases
 #
 
+# Check why a package is installed
+why() { pacman -Qi $1; }
+
 # Repair GRUB
 grub-update() { grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; grub-mkconfig -o /boot/grub/grub.cfg; }
 grub-repair() { pacman --noconfirm -S grub efibootmgr; grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; grub-mkconfig -o /boot/grub/grub.cfg; }
@@ -18,6 +21,9 @@ flatpak-clean-nvidia() {
     flatpak uninstall --unused --delete-data
     flatpak remove --unused --delete-data
 }
+
+# Automatically do an ls after each cd
+cd() { builtin cd "${1:-~}" && ls; }
 
 # Shortcuts
 alias home='cd ~'

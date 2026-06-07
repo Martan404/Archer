@@ -7,13 +7,16 @@
 [[ $- != *i* ]] && return
 
 # Get user aliases
-[[ -r ~/.bash_aliases ]] && source ~/.bash_aliases
+[[ -r $HOME/.bash_aliases ]] && source $HOME/.bash_aliases
+
+# Get completions
+for file in ~/.bash_completions/*; do [[ -e "$file" ]] && source "$file"; done
 
 # Add ~/System/scripts to PATH
 [[ -d "$HOME/System/scripts" ]] && export PATH=$PATH:$HOME/System/scripts
 
 # Display system information
-fastfetch --config ~/.config/fastfetch/config-small.jsonc
+fastfetch --config "$HOME/.config/fastfetch/config-small.jsonc"
 
 # Atuin
 eval "$(atuin init bash)"

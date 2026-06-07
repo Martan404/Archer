@@ -7,8 +7,8 @@ archer-help() {
     grep "^alias" ~/.bash_aliases | awk -F= '{sub("^alias[ \t]*", ""); print $1}'
 }
 
-alias update='paru -Sy --needed --noconfirm archlinux-keyring; paru -Su; flatpak update; pipx upgrade-all'
-alias package-cache-cleanup='paru -Scd'
+alias update='topgrade -y || (paru -Sy --needed --noconfirm archlinux-keyring; paru -Syu; flatpak update; pipx upgrade-all)'
+alias paru-cache-cleanup='paru -Scd'
 alias sudo-password-unlock='faillock --user $USER --reset'
 alias pacman-refresh-mirrors='sudo reflector --age 48 --country "$(curl ifconfig.co/country-iso)" --fastest 5 --latest 20 --sort rate --save /etc/pacman.d/mirrorlist'
 alias pacman-db-unlock='sudo rm /var/lib/pacman/db.lck'
