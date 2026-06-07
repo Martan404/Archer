@@ -222,10 +222,10 @@ exec /usr/bin/efibootmgr -e 3 "\$@"
 		root_disk_uuid=$(blkid -s UUID -o value "$encrypted_root_partition")
 		sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 rd.luks.name=$root_disk_uuid=root root=\/dev\/mapper\/root\"/" /etc/default/grub
 
-        echo -e "-------------------------------------------------------------------------"
-        echo -e "Enabling cryptodisk support for grub-btrfs"
+        #echo -e "-------------------------------------------------------------------------"
+        #echo -e "Enabling cryptodisk support for grub-btrfs"
 
-        sed -i 's/^#GRUB_BTRFS_ENABLE_CRYPTODISK="true"/GRUB_BTRFS_ENABLE_CRYPTODISK="true"/' /etc/default/grub-btrfs/config
+        #sed -i 's/^#GRUB_BTRFS_ENABLE_CRYPTODISK="true"/GRUB_BTRFS_ENABLE_CRYPTODISK="true"/' /etc/default/grub-btrfs/config
 	fi
 }
 
@@ -379,10 +379,12 @@ setup_laptop() {
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Installing laptop packages"
 
-		package_installer "auto-cpufreq"
+		package_installer "auto-cpufreq switcheroo-control"
 
 		systemctl mask power-profiles-daemon.service
 		systemctl enable auto-cpufreq.service
+
+		systemctl enable switcheroo-control.service
 
 	elif [ $laptop_status = 1 ]; then
 		echo -e "-------------------------------------------------------------------------"
