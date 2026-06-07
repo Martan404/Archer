@@ -111,10 +111,8 @@ chmod +x /etc/NetworkManager/dispatcher.d/09-timezone
 
 	if [[ $disk_encryption == "yes" ]]; then
 		echo -e "-------------------------------------------------------------------------"
-		echo -e "Enabling encryption hooks in mkinitcpio.conf"
+		echo -e "Enabling encryption hook in mkinitcpio.conf"
 
-		sed -i '/^HOOKS=/ s/\(base\)/\1 systemd/' /etc/mkinitcpio.conf
-		sed -i '/^HOOKS=/ s/\(keyboard\)/\1 sd-vconsole/' /etc/mkinitcpio.conf
 		sed -i '/^HOOKS=/ s/\(filesystems\)/sd-encrypt \1/' /etc/mkinitcpio.conf
 	fi
 
@@ -418,7 +416,6 @@ install_packages() {
 
 	[[ $install_type == "lite" ]] && package_installer "/Archer-main/quiver/lite_packages.txt"
 	[[ $install_type == "kde" ]] && package_installer "/Archer-main/quiver/kde_packages.txt"
-	[[ $install_type == "hyprland" ]] && package_installer "/Archer-main/quiver/hyprland_packages.txt"
 }
 
 setup_environment() {
@@ -427,7 +424,6 @@ setup_environment() {
 
 	[[ $install_type == "lite" ]]
 	[[ $install_type == "kde" ]] && source "/Archer-main/quiver/kde_setup"
-	[[ $install_type == "hyprland" ]] && source "/Archer-main/quiver/hyprland_setup"
 }
 
 bash_config() {
@@ -451,7 +447,7 @@ bash_config() {
 	chown "$user":"$user" /home/"$user"/.bashrc
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Copying /home/$user/.bashrc to /root/.bashrc"
+	echo -e "Linking /home/$user/.bashrc to /root/.bashrc"
 
 	ln -s /home/"$user"/.bashrc /root/.bashrc
 
@@ -460,9 +456,6 @@ bash_config() {
 
 	cat /Archer-main/quiver/bashrc/user.bash_aliases >>/home/"$user"/.bash_aliases
 	chown "$user":"$user" /home/"$user"/.bash_aliases
-
-	# Make sure home is fully owned by the user
-	chown -R "$user":"$user" /home/"$user"/
 }
 
 yabsnap_setup() {
@@ -538,10 +531,14 @@ package_config() {
 	mv /Archer-main/quiver/hooks/* /etc/pacman.d/hooks/
 	chown -R :wheel /etc/pacman.d/hooks/*
 
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Rebuilding GRUB configs"
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Rebuilding GRUB configs"
 
-		grub-mkconfig -o /boot/grub/grub.cfg
+	grub-mkconfig -o /boot/grub/grub.cfg
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Making sure /home/$user belongs to $user"
+	chown -R "$user":"$user" /home/"$user"
 }
 
 boot_script() {
