@@ -15,5 +15,5 @@ echo -e "Linking config to root"
 
 mkdir -p /root/.config/fastfetch/
 
-ln -s /Archer-main/quiver/configs/fastfetch-config.jsonc /root/.config/fastfetch/config.jsonc
-ln -s /Archer-main/quiver/configs/fastfetch-config-small.jsonc /root/.config/fastfetch/config-small.jsonc
+ln -s /home/"$user"/.config/fastfetch/config.jsonc /root/.config/fastfetch/config.jsonc
+ln -s /home/"$user"/.config/fastfetch/config-small.jsonc /root/.config/fastfetch/config-small.jsonc
