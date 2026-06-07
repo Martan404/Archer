@@ -402,6 +402,10 @@ format_drive() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Wiping drive and setting up GPT partition table"
 
+	umount /dev/mapper/root || true
+	wipefs -a "$disk"
+	sgdisk --zap-all "$disk"
+
 	cryptsetup luksClose root 2>/dev/null || true
 
 	sgdisk --zap-all "$disk"
@@ -440,8 +444,10 @@ setup_drive() {
 
         echo -e "-------------------------------------------------------------------------"
         echo -e "Setting LUKS password"
-        printf '%s' "$luks_password" | cryptsetup -v -q luksFormat "$root_partition"
-        printf '%s' "$luks_password" | cryptsetup open "$root_partition" root
+        #printf '%s' "$luks_password" | cryptsetup -v -q luksFormat "$root_partition"
+        #printf '%s' "$luks_password" | cryptsetup open "$root_partition" root
+        cryptsetup -v -q luksFormat "$root_partition"
+        cryptsetup open "$root_partition" root
 
         unset luks_password luks_password_confirm
 
@@ -548,7 +554,7 @@ install_system() {
 	genfstab -U /mnt >>/mnt/etc/fstab
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Configuring fstab"https://github.com/Martan404/Archer/
+	echo -e "Configuring fstab"
 
 	sed -i 's/\(\/swap\)\(.*\)compress=zstd:3,ssd,discard=async,space_cache=v2\(.*\)/\1\2ssd\3/' /mnt/etc/fstab # Clean up btrfs swap partition
 	sed -i 's/,subvolid=...//g' /mnt/etc/fstab                                                                  # Remove subvolid for better snapshot support
