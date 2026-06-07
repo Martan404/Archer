@@ -24,7 +24,6 @@ set_root() {
 		echo -e "Listing available disks"
 
 		lsblk
-		fdisk -l | awk '$1=="Disk" && $2~"/dev/" {print $2" "$3" "$4}'
 
 		echo -e "Enter root partition"
 		read -r -p "Disk: " root_partition
@@ -52,7 +51,6 @@ set_boot() {
 		echo -e "Listing available disks"
 
 		lsblk
-		fdisk -l | awk '$1=="Disk" && $2~"/dev/" {print $2" "$3" "$4}'
 
 		echo -e "Enter boot partition"
 		read -r -p "Disk: " efi_partition
@@ -94,8 +92,8 @@ archer_chroot() {
 
 	arch-chroot /mnt
 }
-
-set_root
 show_logo
+set_root
+set_boot
 mount_system
 archer_chroot
