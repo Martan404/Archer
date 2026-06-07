@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+show_logo() {
+	clear
+	archer_logo="
+-------------------------------------------------------------------------
+$(tput setaf 4)
+             █████╗ ██████╗  ██████╗██╗  ██╗███████╗██████╗
+            ██╔══██╗██╔══██╗██╔════╝██║  ██║██╔════╝██╔══██╗
+            ███████║██████╔╝██║     ███████║█████╗  ██████╔╝
+            ██╔══██║██╔══██╗██║     ██╔══██║██╔══╝  ██╔══██╗
+            ██║  ██║██║  ██║╚██████╗██║  ██║███████╗██║  ██║
+            ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+$(tput sgr0)
+-------------------------------------------------------------------------"
+	echo -ne "$archer_logo"
+	echo -e "
+                           Grub rescue script
+-------------------------------------------------------------------------"
+}
+
+set_boot() {
+	local status=1
+	while [ $status -ne 0 ]; do
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Listing available disks"
+
+		lsblk
+		fdisk -l | awk '$1=="Disk" && $2~"/dev/" {print $2" "$3" "$4}'
+
+		echo -e "Enter boot partition"
+		read -r -p "Disk: " efi_partition
+
+		echo "p" | fdisk "$efi_partition"
+		status=$?
+	done
+
+	while true; do
+		read -r -p "Is the disk $efi_partition correct? (Y/n) " yn
+
+		case $yn in
+		[yY1]) break ;;
+		[nN2])
+			set_boot
+			break ;;
+		esac
+	done
+}
+
+fix_grub() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Mounting boot volume"
+	mount -o defaults,noatime "$efi_partition" /boot
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Reinstalling Grub"
+
+	pacman -S --noconfirm grub efibootmgr
+
+	grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck
+	grub-mkconfig -o /boot/grub/grub.cfg
+
+}
+
+set_boot
+show_logo
+fix_grub
