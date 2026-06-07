@@ -2,5 +2,4 @@
 # Archer config file
 
 echo -e "Changing geoclue method to reallyfreegeoip"
-
 sed -i 's/^#\?method=ichnaea$/method=reallyfreegeoip/' /etc/geoclue/geoclue.conf
