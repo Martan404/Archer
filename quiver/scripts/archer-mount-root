@@ -25,7 +25,7 @@ set_root() {
 
 		lsblk
 
-		echo -e "Enter root partition"
+		echo -e "Enter ROOT partition"
 		read -r -p "Disk: " root_partition
 
 		echo "p" | fdisk "$root_partition"
@@ -33,7 +33,7 @@ set_root() {
 	done
 
 	while true; do
-		read -r -p "Is the disk $root_partition correct? (Y/n) " yn
+		read -r -p "Is root partition $root_partition correct? (Y/n) " yn
 
 		case $yn in
 		[yY1]) break ;;
@@ -52,7 +52,7 @@ set_boot() {
 
 		lsblk
 
-		echo -e "Enter boot partition"
+		echo -e "Enter BOOT partition"
 		read -r -p "Disk: " efi_partition
 
 		echo "p" | fdisk "$efi_partition"
@@ -60,7 +60,7 @@ set_boot() {
 	done
 
 	while true; do
-		read -r -p "Is the disk $efi_partition correct? (Y/n) " yn
+		read -r -p "Is the boot partition $efi_partition correct? (Y/n) " yn
 
 		case $yn in
 		[yY1]) break ;;
