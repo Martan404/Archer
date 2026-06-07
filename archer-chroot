@@ -221,11 +221,6 @@ exec /usr/bin/efibootmgr -e 3 "\$@"
 
 		root_disk_uuid=$(blkid -s UUID -o value "$encrypted_root_partition")
 		sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 rd.luks.name=$root_disk_uuid=root root=\/dev\/mapper\/root\"/" /etc/default/grub
-
-        #echo -e "-------------------------------------------------------------------------"
-        #echo -e "Enabling cryptodisk support for grub-btrfs"
-
-        #sed -i 's/^#GRUB_BTRFS_ENABLE_CRYPTODISK="true"/GRUB_BTRFS_ENABLE_CRYPTODISK="true"/' /etc/default/grub-btrfs/config
 	fi
 }
 
