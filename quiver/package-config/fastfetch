@@ -3,11 +3,17 @@
 
 echo -e "Configuring fastfetch"
 
-install --owner "$user" --group "$user" --mode 777 -D /Archer-main/quiver/configs/fastfetch-config.jsonc /home/"$user"/.config/fastfetch/config.jsonc
-install --owner "$user" --group "$user" --mode 777 -D /Archer-main/quiver/configs/fastfetch-config-small.jsonc /home/"$user"/.config/fastfetch/config-small.jsonc
+mkdir -p /home/"$user"/.config/fastfetch/
+
+cat /Archer-main/quiver/configs/fastfetch-config.jsonc >/home/"$user"/.config/fastfetch/config.jsonc
+cat /Archer-main/quiver/configs/fastfetch-config-small.jsonc >/home/"$user"/.config/fastfetch/config-small.jsonc
+
+chown "$user":"$user" /home/"$user"/.config/fastfetch/
+chmod 775 /home/"$user"/.config/fastfetch/
 
 echo -e "Linking config to root"
 
 mkdir -p /root/.config/fastfetch/
+
 ln -s /Archer-main/quiver/configs/fastfetch-config.jsonc /root/.config/fastfetch/config.jsonc
 ln -s /Archer-main/quiver/configs/fastfetch-config-small.jsonc /root/.config/fastfetch/config-small.jsonc
