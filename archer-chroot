@@ -220,6 +220,13 @@ exec /usr/bin/efibootmgr -e 3 "\$@"
 		root_disk_uuid=$(blkid -s UUID -o value "$encrypted_root_partition")
 		sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 rd.luks.name=$root_disk_uuid=root root=\/dev\/mapper\/root\"/" /etc/default/grub
 	fi
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Setting up netboot.xyz"
+
+		curl -L https://boot.netboot.xyz/ipxe/netboot.xyz-legacy.efi -o /boot/EFI/netboot.xyz.efi
+		cat /Archer/quiver/configs/45_netboot.xyz >/etc/grub.d/45_netboot.xyz
+		chown root:root /etc/grub.d/45_netboot.xyz
 }
 
 setup_cpu() {
