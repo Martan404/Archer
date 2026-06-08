@@ -1,0 +1,7 @@
+#!/bin/sh
+cat <<EOF
+menuentry "Netboot.xyz" --class net {
+    search --no-floppy --file --set=root /EFI/netboot.xyz.efi
+    chainloader /EFI/netboot.xyz.efi
+}
+EOF
