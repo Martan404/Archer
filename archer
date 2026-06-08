@@ -403,6 +403,7 @@ format_drive() {
 	echo -e "Wiping drive and setting up GPT partition table"
 
 	umount /dev/mapper/root || true
+	umount /dev/mapper/cryptroot || true
 	cryptsetup luksClose root 2>/dev/null || true
 
 	sgdisk --zap-all "$disk"
