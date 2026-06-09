@@ -616,6 +616,7 @@ arch_chroot() {
 
 	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot
 	rm -rf /mnt/Archer-main
+	unset root_password user_password
 }
 
 exit_install() {
