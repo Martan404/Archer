@@ -636,7 +636,7 @@ exit_install() {
 	swapoff /mnt/swap/swapfile >/dev/null 2>&1
 	umount -l /mnt >/dev/null 2>&1
 
-	shutdown now
+	reboot || shutdown now
 	exit
 }
 
