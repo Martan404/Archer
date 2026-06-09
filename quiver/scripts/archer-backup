@@ -47,7 +47,7 @@ backup() {
     # Set name for archive if none is provided
     [[ $NAME = "" ]] && NAME="Backup"
 
-    # Function to add files to the archive
+    # Helper function
     add_to_archive() {
         local path="$1"
         if [[ -e "$path" ]]; then
@@ -55,13 +55,13 @@ backup() {
             relative_path=$(realpath --relative-to="$HOME" "$path")
 
             echo -e "[${blue} Add ${clear}] $path added to archive"
-            tar --append --file="$NAME.tar.gz" --directory="$HOME" --transform="s|^$HOME||" "$relative_path"
+            tar --append --file="$NAME.tar.gz" --directory="$HOME" --transform="s|^|home/|" "$relative_path"
         else
             echo -e "[${yellow} Skip ${clear}] $path does not exist"
         fi
     }
 
-    # Function to process include arrays
+    # Helper function
     process_include_array() {
         local include_var_name=$1
         local include_array=("${!include_var_name}")
@@ -95,7 +95,7 @@ restore() {
     local archive_file="$1"
     if [[ -f "$archive_file" ]]; then
         echo -e "[${blue} Copy ${clear}] Extracting files from $archive_file."
-        tar --extract --file="$archive_file" --directory="$HOME" --transform="s|^||" --no-same-owner
+        tar --extract --file="$archive_file" --directory="$HOME" --strip-components=1 --no-same-owner
         echo -e "[${green} Done ${clear}] Restore from $archive_file completed"
     else
         echo -e "[${red} Error ${clear}] $archive_file does not exist"
@@ -107,10 +107,7 @@ create_config() {
 
     local config_name="$1"
 
-    if [ -z "$config_name" ]; then
-        echo -e "[${red} Error ${clear}] No configuration name provided"
-        exit 1
-    fi
+    [[ "$config_name" == "" ]] && config_name="Backup"
 
     local config_file="./$config_name.conf"
 
