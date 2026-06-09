@@ -1,7 +1,16 @@
 #!/bin/sh
 cat <<EOF
-menuentry "Netboot.xyz" --class net {
-    search --no-floppy --file --set=root /EFI/netboot.xyz.efi
-    chainloader /EFI/netboot.xyz.efi
+submenu "Netboot.xyz" --class net {
+
+    menuentry "Netboot.xyz (Legacy)" --class net {
+        search --no-floppy --file --set=root /EFI/netboot.xyz-legacy.efi
+        chainloader /EFI/netboot.xyz-legacy.efi
+    }
+
+    menuentry "Netboot.xyz (Standard)" --class net {
+        search --no-floppy --file --set=root /EFI/netboot.xyz.efi
+        chainloader /EFI/netboot.xyz.efi
+    }
+
 }
 EOF
