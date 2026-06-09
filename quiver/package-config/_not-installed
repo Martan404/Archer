@@ -2,7 +2,12 @@
 # Archer config file
 # This is for configuring packages that did not get installed
 
-if ! pacman -Q steam > /dev/null 2>&1; then
+if ! pacman -Q steam >/dev/null 2>&1; then
     echo -e "Installing steam-devices package for Steam Flatpak"
-    package_installer "steam-devices" 
+    package_installer "steam-devices"
 fi
+
+boot_config() {
+    echo "Use boot_config function to write to the archer-boot script \
+    that will be ran first time booting the computer" >/dev/null 2>&1
+}

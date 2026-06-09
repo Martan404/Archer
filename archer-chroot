@@ -541,6 +541,15 @@ package_config() {
 			echo "Found $package_name config"
 
 			source "/Archer-main/quiver/package-config/$package_name"
+
+            if declare -f boot_config >/dev/null; then
+                {
+                    echo "Creating boot config for $package_name"
+                    declare -f boot_config | sed '1,2d;$d'
+
+                } >> /usr/local/bin/archer-boot
+                unset -f boot_config
+            fi
 		fi
 	done <<<"$installed_packages"
 
@@ -568,10 +577,38 @@ package_config() {
 }
 
 boot_script() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting up boot script"
+	if [ "$prepared" != "yes" ]; then
+	    echo -e "-------------------------------------------------------------------------"
+		echo -e "Preparing boot script"
 
-	cat /Archer-main/archer-boot >/usr/bin/archer-boot
+        cat <<-END >/usr/bin/archer-boot
+#!/bin/bash
+echo -e "
+-------------------------------------------------------------------------
+\$(tput setaf 4)
+             █████╗ ██████╗  ██████╗██╗  ██╗███████╗██████╗
+            ██╔══██╗██╔══██╗██╔════╝██║  ██║██╔════╝██╔══██╗
+            ███████║██████╔╝██║     ███████║█████╗  ██████╔╝
+            ██╔══██║██╔══██╗██║     ██╔══██║██╔══╝  ██╔══██╗
+            ██║  ██║██║  ██║╚██████╗██║  ██║███████╗██║  ██║
+            ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+\$(tput sgr0)
+-------------------------------------------------------------------------
+                           Arch install script"
+END
+        prepared="yes"
+
+	else
+        cat <<-END >>/usr/bin/archer-boot
+echo -e "-------------------------------------------------------------------------"
+echo -e "Cleaning up script"
+
+systemctl disable --now archer-boot.service
+rm -f /etc/systemd/system/archer-boot.service
+rm -f \${BASH_SOURCE[0]}
+exit
+END
+    fi
 	chmod a+x /usr/bin/archer-boot
 
 	cat <<-END >/etc/systemd/system/archer-boot.service
@@ -583,7 +620,7 @@ ExecStart=/usr/bin/archer-boot
 
 [Install]
 WantedBy=multi-user.target
-	END
+END
 
 	systemctl enable archer-boot.service
 }
@@ -663,6 +700,7 @@ yabsnap_setup
 snapshot_rollback
 setup_environment
 bash_config
+boot_script
 package_config
 boot_script
 exit_chroot
