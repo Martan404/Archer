@@ -542,9 +542,10 @@ package_config() {
 
 			source "/Archer-main/quiver/package-config/$package_name"
 
+
             if declare -f boot_config >/dev/null; then
+                echo "Creating boot config for $package_name"
                 {
-                    echo "Creating boot config for $package_name"
                     declare -f boot_config | sed '1,2d;$d'
 
                 } >> /usr/local/bin/archer-boot
