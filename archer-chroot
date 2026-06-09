@@ -167,7 +167,7 @@ setup_paru_pipx() {
 		package_installer "git rust cmake" pacman
 
 		cd /home/"$user"/
-		sudo -u "$user" git clone https://aur.archlinux.org/paru.git 2>&1 | sudo_quiet
+		sudo -u "$user" git clone https://aur.archlinux.org/paru-git.git 2>&1 | sudo_quiet
 		cd paru
 
 		while true; do
@@ -600,7 +600,7 @@ sudo_quiet() { grep -v "unable to find terminal name for device"; }
 
 package_installer() {
 	input_packages=$1
-	pkg_manager=$2
+	package_manager=$2
 	max_tries=3
 	try_count=0
 
@@ -614,7 +614,7 @@ package_installer() {
 		try_count=$((try_count + 1))
 
 		# shellcheck disable=SC2086
-		if [ "$pkg_manager" == "pacman" ]; then
+		if [ "$package_manager" == "pacman" ]; then
 			pacman -S --needed --noconfirm $packages && break
 
 		else
@@ -637,7 +637,7 @@ package_installer() {
 			case $choice in
 			[yY1])
 				try_count=0
-				package_installer "$packages" "$pkg_manager"
+				package_installer "$packages" "$package_manager"
 				break
 				;;
 			[nN2])
