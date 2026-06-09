@@ -544,7 +544,7 @@ package_config() {
 
 
             if declare -f boot_config >/dev/null; then
-                echo "Creating boot config for $package_name"
+                echo "Writing boot config for $package_name"
                 {
                     declare -f boot_config | sed '1,2d;$d'
 
