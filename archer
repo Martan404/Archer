@@ -53,37 +53,26 @@ set_variables() {
 
     confirmed=0
     echo -e "-------------------------------------------------------------------------"
-    echo -e "Set root and user password now?"
+    echo -e "Set root and user password"
 
-    while [ "$confirmed" != 1 ]; do
-        set_passwords=$(confirm "Choice:")
-        confirmed=$(confirm "Is this correct?")
+    while true; do
+        root_password=$(password "Enter root password")
+        root_password_confirm=$(password "Confirm root password")
+
+        [[ "$root_password" == "$root_password_confirm" ]] && break
+
+        echo "Root passwords do not match"
     done
+    echo
+    while true; do
+        user_password=$(password "Enter user password")
+        user_password_confirm=$(password "Confirm user password")
 
-    if [ "$set_passwords" == 1 ]; then
-        while true; do
-            root_password=$(password "Enter root password")
-            root_password_confirm=$(password "Confirm root password")
+        [[ "$user_password" == "$user_password_confirm" ]] && break
 
-            [[ "$root_password" == "$root_password_confirm" ]] && break
-
-            echo "Root passwords do not match"
-        done
-
-        while true; do
-            user_password=$(password "Enter user password")
-            user_password_confirm=$(password "Confirm user password")
-
-            [[ "$user_password" == "$user_password_confirm" ]] && break
-
-            echo "User passwords do not match"
-        done
-
-        unset root_password_confirm user_password_confirm
-        passwords_set="yes"
-    else
-        passwords_set="no"
-    fi
+        echo "User passwords do not match"
+    done
+    unset root_password_confirm user_password_confirm
 
 	confirmed=0
 	echo -e "-------------------------------------------------------------------------"
@@ -612,7 +601,7 @@ arch_chroot() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Changing root into new system"
 
-	export hostname && export user && export passwords_set && export root_password && export user_password && export install_type && export kernel && export keyboard_keymap && export default_locale && export timezone && export root_partition && export disk_encryption && export encrypted_root_partition
+	export hostname && export user && export root_password && export user_password && export install_type && export kernel && export keyboard_keymap && export default_locale && export timezone && export root_partition && export disk_encryption && export encrypted_root_partition
 
 	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot
 	rm -rf /mnt/Archer-main

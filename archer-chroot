@@ -5,7 +5,6 @@
 # Declaring exported variables from first script
 hostname=${hostname}
 user=${user}
-passwords_set=${passwords_set}
 root_password=${root_password}
 user_password=${user_password}
 install_type=${install_type}
@@ -143,6 +142,16 @@ chmod +x /etc/NetworkManager/dispatcher.d/09-timezone
 	groupadd -f git
 	useradd -m -G sys,wheel,rfkill,git -s /bin/bash "$user"
 
+	echo "-------------------------------------------------------------------------"
+	echo "Setting root password"
+	echo "root:$root_password" | chpasswd
+
+	echo "-------------------------------------------------------------------------"
+	echo "Setting user password"
+	echo "$user:$user_password" | chpasswd
+
+	unset root_password user_password
+
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Adding ~/.local/bin PATH to /etc/profile.d/custom-path.sh"
 
@@ -180,7 +189,7 @@ setup_grub() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing Grub packages"
 
-	package_installer "grub-btrfs efibootmgr inotify-tools grub-netboot-archlinux"
+	package_installer "grub-btrfs efibootmgr inotify-tools"
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating efibootmgr wrapper script to prevent fail"
@@ -512,6 +521,7 @@ snapshot_rollback() {
 
 	cat /Archer-main/quiver/scripts/rollback >/usr/local/bin/rollback
 	chmod a+x /usr/local/bin/rollback
+
 	cat /Archer-main/quiver/scripts/rollback-tui >/usr/local/bin/rollback-tui
 	chmod a+x /usr/local/bin/rollback-tui
 }
@@ -578,45 +588,12 @@ WantedBy=multi-user.target
 	systemctl enable archer-boot.service
 }
 
-set_password() {
+exit_chroot() {
 	echo "-------------------------------------------------------------------------"
 	echo "Restoring password requirement for wheel group"
 
 	sed -i 's/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /etc/sudoers
-
-	# ROOT PASSWORD
-	echo "-------------------------------------------------------------------------"
-	echo "Setting root password"
-
-	if [[ -z "$root_password" ]]; then
-		while true; do
-			root_password=$(password "Enter root password")
-			root_password_confirm=$(password "Confirm root password")
-
-			[[ "$root_password" == "$root_password_confirm" ]] && break
-
-			echo "Passwords do not match"
-		done
-	fi
-
-	echo "root:$root_password" | chpasswd
-
-	# USER PASSWORD
-	echo "-------------------------------------------------------------------------"
-	echo "Setting user password"
-
-	if [[ -z "$user_password" ]]; then
-		while true; do
-			user_password=$(password "Enter user password")
-			user_password_confirm=$(password "Confirm user password")
-
-			[[ "$user_password" == "$user_password_confirm" ]] && break
-
-			echo "Passwords do not match"
-		done
-	fi
-
-	echo "$user:$user_password" | chpasswd
+	exit
 }
 
 sudo_quiet() { grep -v "unable to find terminal name for device"; }
@@ -687,7 +664,5 @@ snapshot_rollback
 setup_environment
 bash_config
 package_config
-
 boot_script
-set_password
-exit
+exit_chroot
