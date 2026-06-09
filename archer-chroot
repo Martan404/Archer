@@ -5,6 +5,9 @@
 # Declaring exported variables from first script
 hostname=${hostname}
 user=${user}
+passwords_set=${passwords_set}
+root_password=${root_password}
+user_password=${user_password}
 install_type=${install_type}
 kernel=${kernel}
 keyboard_keymap=${keyboard_keymap}
@@ -13,6 +16,9 @@ timezone=${timezone}
 root_partition=${root_partition}
 disk_encryption=${disk_encryption}
 encrypted_root_partition=${encrypted_root_partition}
+
+source /bash-tui-toolkit.sh
+rm /bash-tui-toolkit.sh
 
 setup_pacman() {
 	echo -e "-------------------------------------------------------------------------"
@@ -573,28 +579,44 @@ WantedBy=multi-user.target
 }
 
 set_password() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Restoring password requierment for wheel group"
+	echo "-------------------------------------------------------------------------"
+	echo "Restoring password requirement for wheel group"
 
 	sed -i 's/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /etc/sudoers
 
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Set root password"
+	# ROOT PASSWORD
+	echo "-------------------------------------------------------------------------"
+	echo "Setting root password"
 
-	status=1
-	while [ $status != 0 ]; do
-		passwd
-		status=$?
-	done
+	if [[ -z "$root_password" ]]; then
+		while true; do
+			root_password=$(password "Enter root password")
+			root_password_confirm=$(password "Confirm root password")
 
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Set user password"
+			[[ "$root_password" == "$root_password_confirm" ]] && break
 
-	status=1
-	while [ $status != 0 ]; do
-		passwd "$user"
-		status=$?
-	done
+			echo "Passwords do not match"
+		done
+	fi
+
+	echo "root:$root_password" | chpasswd
+
+	# USER PASSWORD
+	echo "-------------------------------------------------------------------------"
+	echo "Setting user password"
+
+	if [[ -z "$user_password" ]]; then
+		while true; do
+			user_password=$(password "Enter user password")
+			user_password_confirm=$(password "Confirm user password")
+
+			[[ "$user_password" == "$user_password_confirm" ]] && break
+
+			echo "Passwords do not match"
+		done
+	fi
+
+	echo "$user:$user_password" | chpasswd
 }
 
 sudo_quiet() { grep -v "unable to find terminal name for device"; }

@@ -4,9 +4,12 @@
 # Pre init
 [[ -e "archer-check" ]] && echo -e "Rebooting computer to start fresh" && read -r -t 3 && shutdown -r now
 
+# Documentation: https://bash-tui-toolkit.timo-reymann.de/latest/docs/
 echo -e "Getting bash TUI toolkit"
-# shellcheck disable=SC1090
-source <(curl -qsS https://bash-tui-toolkit.timo-reymann.de/latest/bundle.bash)
+
+curl -fsSL https://bash-tui-toolkit.timo-reymann.de/latest/bundle.bash -o /bash-tui-toolkit.sh
+# shellcheck disable=SC1091
+source /bash-tui-toolkit.sh
 
 show_logo() {
 	clear
@@ -48,26 +51,59 @@ set_variables() {
         confirmed=$(confirm "Is this correct?")
     done
 
+    confirmed=0
+    echo -e "-------------------------------------------------------------------------"
+    echo -e "Set root and user password now?"
+
+    while [ "$confirmed" != 1 ]; do
+        set_passwords=$(confirm "Choice:")
+        confirmed=$(confirm "Is this correct?")
+    done
+
+    if [ "$set_passwords" == 1 ]; then
+        while true; do
+            root_password=$(password "Enter root password")
+            root_password_confirm=$(password "Confirm root password")
+
+            [[ "$root_password" == "$root_password_confirm" ]] && break
+
+            echo "Root passwords do not match"
+        done
+
+        while true; do
+            user_password=$(password "Enter user password")
+            user_password_confirm=$(password "Confirm user password")
+
+            [[ "$user_password" == "$user_password_confirm" ]] && break
+
+            echo "User passwords do not match"
+        done
+
+        unset root_password_confirm user_password_confirm
+        passwords_set="yes"
+    else
+        passwords_set="no"
+    fi
+
 	confirmed=0
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enable LUKS disk encryption?"
+
 	while [ "$confirmed" != 1 ]; do
         disk_encryption=$(confirm "Choice:")
         confirmed=$(confirm "Is this correct?")
     done
+
     if [ "$disk_encryption" == 1 ]; then
         disk_encryption="yes"
-        while true; do
 
+        while true; do
             luks_password=$(password "Enter LUKS password")
             luks_password_confirm=$(password "Confirm LUKS password")
 
-            if [[ "$luks_password" != "$luks_password_confirm" ]]; then
-                echo "Passwords do not match"
-                continue
-            else
-                break
-            fi
+            [[ "$luks_password" == "$luks_password_confirm" ]] && break
+
+            echo "Passwords do not match"
         done
     else
         disk_encryption="no"
@@ -552,8 +588,10 @@ install_system() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Configuring fstab"
 
-	sed -i 's/\(\/swap\)\(.*\)compress=zstd:3,ssd,discard=async,space_cache=v2\(.*\)/\1\2ssd\3/' /mnt/etc/fstab # Clean up btrfs swap partition
-	sed -i 's/,subvolid=...//g' /mnt/etc/fstab                                                                  # Remove subvolid for better snapshot support
+	# Clean up btrfs swap partition
+	sed -i 's/\(\/swap\)\(.*\)compress=zstd:3,ssd,discard=async,space_cache=v2\(.*\)/\1\2ssd\3/' /mnt/etc/fstab
+	# Remove subvolid for better snapshot support
+	sed -i 's/,subvolid=...//g' /mnt/etc/fstab
 }
 
 arch_chroot() {
@@ -563,28 +601,42 @@ arch_chroot() {
 	cd /mnt && curl -L https://github.com/Martan404/Archer/archive/master.tar.gz | tar -xz Archer-main && cd /
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Copying locale.gen from iso"
+	echo -e "Copying Bash TUI toolkit"
+	cp /bash-tui-toolkit.sh /mnt
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Copying locale.gen"
 
 	cp /etc/locale.gen /mnt/etc
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Changing root into new system"
 
-	export hostname && export user && export install_type && export kernel && export keyboard_keymap && export default_locale && export timezone && export root_partition && export disk_encryption && export encrypted_root_partition
+	export hostname && export user && export passwords_set && export root_password && export user_password && export install_type && export kernel && export keyboard_keymap && export default_locale && export timezone && export root_partition && export disk_encryption && export encrypted_root_partition
 
 	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot
 	rm -rf /mnt/Archer-main
 }
 
 exit_install() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "System ready to boot, please remove the installation media before restarting"
+	echo "-------------------------------------------------------------------------"
+	echo "System ready to boot, shutting down..."
+	echo "Press any key to cancel"
 
-	read -r -p "Press enter to shutdown..."
+	for i in 5 4 3 2 1; do
+	    printf "\rShutting down in %d..." "$i"
+
+        if read -rsn1 -t 1; then
+            echo "Cancelled"
+            return 0
+        fi
+    done
 
 	swapoff /mnt/swap/swapfile >/dev/null 2>&1
 	umount -l /mnt >/dev/null 2>&1
-	shutdown now && exit
+
+	shutdown now
+	exit
 }
 
 config_installation() {
