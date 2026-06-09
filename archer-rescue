@@ -1,0 +1,175 @@
+#!/usr/bin/env bash
+show_logo() {
+	clear
+	archer_logo="
+-------------------------------------------------------------------------
+$(tput setaf 4)
+             █████╗ ██████╗  ██████╗██╗  ██╗███████╗██████╗
+            ██╔══██╗██╔══██╗██╔════╝██║  ██║██╔════╝██╔══██╗
+            ███████║██████╔╝██║     ███████║█████╗  ██████╔╝
+            ██╔══██║██╔══██╗██║     ██╔══██║██╔══╝  ██╔══██╗
+            ██║  ██║██║  ██║╚██████╗██║  ██║███████╗██║  ██║
+            ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+$(tput sgr0)
+-------------------------------------------------------------------------"
+	echo -ne "$archer_logo"
+	echo -e "
+                          Archer rescue script
+-------------------------------------------------------------------------"
+}
+
+# Documentation: https://bash-tui-toolkit.timo-reymann.de/latest/docs/
+echo -e "Getting bash TUI toolkit"
+# shellcheck disable=SC1090
+source ./quiver/bash-tui-toolkit.bash || source <(curl -qsS https://bash-tui-toolkit.timo-reymann.de/latest/bundle.bash)
+
+script_path="$(readlink -f "$0")"
+
+if [[ "$EUID" -ne 0 ]]; then
+    echo "This script needs to be run with root privileges" >&2
+    exit 1
+fi
+
+get_root() {
+    confirmed=0
+	while [ "$confirmed" != 1 ]; do
+		mapfile -t parts < <(lsblk -pn -o NAME,SIZE,FSTYPE,TYPE | awk '$4=="part"')
+
+		selected=$(list "Select root partition" "${parts[@]}")
+
+		root_partition=$(echo "${parts[$selected]}" | awk '{print $1}')
+
+		confirmed=$(confirm "Is $root_partition correct?")
+	done
+}
+
+encryption() {
+    fs_type=$(blkid -o value -s TYPE "$root_partition")
+	if [[ "$fs_type" == "crypto_LUKS" ]]; then
+	    echo "Detected LUKS root"
+
+		if [ ! -e /dev/mapper/root ]; then
+			echo "Opening LUKS container..."
+			cryptsetup open "$root_partition" root
+		fi
+
+		encrypted_root_partition=$root_partition
+		root_partition="/dev/mapper/root"
+	fi
+}
+
+get_boot() {
+    confirmed=0
+	while [ "$confirmed" != 1 ]; do
+
+		mapfile -t parts < <(
+			lsblk -pn -o NAME,SIZE,FSTYPE,PARTTYPENAME | awk '$0 ~ /vfat|EFI|boot/ {print $1 " (" $2 ")"}')
+
+		selected=$(list "Select boot/efi partition" "${parts[@]}")
+
+		efi_partition=$(echo "${parts[$selected]}" | awk '{print $1}')
+
+		confirmed=$(confirm "Is $efi_partition correct?")
+	done
+}
+
+mount_system() {
+	echo -e "Mounting btrfs subvolumes"
+	mount -o subvol=@ "$root_partition" /mnt
+	mount -o subvol=@root "$root_partition" /mnt/root
+	mount -o subvol=@home "$root_partition" /mnt/home
+	mount -o subvol=@log "$root_partition" /mnt/var/log
+	mount -o subvol=@pkg "$root_partition" /mnt/var/cache/pacman/pkg
+	mount -o subvol=@tmp "$root_partition" /mnt/var/tmp
+	mount -o subvol=@cache "$root_partition" /mnt/var/cache
+	mount -o subvol=@spool "$root_partition" /mnt/var/spool
+	mount -o subvol=@srv "$root_partition" /mnt/srv
+	mount -o defaults,noatime "$efi_partition" /mnt/boot
+}
+
+archer_chroot() {
+	echo -e "Entering arch-chroot"
+
+	arch-chroot /mnt /bin/bash "$script_path" chroot
+}
+
+declare -A chroot_menu=(
+    ["Reinstall kernel"]="reinstall_kernel"
+	["Reinstall GRUB"]="reinstall_grub"
+	["Exit menu"]="break"
+)
+
+chroot() {
+    clear
+    show_logo
+
+    while true; do
+		options=("${!chroot_menu[@]}")
+
+		selected=$(list "Chroot Menu" "${options[@]}")
+
+		label="${options[$selected]}"
+		func="${chroot_menu[$label]}"
+
+		"$func"
+	done
+}
+
+reinstall_grub() {
+    echo -e "-------------------------------------------------------------------------"
+	echo -e "Reinstalling Grub"
+
+	pacman -S --noconfirm grub efibootmgr
+
+	grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck
+	grub-mkconfig -o /boot/grub/grub.cfg
+
+	echo
+	echo "GRUB reinstall complete."
+	echo "Press enter to return to menu..."
+	read -r
+}
+
+reinstall_kernel(){
+	mapfile -t kernels < <(pacman -Qq | grep -E '^linux($|-(zen|lts|hardened))$')
+
+	if [ "${#kernels[@]}" -eq 0 ]; then
+		echo "No kernels found in system!"
+		read -r
+		return
+	fi
+
+	for kernel in "${kernels[@]}"; do
+		echo "Reinstalling: $kernel"
+		pacman -S --noconfirm "$kernel" "$kernel-headers"
+	done
+
+	echo
+	echo "Kernel reinstall complete."
+	echo "Press enter to return to menu..."
+	read -r
+}
+
+case "${1:-}" in
+		"" )
+			show_logo
+			get_root
+			show_logo
+			encryption
+			show_logo
+			get_boot
+			mount_system
+			archer_chroot
+			;;
+
+		chroot )
+		    show_logo
+			chroot
+			# to do
+			;;
+		* )
+		    show_logo
+			echo "Unknown command: $1"
+			exit 1
+			;;
+	esac
