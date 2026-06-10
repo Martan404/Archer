@@ -599,7 +599,7 @@ arch_chroot() {
 	cp /etc/locale.gen /mnt/etc
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Changing root into new system"
+	echo -e "Changing root to new system"
 
 	export hostname && export user && export root_password && export user_password && export install_type && export kernel && export keyboard_keymap && export default_locale && export timezone && export root_partition && export disk_encryption && export encrypted_root_partition
 

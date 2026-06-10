@@ -189,7 +189,7 @@ setup_grub() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing Grub packages"
 
-	package_installer "grub-btrfs efibootmgr inotify-tools"
+	package_installer "grub-btrfs efibootmgr inotify-tools rsync"
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating efibootmgr wrapper script to prevent fail"
@@ -236,15 +236,20 @@ exec /usr/bin/efibootmgr -e 3 "\$@"
 		sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 rd.luks.name=$root_disk_uuid=root root=\/dev\/mapper\/root\"/" /etc/default/grub
 	fi
 
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Setting up netboot.xyz"
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting up netboot.xyz"
 
-        # https://netboot.xyz/docs/kb/hardware/usb-keyboard
-		curl -L https://boot.netboot.xyz/ipxe/netboot.xyz-legacy.efi -o /boot/EFI/netboot.xyz-legacy.efi
-		curl -L https://boot.netboot.xyz/ipxe/netboot.xyz.efi -o /boot/EFI/netboot.xyz.efi
+    # https://netboot.xyz/docs/kb/hardware/usb-keyboard
+	curl -L https://boot.netboot.xyz/ipxe/netboot.xyz-legacy.efi -o /boot/EFI/netboot.xyz-legacy.efi
+	curl -L https://boot.netboot.xyz/ipxe/netboot.xyz.efi -o /boot/EFI/netboot.xyz.efi
 
-		cat /Archer/quiver/configs/45_netboot.xyz >/etc/grub.d/45_netboot.xyz
-		chown root:root /etc/grub.d/45_netboot.xyz
+	cat /Archer-main/quiver/configs/45_netboot.xyz >/etc/grub.d/45_netboot.xyz
+	chown root:root /etc/grub.d/45_netboot.xyz
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Preparing /boot backup directory structure"
+
+	mkdir -p /.boot-backup/{pre-update,post-update}
 }
 
 setup_cpu() {
