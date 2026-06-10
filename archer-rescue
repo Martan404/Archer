@@ -93,23 +93,27 @@ archer_chroot() {
 	arch-chroot -S /mnt /bin/bash "$script_path" chroot
 }
 
-declare -A chroot_menu=(
-    ["Reinstall kernel"]="reinstall_kernel"
-	["Reinstall GRUB"]="reinstall_grub"
-	["Exit menu"]="break"
+chroot_menu=(
+	"Reinstall kernel:reinstall_kernel"
+	"Reinstall GRUB:reinstall_grub"
+	"Restore /boot backup:restore_boot_backup"
+	"Exit menu:break"
 )
 
 chroot() {
-    clear
     show_logo
 
-    while true; do
-		options=("${!chroot_menu[@]}")
+	while true; do
+		options=()
+
+		for item in "${chroot_menu[@]}"; do
+			options+=("${item%%:*}")
+		done
 
 		selected=$(list "Chroot Menu" "${options[@]}")
 
-		label="${options[$selected]}"
-		func="${chroot_menu[$label]}"
+		entry="${chroot_menu[$selected]}"
+		func="${entry#*:}"
 
 		"$func"
 	done
@@ -146,6 +150,37 @@ reinstall_kernel(){
 
 	echo
 	echo "Kernel reinstall complete."
+	echo "Press enter to return to menu..."
+	read -r
+}
+
+restore_boot_backup() {
+	selected=$(list "Select backup to restore" \
+		"Pre-update backup" \
+		"Post-update backup")
+
+	if [[ "$selected" -eq 0 ]]; then
+		backup_dir="./boot-backup/pre-backup"
+	else
+		backup_dir="./boot-backup/post-backup"
+	fi
+
+	if [[ ! -d "$backup_dir" ]]; then
+		echo "Backup directory not found: $backup_dir"
+		echo "Press enter to return to menu..."
+		read -r
+		return
+	fi
+
+	if [[ $(confirm "Restore $(basename "$backup_dir") to /boot?") == 0 ]]; then
+		return
+	fi
+
+	echo "Restoring /boot from $backup_dir..."
+	cp -af "$backup_dir"/. /boot/
+
+	echo
+	echo "Restoration of /boot complete."
 	echo "Press enter to return to menu..."
 	read -r
 }
