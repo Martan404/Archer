@@ -206,9 +206,10 @@ set_locale() {
         selected_locales+=("$chosen_locale")
 
         more_locales=$(confirm "Add another locale?")
+
         if [ "$more_locales" == 0 ]; then
 
-            echo "Selected locales: $(printf '%s | ' "${selected_locales[@]}" | sed 's/ | $//')"
+            echo "Selected locales: $(printf '%s | '"${selected_locales[@]}" | sed 's/ | $//')"
 
             confirmed=$(confirm "Is this selection correct?")
 
@@ -259,6 +260,8 @@ set_timezone() {
             [ -z "$timezone" ] && timezone=$(
                 curl -fsSL https://reallyfreegeoip.org/json/ 2>/dev/null | sed -n 's/.*"time_zone":"\([^"]*\)".*/\1/p'
             )
+
+            [ -z "$timezone" ] && echo -e "Failed to get timezone automatically"
         else
             while true; do
                 search=$(input "Search timezone keyword (20 results)")
@@ -288,7 +291,7 @@ set_timezone() {
             done
         fi
 
-        confirmed=$(confirm "Use timezone '$timezone'?")
+        [ -z "$timezone" ] || confirmed=$(confirm "Use timezone '$timezone'?")
     done
 }
 
