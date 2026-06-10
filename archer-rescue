@@ -110,7 +110,7 @@ chroot() {
 			options+=("${item%%:*}")
 		done
 
-		selected=$(list "Chroot Menu" "${options[@]}")
+		selected=$(list "Rescue Menu" "${options[@]}")
 
 		entry="${chroot_menu[$selected]}"
 		func="${entry#*:}"
