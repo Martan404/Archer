@@ -14,13 +14,12 @@ bash <(curl -L https://raw.githubusercontent.com/Martan404/Archer/main/archer)
 
 ## Regular install
 
-From initial prompt run these commands: 
+From initial prompt run these commands and replace *sv-latin1* with whatever keymap you want
 ```
 localectl list-keymaps
 localectl set-keymap sv-latin1
 bash <(curl -L https://raw.githubusercontent.com/Martan404/Archer/main/archer)
 ```
-*Replace sv-latin1 with whatever keymap you want*
 
 ## Wifi
 
@@ -34,9 +33,3 @@ station [device name] connect [network name]
 Enter your password and run `exit`. You can test if you have internet connection by running `ping archlinux.org`, press Ctrl + C to stop the ping test
 
 *You can check if the WiFi is blocked by running `rfkill list`. If it says **Soft blocked: yes**, then run `rfkill unblock wifi`*
-
-## Edit script during installation
-
-From initial prompt run `curl -L https://raw.githubusercontent.com/Martan404/Archer/main/archer > archer` and then run `nano archer` to edit the script
-
-After editing run `chmod +x archer` to make the script executable and then `sh archer` to run it
