@@ -73,19 +73,25 @@ setup_system() {
 
 	cat <<-END >/etc/NetworkManager/dispatcher.d/09-timezone
 #!/bin/sh
-case "\$2" in
-    up)
-        timedatectl set-timezone "\$(curl --fail https://ipapi.co/timezone)"
-    ;;
-esac
+
+[ "\$2" = "up" ] || exit 0
+
+sleep 5
+
+TIMEZONE=\$(curl -fsSL https://reallyfreegeoip.org/json/ 2>/dev/null | sed -n 's/.*"time_zone":"\([^"]*\)".*/\1/p')
+
+if [ -n "\$TIMEZONE" ]; then
+    timedatectl set-timezone "\$TIMEZONE"
+fi
 END
 
 chmod +x /etc/NetworkManager/dispatcher.d/09-timezone
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting hardware clock"
+	echo -e "Setting hardware clock to UTC"
 
 	hwclock --systohc
+	timedatectl set-local-rtc 0
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling network time syncronization"
