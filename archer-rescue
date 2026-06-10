@@ -88,9 +88,9 @@ mount_system() {
 }
 
 archer_chroot() {
-	echo -e "Entering arch-chroot"
+	echo -e "Entering system root"
 
-	arch-chroot /mnt /bin/bash "$script_path" chroot
+	arch-chroot -S /mnt /bin/bash "$script_path" chroot
 }
 
 declare -A chroot_menu=(
@@ -151,25 +151,25 @@ reinstall_kernel(){
 }
 
 case "${1:-}" in
-		"" )
-			show_logo
-			get_root
-			show_logo
-			encryption
-			show_logo
-			get_boot
-			mount_system
-			archer_chroot
-			;;
+	"" )
+	    show_logo
+	    get_root
+	    show_logo
+		encryption
+		show_logo
+		get_boot
+		mount_system
+		archer_chroot
+		;;
 
-		chroot )
-		    show_logo
-			chroot
-			# to do
-			;;
-		* )
-		    show_logo
-			echo "Unknown command: $1"
-			exit 1
-			;;
-	esac
+	chroot )
+		show_logo
+		chroot
+		;;
+
+	* )
+		show_logo
+		echo "Unknown command: $1"
+		exit 1
+		;;
+esac
