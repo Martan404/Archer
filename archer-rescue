@@ -93,37 +93,41 @@ archer_chroot() {
     if [[ "$script_path" == /proc/* ]]; then
         curl -fsSL "https://raw.githubusercontent.com/Martan404/Archer/main/archer-rescue" -o "/mnt/root/archer-rescue"
         chmod +x /mnt/root/archer-rescue
-        arch-chroot -S /mnt /bin/bash "/root/archer-rescue" chroot
+        arch-chroot /mnt /bin/bash "/root/archer-rescue" chroot
     else
         cp "$script_path" "/mnt/root/archer-rescue"
-        arch-chroot -S /mnt /bin/bash "/root/archer-rescue" chroot
+        arch-chroot /mnt /bin/bash "/root/archer-rescue" chroot
     fi
 }
 
-chroot_menu=(
+menu_list=(
 	"Reinstall kernel:reinstall_kernel"
 	"Reinstall GRUB:reinstall_grub"
 	"Restore /boot backup:restore_boot_backup"
-	"Exit menu:break"
+	"Exit menu:exit_menu"
 )
 
-chroot() {
-    show_logo
-
+chroot_menu() {
 	while true; do
+	    show_logo
 		options=()
 
-		for item in "${chroot_menu[@]}"; do
+		for item in "${menu_list[@]}"; do
 			options+=("${item%%:*}")
 		done
 
 		selected=$(list "Rescue Menu" "${options[@]}")
 
-		entry="${chroot_menu[$selected]}"
+		entry="${menu_list[$selected]}"
 		func="${entry#*:}"
 
 		"$func"
 	done
+}
+
+exit_menu(){
+    echo 'Type "arch-chroot /mnt" to enter again'
+    return
 }
 
 reinstall_grub() {
@@ -206,7 +210,7 @@ case "${1:-}" in
 
 	chroot )
 		show_logo
-		chroot
+		chroot_menu
 		;;
 
 	* )
