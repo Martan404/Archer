@@ -380,7 +380,7 @@ intel_gpu() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing packages"
 
-	package_installer "mesa vulkan-intel"
+	package_installer "mesa vulkan-intel intel-media-driver"
 }
 
 qemu_gpu() {
