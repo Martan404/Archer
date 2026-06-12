@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 show_logo() {
 	clear
-	echo "$script_path"
 	archer_logo="
 -------------------------------------------------------------------------
 $(tput setaf 4)
@@ -90,11 +89,14 @@ mount_system() {
 }
 
 archer_chroot() {
-    echo -e "Copying self to system $script_path"
-    cp "$script_path" "/mnt$script_path"
-
-	echo -e "Entering system root"
-	arch-chroot -S /mnt /bin/bash "$script_path" chroot ||curl -fsSL "https://raw.githubusercontent.com/Martan404/Archer/main/archer-rescue" -o "/mnt/root/archer-rescue"; arch-chroot -S /mnt /bin/bash "/mnt/root/archer-rescue" chroot
+    echo -e "Entering system root"
+    if [[ "$script_path" == /proc/* ]]; then
+        curl -fsSL "https://raw.githubusercontent.com/Martan404/Archer/main/archer-rescue" -o "/mnt/root/archer-rescue"
+        arch-chroot -S /mnt /bin/bash "/mnt/root/archer-rescue" chroot
+    else
+        cp "$script_path" "/mnt/root/archer-rescue"
+        arch-chroot -S /mnt /bin/bash "/mnt/root/archer-rescue" chroot
+    fi
 }
 
 chroot_menu=(
