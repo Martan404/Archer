@@ -18,6 +18,7 @@ $(tput sgr0)
 -------------------------------------------------------------------------"
 }
 
+
 # Documentation: https://bash-tui-toolkit.timo-reymann.de/latest/docs/
 echo -e "Getting bash TUI toolkit"
 # shellcheck disable=SC1090
@@ -88,9 +89,11 @@ mount_system() {
 }
 
 archer_chroot() {
-	echo -e "Entering system root"
+    echo -e "Copying self to system $script_path"
+    cp "$script_path" "/mnt$script_path"
 
-	arch-chroot /mnt /bin/bash "$script_path" chroot
+	echo -e "Entering system root"
+	arch-chroot -S /mnt /bin/bash "$script_path" chroot
 }
 
 chroot_menu=(
