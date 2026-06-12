@@ -175,7 +175,6 @@ set_locale() {
 	echo -e "Select the locales you want enabled"
 
 	selected_locales=()
-    confirmed=0
 
     while [ "$confirmed" != 1 ]; do
         search=$(input "Search locale keyword (20 results)")
@@ -184,7 +183,8 @@ set_locale() {
             grep -E '^[#]?[a-zA-Z]' /etc/locale.gen \
             | sed 's/^#//' \
             | grep -i "${search:-.}"\
-            | head -n 20
+            | head -n 20 \
+            | awk '{$1=$1}1'
         )
 
         # Try again if no results
@@ -209,7 +209,7 @@ set_locale() {
 
         if [ "$more_locales" == 0 ]; then
 
-            echo "Selected locales: $(printf '%s | '"${selected_locales[@]}" | sed 's/ | $//')"
+            printf "Selected locales: %s\n" "$(printf '%s | ' "${selected_locales[@]}" | sed 's/ | $//')"
 
             confirmed=$(confirm "Is this selection correct?")
 
