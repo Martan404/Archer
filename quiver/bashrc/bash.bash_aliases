@@ -3,27 +3,20 @@
 #
 
 # Check why a package is installed
-why() { pacman -Qi $1; }
+why() { pacman -Qi "$1"; }
 
 # Repair GRUB
 grub-update() { grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; grub-mkconfig -o /boot/grub/grub.cfg; }
 grub-repair() { pacman --noconfirm -S grub efibootmgr; grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; grub-mkconfig -o /boot/grub/grub.cfg; }
 alias grub-rescue='grub-repair'
 
-flatpak-clean-nvidia() {
-    LATEST_NVIDIA=$(flatpak list | grep "GL.nvidia" | cut -f2 | cut -d '.' -f5)
-
-    flatpak list | grep org.freedesktop.Platform.GL32.nvidia- | cut -f2 | grep -v "$LATEST_NVIDIA" | xargs -o flatpak uninstall
-
-    flatpak repair
-    flatpak update
-
+flatpak-clean() {
     flatpak uninstall --unused --delete-data
     flatpak remove --unused --delete-data
 }
 
 # Automatically do an ls after each cd
-cd() { builtin cd "${1:-~}" && ls; }
+cd() { builtin cd "${1:-~}" && ls -a; }
 
 # Shortcuts
 alias home='cd ~'

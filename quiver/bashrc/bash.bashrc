@@ -30,20 +30,5 @@ PS1='[\[\e[38;5;39m\]\u\[\e[38;5;245m\]@\[\e[38;5;33m\]\h\[\e[0m\] \[\e[38;5;64m
 # Color style - https://github.com/sharkdp/vivid
 export LS_COLORS=$(vivid generate solarized-dark)
 
-# Cycle in autocomplete
-bind 'set completion-ignore-case on'
-bind 'set show-all-if-ambiguous on'
-bind 'TAB:menu-complete'
-
-# Partially search in history
-bind '"\e[A": history-search-backward'
-bind '"\e[B": history-search-forward'
-
-# Autojump
-[[ -r /etc/profile.d/autojump.sh ]] && source /etc/profile.d/autojump.sh
-
-# Enter directory by only typing the name
-shopt -s autocd
-
 # Add pipx to PATH
 eval "$(register-python-argcomplete pipx)"
