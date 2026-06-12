@@ -92,10 +92,11 @@ archer_chroot() {
     echo -e "Entering system root"
     if [[ "$script_path" == /proc/* ]]; then
         curl -fsSL "https://raw.githubusercontent.com/Martan404/Archer/main/archer-rescue" -o "/mnt/root/archer-rescue"
-        arch-chroot -S /mnt /bin/bash "/mnt/root/archer-rescue" chroot
+        chmod +x /mnt/root/archer-rescue
+        arch-chroot -S /mnt /bin/bash "/root/archer-rescue" chroot
     else
         cp "$script_path" "/mnt/root/archer-rescue"
-        arch-chroot -S /mnt /bin/bash "/mnt/root/archer-rescue" chroot
+        arch-chroot -S /mnt /bin/bash "/root/archer-rescue" chroot
     fi
 }
 
