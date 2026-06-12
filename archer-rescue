@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 show_logo() {
 	clear
+	echo "$script_path"
 	archer_logo="
 -------------------------------------------------------------------------
 $(tput setaf 4)
@@ -93,7 +94,7 @@ archer_chroot() {
     cp "$script_path" "/mnt$script_path"
 
 	echo -e "Entering system root"
-	arch-chroot -S /mnt /bin/bash "$script_path" chroot
+	arch-chroot -S /mnt /bin/bash "$script_path" chroot ||curl -fsSL "https://raw.githubusercontent.com/Martan404/Archer/main/archer-rescue" -o "/mnt/root/archer-rescue"; arch-chroot -S /mnt /bin/bash "/mnt/root/archer-rescue" chroot
 }
 
 chroot_menu=(
