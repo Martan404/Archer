@@ -5,7 +5,7 @@
 networkmanager
 iwd
 wireless-regdb
-firewalld
+ufw
 dosfstools
 exfatprogs
 ntfs-3g
@@ -15,7 +15,6 @@ fatresize
 
 # SYSTEM #
 atuin
-autojump
 bash-completion
 bash-language-server
 blesh-git
@@ -24,7 +23,6 @@ dialog
 fastfetch
 man-db
 man-pages
-micro
 openssh
 pacman-contrib
 pacutils

@@ -83,7 +83,6 @@ ark
 p7zip
 unrar
 atuin
-autojump
 bash-completion
 bash-language-server
 blesh-git
