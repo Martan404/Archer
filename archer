@@ -624,6 +624,7 @@ exit_install() {
             return 0
         fi
     done
+    echo
 
 	swapoff /mnt/swap/swapfile >/dev/null 2>&1
 	umount -l /mnt >/dev/null 2>&1

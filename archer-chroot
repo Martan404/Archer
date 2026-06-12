@@ -608,9 +608,13 @@ echo -e "
 -------------------------------------------------------------------------
                            Arch install script"
 END
+
         prepared="yes"
 
 	else
+        echo -e "-------------------------------------------------------------------------"
+        echo -e "Finishing boot script"
+
         cat <<-END >>/usr/bin/archer-boot
 echo -e "-------------------------------------------------------------------------"
 echo -e "Cleaning up script"
@@ -620,10 +624,8 @@ rm -f /etc/systemd/system/archer-boot.service
 rm -f \${BASH_SOURCE[0]}
 exit
 END
-    fi
-	chmod a+x /usr/bin/archer-boot
 
-	cat <<-END >/etc/systemd/system/archer-boot.service
+	    cat <<-END >/etc/systemd/system/archer-boot.service
 [Unit]
 Description=Archer boot setup script
 
@@ -634,7 +636,10 @@ ExecStart=/usr/bin/archer-boot
 WantedBy=multi-user.target
 END
 
-	systemctl enable archer-boot.service
+	    systemctl enable archer-boot.service
+	fi
+
+	chmod a+x /usr/bin/archer-boot
 }
 
 exit_chroot() {
