@@ -33,7 +33,7 @@ fi
 get_root() {
     confirmed=0
 	while [ "$confirmed" != 1 ]; do
-		mapfile -t parts < <(lsblk -pn -o NAME,SIZE,FSTYPE,TYPE | awk '$4=="part"')
+		mapfile -t parts < <(lsblk -rpn -o NAME,SIZE,FSTYPE,TYPE | awk '$4=="part"')
 
 		selected=$(list "Select root partition" "${parts[@]}")
 
@@ -63,7 +63,7 @@ get_boot() {
 	while [ "$confirmed" != 1 ]; do
 
 		mapfile -t parts < <(
-			lsblk -pn -o NAME,SIZE,FSTYPE,PARTTYPENAME | awk '$0 ~ /vfat|EFI|boot/ {print $1 " (" $2 ")"}')
+			lsblk -rpn -o NAME,SIZE,FSTYPE,PARTTYPENAME | awk '$0 ~ /vfat|EFI|boot/ {print $1 " (" $2 ")"}')
 
 		selected=$(list "Select boot/efi partition" "${parts[@]}")
 
@@ -90,7 +90,7 @@ mount_system() {
 archer_chroot() {
 	echo -e "Entering system root"
 
-	arch-chroot -S /mnt /bin/bash "$script_path" chroot
+	arch-chroot /mnt /bin/bash "$script_path" chroot
 }
 
 chroot_menu=(
