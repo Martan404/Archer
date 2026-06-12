@@ -33,7 +33,7 @@ script_path="$(realpath "${BASH_SOURCE[0]}")"
 get_root() {
     confirmed=0
 	while [ "$confirmed" != 1 ]; do
-		mapfile -t parts < <(lsblk -rpn -o NAME,SIZE,FSTYPE,TYPE | awk '$4=="part"')
+		mapfile -t parts < <(lsblk -rpn -o NAME,SIZE,FSTYPE,TYPE | awk '$4=="part" && $3=="btrfs"')
 
 		selected=$(list "Select root partition" "${parts[@]}")
 
