@@ -620,7 +620,7 @@ arch_chroot() {
 
 	export hostname && export user && export root_password && export user_password && export install_type && export cachyos_repo && export kernel && export keyboard_keymap && export default_locale && export timezone && export country_iso && export root_partition && export disk_encryption && export encrypted_root_partition
 
-	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot
+	arch-chroot -S /mnt /bin/bash /Archer-main/archer-chroot
 	rm -rf /mnt/Archer-main
 	unset root_password user_password
 }

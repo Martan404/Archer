@@ -644,7 +644,7 @@ echo -e "Cleaning up script"
 
 systemctl disable --now archer-boot.service
 rm -f /etc/systemd/system/archer-boot.service
-rm -f \${BASH_SOURCE[0]}
+#rm -f \${BASH_SOURCE[0]}
 exit
 END
 
