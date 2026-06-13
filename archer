@@ -190,10 +190,7 @@ set_keymap() {
     while [ "$confirmed" != 1 ]; do
         search=$(input "Search keymap keyword (20 results)")
 
-        mapfile -t keymaps < <(
-            localectl list-keymaps | grep -i "$search" \
-            | head -n 20
-        )
+        mapfile -t keymaps < <(localectl list-keymaps | grep -i "$search" | head -n 20)
 
         # Try again if no results
         if [ "${#keymaps[@]}" -eq 0 ]; then
@@ -225,13 +222,7 @@ set_locale() {
     while [ "$confirmed" != 1 ]; do
         search=$(input "Search locale keyword (20 results)")
 
-        mapfile -t locales < <(
-            grep -E '^[#]?[a-zA-Z]' /etc/locale.gen \
-            | sed 's/^#//' \
-            | grep -i "${search:-.}"\
-            | head -n 20 \
-            | awk '{$1=$1}1'
-        )
+        mapfile -t locales < <(grep -E '^[#]?[a-zA-Z]' /etc/locale.gen | sed 's/^#//' | grep -i "${search:-.}" | head -n 20 | awk '{$1=$1}1')
 
         # Try again if no results
         if [ "${#locales[@]}" -eq 0 ]; then
@@ -294,29 +285,17 @@ set_timezone() {
         selected_idx=$(list "Method:" "${timezone_options[@]}")
 
         if [ "$selected_idx" == 0 ]; then
+            timezone=$(curl -fsSL https://geoip.chrisdown.name/ 2>/dev/null | sed -n 's/.*"time_zone":[[:space:]]*"\([^"]*\)".*/\1/p')
 
-            timezone=$(
-                curl -fsSL https://geoip.chrisdown.name/ 2>/dev/null | sed -n 's/.*"time_zone":"\([^"]*\)".*/\1/p'
-            )
-
-            [ -z "$timezone" ] && timezone=$(
-                curl -fsSL https://api.ipbase.com/v1/json/ 2>/dev/null | sed -n 's/.*"time_zone":"\([^"]*\)".*/\1/p'
-            )
-
-            [ -z "$timezone" ] && timezone=$(
-                curl -fsSL https://reallyfreegeoip.org/json/ 2>/dev/null | sed -n 's/.*"time_zone":"\([^"]*\)".*/\1/p'
-            )
-
+            [ -z "$timezone" ] && timezone=$(curl -fsSL https://api.ipbase.com/v1/json/ 2>/dev/null | sed -n 's/.*"time_zone":[[:space:]]*"\([^"]*\)".*/\1/p')
+            [ -z "$timezone" ] && timezone=$(curl -fsSL https://ifconfig.co/json 2>/dev/null | sed -n 's/.*"time_zone":[[:space:]]*"\([^"]*\)".*/\1/p')
+            [ -z "$timezone" ] && timezone=$(curl -fsSL https://reallyfreegeoip.org/json/ 2>/dev/null | sed -n 's/.*"time_zone":[[:space:]]*"\([^"]*\)".*/\1/p')
             [ -z "$timezone" ] && echo -e "Failed to get timezone automatically"
         else
             while true; do
                 search=$(input "Search timezone keyword (20 results)")
 
-                mapfile -t timezones < <(
-                    timedatectl list-timezones \
-                    | grep -i "$search" \
-                    | head -n 20
-                )
+                mapfile -t timezones < <(timedatectl list-timezones | grep -i "$search" | head -n 20)
 
                 # Try again if no results
                 if [ "${#timezones[@]}" -eq 0 ]; then
@@ -348,9 +327,7 @@ set_disk() {
 
     while [ "$confirmed" != 1 ]; do
 
-        mapfile -t disks < <(
-            lsblk -dpno NAME,SIZE,MODEL
-        )
+        mapfile -t disks < <(lsblk -dpno NAME,SIZE,MODEL)
 
         if [ "${#disks[@]}" -eq 0 ]; then
             input "No disks found. Press enter to retry"
