@@ -128,6 +128,7 @@ chroot_menu() {
 exit_menu(){
     echo
     echo 'Type "arch-chroot /mnt" to enter again'
+    echo 'or arch-chroot /mnt /bin/bash "/root/archer-rescue" chroot'
     exit
 }
 
