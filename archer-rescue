@@ -25,32 +25,37 @@ fi
 
 # Documentation: https://bash-tui-toolkit.timo-reymann.de/latest/docs/
 echo -e "Getting bash TUI toolkit"
-# shellcheck disable=SC1090
-source ./quiver/bash-tui-toolkit.bash || source <(curl -qsS https://bash-tui-toolkit.timo-reymann.de/latest/bundle.bash)
 
+if [[ -f ./quiver/bash-tui-toolkit.bash ]]; then
+    source ./quiver/bash-tui-toolkit.bash
+else
+    source <(curl -qsS https://bash-tui-toolkit.timo-reymann.de/latest/bundle.bash)
+fi
 script_path="$(realpath "${BASH_SOURCE[0]}")"
 
 get_root() {
     confirmed=0
 	while [ "$confirmed" != 1 ]; do
-		mapfile -t parts < <(lsblk -rpn -o NAME,SIZE,FSTYPE,TYPE | awk '$4=="part" && $3=="btrfs"')
+		mapfile -t parts < <(lsblk -rpn -o NAME,SIZE,FSTYPE,TYPE,LABEL | awk '$4=="part" && ($3=="btrfs" || $3=="crypto_LUKS")')
 
 		selected=$(list "Select root partition" "${parts[@]}")
 
 		root_partition=$(echo "${parts[$selected]}" | awk '{print $1}')
-
+		echo
 		confirmed=$(confirm "Is $root_partition correct?")
 	done
 }
 
 encryption() {
-    fs_type=$(blkid -o value -s TYPE "$root_partition")
+    fs_type=$(lsblk -no FSTYPE "$root_partition")
 	if [[ "$fs_type" == "crypto_LUKS" ]]; then
 	    echo "Detected LUKS root"
 
 		if [ ! -e /dev/mapper/root ]; then
 			echo "Opening LUKS container..."
-			cryptsetup open "$root_partition" root
+			while ! cryptsetup open "$root_partition" root; do
+            echo "Incorrect password, retrying..."
+            done
 		fi
 
 		encrypted_root_partition=$root_partition
@@ -68,7 +73,7 @@ get_boot() {
 		selected=$(list "Select boot/efi partition" "${parts[@]}")
 
 		efi_partition=$(echo "${parts[$selected]}" | awk '{print $1}')
-
+		echo
 		confirmed=$(confirm "Is $efi_partition correct?")
 	done
 }
