@@ -12,10 +12,14 @@ fi
 
 # Documentation: https://bash-tui-toolkit.timo-reymann.de/latest/docs/
 echo -e "Getting bash TUI toolkit"
+if [[ -f ./quiver/bash-tui-toolkit.bash ]]; then
+    source ./quiver/bash-tui-toolkit.bash
 
-curl -fsSL https://bash-tui-toolkit.timo-reymann.de/latest/bundle.bash -o /bash-tui-toolkit.sh
-# shellcheck disable=SC1091
-source /bash-tui-toolkit.sh
+else
+    curl -fsSL https://bash-tui-toolkit.timo-reymann.de/latest/bundle.bash -o /bash-tui-toolkit.sh
+    # shellcheck disable=SC1091
+    source /bash-tui-toolkit.sh
+fi
 
 show_logo() {
 	clear
