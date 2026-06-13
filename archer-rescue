@@ -58,7 +58,6 @@ encryption() {
             echo "Incorrect password, retrying..."
             done
 		fi
-
 		#encrypted_root_partition=$root_partition
 		root_partition="/dev/mapper/root"
 	fi

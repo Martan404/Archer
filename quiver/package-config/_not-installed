@@ -1,6 +1,8 @@
 #!/bin/bash
 # Archer config file
 # This is for configuring packages that did not get installed
+# Use the boot_config function in any 'Archer config file' to write code to the
+# archer-boot script which then will be ran first time booting in to the new system
 
 if ! pacman -Q steam >/dev/null 2>&1; then
     echo -e "Installing steam-devices package for Steam Flatpak"
@@ -8,15 +10,12 @@ if ! pacman -Q steam >/dev/null 2>&1; then
 fi
 
 boot_config() {
-    echo "Use boot_config function to write to the archer-boot script \
-    that will be ran first time booting the computer" >/dev/null 2>&1
+    echo -e "-------------------------------------------------------------------------"
+    echo -e "Setting keymap and locale system-wide"
 
-    #echo -e "-------------------------------------------------------------------------"
-    #echo -e "Setting keymap and locale system-wide"
+    keyboard_keymap=$(localectl status | grep 'VC Keymap' | awk '{print $3}')
+    localectl set-keymap "$keyboard_keymap"
 
-    #keyboard_keymap=$(localectl status | grep 'VC Keymap' | awk '{print $3}')
-    #localectl set-keymap "$keyboard_keymap"
-
-    #default_locale=$(locale | awk -F= '/^LANG=/{print $2}')
-    #localectl set-locale "$default_locale"
+    default_locale=$(locale | awk -F= '/^LANG=/{print $2}')
+    localectl set-locale "$default_locale"
 }

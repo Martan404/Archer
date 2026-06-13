@@ -251,6 +251,7 @@ exec /usr/bin/efibootmgr -e 3 "\$@"
 
 	cat /Archer-main/quiver/configs/45_netboot.xyz >/etc/grub.d/45_netboot.xyz
 	chown root:root /etc/grub.d/45_netboot.xyz
+	chmod +x /etc/grub.d/45_netboot.xyz
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Preparing /boot backup directory structure"
