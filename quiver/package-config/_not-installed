@@ -13,9 +13,8 @@ boot_config() {
     echo -e "-------------------------------------------------------------------------"
     echo -e "Setting keymap and locale system-wide"
 
-    keyboard_keymap=$(localectl status | grep 'VC Keymap' | awk '{print $3}')
+    # shellcheck disable=SC2154
     localectl set-keymap "$keyboard_keymap"
-
-    default_locale=$(locale | awk -F= '/^LANG=/{print $2}')
+    # shellcheck disable=SC2154
     localectl set-locale "$default_locale"
 }
