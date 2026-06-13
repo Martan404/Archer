@@ -13,6 +13,7 @@ kernel=${kernel}
 keyboard_keymap=${keyboard_keymap}
 default_locale=${default_locale}
 timezone=${timezone}
+country_iso=${country_iso}
 root_partition=${root_partition}
 disk_encryption=${disk_encryption}
 encrypted_root_partition=${encrypted_root_partition}
@@ -66,11 +67,15 @@ setup_pacman() {
 	echo "[chaotic-aur]" >> /etc/pacman.conf
 	echo "Include = /etc/pacman.d/chaotic-mirrorlist" >> /etc/pacman.conf
 
-
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Updating pacman databases"
 
 	pacman -Syu --noconfirm
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Updating pacman mirrors"
+    reflector --age 48 --country "$country_iso" --fastest 5 --latest 20 --sort rate --save /etc/pacman.d/mirrorlist
+
 }
 
 setup_system() {
