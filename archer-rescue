@@ -83,7 +83,8 @@ mount_system() {
 	mount -o subvol=@root "$root_partition" /mnt/root
 	mount -o subvol=@home "$root_partition" /mnt/home
 	mount -o subvol=@log "$root_partition" /mnt/var/log
-	mount -o subvol=@pkg "$root_partition" /mnt/var/cache/pacman/pkg
+	mount -o subvol=@flatpak "$root_partition" /mnt/var/lib/flatpak
+	mount -o subvol=@libvirt "$root_partition" /mnt/var/libvirt
 	mount -o subvol=@tmp "$root_partition" /mnt/var/tmp
 	mount -o subvol=@cache "$root_partition" /mnt/var/cache
 	mount -o subvol=@spool "$root_partition" /mnt/var/spool

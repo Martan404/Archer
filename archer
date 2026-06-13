@@ -527,7 +527,8 @@ setup_drive() {
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@root "$root_partition" /mnt/root
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@home "$root_partition" /mnt/home
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@log "$root_partition" /mnt/var/log
-	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@pkg "$root_partition" /mnt/var/cache/pacman/pkg
+	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@flatpak "$root_partition" /mnt/var/lib/flatpak
+	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@libvirt "$root_partition" /mnt/var/lib/libvirt
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@tmp "$root_partition" /mnt/var/tmp
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@cache "$root_partition" /mnt/var/cache
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@spool "$root_partition" /mnt/var/spool
