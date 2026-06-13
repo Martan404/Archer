@@ -4,9 +4,9 @@ Archer is an Arch install script. It follows the steps outlined in the ArchWiki 
 
 ## SSH install
 
-From initial prompt run `ip a` to get the ip address then `passwd` to set a password
+From initial prompt run `ip a` to get the ip address then do `passwd` to set a password
 
-Enter new system with `ssh root@ip_address` then run:
+On another device enter the new system with `ssh root@ip_address` then run:
 ```
 bash <(curl -L https://raw.githubusercontent.com/Martan404/Archer/main/archer)
 ```
@@ -14,10 +14,10 @@ bash <(curl -L https://raw.githubusercontent.com/Martan404/Archer/main/archer)
 
 ## Regular install
 
-From initial prompt run these commands and replace *sv-latin1* with whatever keymap you want
+From initial prompt run these commands
 ```
 localectl list-keymaps
-localectl set-keymap sv-latin1
+localectl set-keymap chosen_keymap
 bash <(curl -L https://raw.githubusercontent.com/Martan404/Archer/main/archer)
 ```
 
