@@ -91,7 +91,11 @@ setup_system() {
 
 sleep 5
 
-TIMEZONE=\$(curl -fsSL https://reallyfreegeoip.org/json/ 2>/dev/null | sed -n 's/.*"time_zone":"\([^"]*\)".*/\1/p')
+TIMEZONE=\$(curl -fsSL https://reallyfreegeoip.org/json/ 2>/dev/null | sed -n 's/.*"time_zone":[[:space:]]*"\([^"]*\)".*/\1/p')
+
+if [ -z "\$TIMEZONE" ]; then
+    TIMEZONE=\$(curl -fsSL https://ifconfig.co/json 2>/dev/null | sed -n 's/.*"time_zone":[[:space:]]*"\([^"]*\)".*/\1/p')
+fi
 
 if [ -n "\$TIMEZONE" ]; then
     timedatectl set-timezone "\$TIMEZONE"
