@@ -125,6 +125,42 @@ set_variables() {
 		install_type="lite"
 		;;
 	esac
+
+    confirmed=0
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Enable CachyOS repo?"
+
+	while [ "$confirmed" != 1 ]; do
+        cachyos_repo=$(confirm "Choice:")
+        confirmed=$(confirm "Is this correct?")
+    done
+    [[ $cachyos_repo == 1 ]] && cachyos_repo="yes"
+}
+
+set_kernel() {
+    confirmed=0
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Select which kernel to use"
+
+     kernel_options=(
+         "Linux Zen (linux-zen)"
+         "Linux (linux)"
+         "Linux LTS (linux-lts)"
+         "Linux Hardened (linux-hardened)"
+     )
+
+     while [ "$confirmed" != 1 ]; do
+
+         selected_idx=$(list "Kernel:" "${kernel_options[@]}")
+
+         case $selected_idx in
+             0) kernel="linux-zen" ;;
+             1) kernel="linux" ;;
+             2) kernel="linux-lts" ;;
+             3) kernel="linux-hardened" ;;
+         esac
+         confirmed=$(confirm "Use $kernel kernel?")
+     done
 }
 
 check_keymap() {
@@ -349,32 +385,6 @@ set_efi() {
     done
 }
 
-set_kernel() {
-    confirmed=0
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Select which kernel to use"
-
-     kernel_options=(
-         "Linux Zen (linux-zen)"
-         "Linux (linux)"
-         "Linux LTS (linux-lts)"
-         "Linux Hardened (linux-hardened)"
-     )
-
-     while [ "$confirmed" != 1 ]; do
-
-         selected_idx=$(list "Kernel:" "${kernel_options[@]}")
-
-         case $selected_idx in
-             0) kernel="linux-zen" ;;
-             1) kernel="linux" ;;
-             2) kernel="linux-lts" ;;
-             3) kernel="linux-hardened" ;;
-         esac
-         confirmed=$(confirm "Use $kernel kernel?")
-     done
-}
-
 set_swap() {
 	echo -e "-------------------------------------------------------------------------"
 	confirmed=0
@@ -404,9 +414,11 @@ review_installation() {
     echo "Hostname:        $hostname"
     echo "User:            $user"
     echo "Install type:    $install_type"
+    echo "CachyOS repo:    $cachyos_repo"
     echo "Kernel:          $kernel"
     echo "Keymap:          $keyboard_keymap"
     echo "Default locale:  $default_locale"
+    echo "Timezone:        $timezone"
     echo "Disk:            $disk"
     echo "EFI size:        $efi_size"
     echo "Swap size:       ${swapsize}GiB"
@@ -615,7 +627,7 @@ arch_chroot() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Changing root to new system"
 
-	export hostname && export user && export root_password && export user_password && export install_type && export kernel && export keyboard_keymap && export default_locale && export timezone && export root_partition && export disk_encryption && export encrypted_root_partition
+	export hostname && export user && export root_password && export user_password && export install_type && export cachyos_repo && export kernel && export keyboard_keymap && export default_locale && export timezone && export root_partition && export disk_encryption && export encrypted_root_partition
 
 	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot
 	rm -rf /mnt/Archer-main
@@ -647,13 +659,14 @@ exit_install() {
 config_installation() {
     show_logo
     set_variables
+    set_kernel
+
     check_keymap
     set_locale
     set_timezone
 
     set_disk
     set_efi
-    set_kernel
     set_swap
 }
 

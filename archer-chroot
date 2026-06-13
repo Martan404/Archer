@@ -8,6 +8,7 @@ user=${user}
 root_password=${root_password}
 user_password=${user_password}
 install_type=${install_type}
+cachyos_repo=${cachyos_repo}
 kernel=${kernel}
 keyboard_keymap=${keyboard_keymap}
 default_locale=${default_locale}
@@ -43,6 +44,18 @@ setup_pacman() {
 	sed -i '/^ParallelDownloads = .*/a ILoveCandy' /etc/pacman.conf
 	sed -i '/^#Color/s/^#//' /etc/pacman.conf
 
+    if [[ $cachyos_repo == "yes" ]]; then
+        echo -e "-------------------------------------------------------------------------"
+        echo -e "Enabling CachyOS repo"
+
+        curl https://mirror.cachyos.org/cachyos-repo.tar.xz -o cachyos-repo.tar.xz
+        tar xvf cachyos-repo.tar.xz && rm -rf cachyos-repo.tar.xz && cd cachyos-repo
+        sed -i 's/pacman /pacman --noconfirm /g' ./cachyos-repo.sh
+        chmod +x ./cachyos-repo.sh
+        ./cachyos-repo.sh
+        cd .. && rm -rf ./cachyos-repo
+    fi
+
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling Chaotic-AUR repo"
 
@@ -61,11 +74,6 @@ setup_pacman() {
 }
 
 setup_system() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting timezone to $timezone"
-
-	timedatectl set-timezone "$timezone"
-
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating NetworkManager script to get timezone automatically"
 
@@ -98,6 +106,11 @@ chmod +x /etc/NetworkManager/dispatcher.d/09-timezone
 
 	systemctl enable systemd-timesyncd.service
 	timedatectl set-ntp true
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting timezone to $timezone"
+
+	timedatectl set-timezone "$timezone"
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting $default_locale as locale and $keyboard_keymap as keymap"
