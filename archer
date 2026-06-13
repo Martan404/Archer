@@ -298,9 +298,7 @@ set_timezone() {
                 mapfile -t timezones < <(timedatectl list-timezones | grep -i "$search" | head -n 20)
 
                 # Try again if no results
-                if [ "${#timezones[@]}" -eq 0 ]; then
-                    continue
-                fi
+                [ "${#timezones[@]}" -eq 0 ] && continue
 
                 # Add Search again option
                 timezones=("Search again" "${timezones[@]}")
