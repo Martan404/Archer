@@ -413,6 +413,7 @@ review_installation() {
 
     echo "Hostname:        $hostname"
     echo "User:            $user"
+    echo "Encryption:      $disk_encryption"
     echo "Install type:    $install_type"
     echo "CachyOS repo:    $cachyos_repo"
     echo "Kernel:          $kernel"
@@ -422,7 +423,6 @@ review_installation() {
     echo "Disk:            $disk"
     echo "EFI size:        $efi_size"
     echo "Swap size:       ${swapsize}GiB"
-    echo "Encryption:      $disk_encryption"
 
     echo -e "-------------------------------------------------------------------------"
 
@@ -534,6 +534,9 @@ setup_drive() {
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Mounting btrfs subvolumes and EFI partition"
+
+    mkdir -p /mnt/var/lib/flatpak
+    mkdir -p /mnt/var/lib/libvirt
 
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@ "$root_partition" /mnt
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@root "$root_partition" /mnt/root
