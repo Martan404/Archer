@@ -20,6 +20,8 @@ bash-language-server
 blesh-git
 btop
 dialog
+duperemove
+duperemove-service
 fastfetch
 man-db
 man-pages

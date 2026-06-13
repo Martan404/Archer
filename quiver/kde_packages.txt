@@ -91,6 +91,8 @@ btrfs-assistant
 btrfsmaintenance
 udisks2-btrfs
 dialog
+duperemove
+duperemove-service
 fail2ban
 fastfetch
 filelight

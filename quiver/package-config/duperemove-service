@@ -1,0 +1,7 @@
+#!/bin/bash
+# Archer config file
+
+cp /Archer-main/quiver/configs/duperemove-service.conf /etc/duperemove-service/root.conf
+
+echo -e "Enabling duperemove-service timer"
+systemctl enable duperemove@root.timer
