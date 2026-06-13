@@ -29,6 +29,7 @@ echo -e "Getting bash TUI toolkit"
 if [[ -f ./quiver/bash-tui-toolkit.bash ]]; then
     source ./quiver/bash-tui-toolkit.bash
 else
+    # shellcheck disable=SC1090
     source <(curl -qsS https://bash-tui-toolkit.timo-reymann.de/latest/bundle.bash)
 fi
 script_path="$(realpath "${BASH_SOURCE[0]}")"
@@ -36,7 +37,7 @@ script_path="$(realpath "${BASH_SOURCE[0]}")"
 get_root() {
     confirmed=0
 	while [ "$confirmed" != 1 ]; do
-		mapfile -t parts < <(lsblk -rpn -o NAME,SIZE,FSTYPE,TYPE,LABEL | awk '$4=="part" && ($3=="btrfs" || $3=="crypto_LUKS")')
+		mapfile -t parts < <(lsblk -rpn -o NAME,SIZE,FSTYPE,TYPE,LABEL | awk '$4=="part" && ($3=="btrfs" || $3=="crypto_LUKS") {print $1 " (" $2 ") " $3 " " $5 }')
 
 		selected=$(list "Select root partition" "${parts[@]}")
 
@@ -58,7 +59,7 @@ encryption() {
             done
 		fi
 
-		encrypted_root_partition=$root_partition
+		#encrypted_root_partition=$root_partition
 		root_partition="/dev/mapper/root"
 	fi
 }
@@ -67,8 +68,7 @@ get_boot() {
     confirmed=0
 	while [ "$confirmed" != 1 ]; do
 
-		mapfile -t parts < <(
-			lsblk -rpn -o NAME,SIZE,FSTYPE,PARTTYPENAME | awk '$0 ~ /vfat|EFI|boot/ {print $1 " (" $2 ")"}')
+		mapfile -t parts < <(lsblk -rpn -o NAME,SIZE,FSTYPE,LABEL,PARTTYPENAME | awk '$0 ~ /vfat|EFI|boot/ {print $1 " (" $2 ") " $4}')
 
 		selected=$(list "Select boot/efi partition" "${parts[@]}")
 
