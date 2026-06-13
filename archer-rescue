@@ -126,8 +126,9 @@ chroot_menu() {
 }
 
 exit_menu(){
+    echo
     echo 'Type "arch-chroot /mnt" to enter again'
-    return
+    exit
 }
 
 reinstall_grub() {
