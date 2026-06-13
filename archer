@@ -519,7 +519,8 @@ setup_drive() {
 	btrfs subvolume create /mnt/@root # Root home
 	btrfs subvolume create /mnt/@home # Home
 	btrfs subvolume create /mnt/@log # Log files
-	btrfs subvolume create /mnt/@pkg # Package cache
+	btrfs subvolume create /mnt/@flatpak # Flatpak files
+	btrfs subvolume create /mnt/@libvirt # Libvirt files
 	btrfs subvolume create /mnt/@tmp # Temp files
 	btrfs subvolume create /mnt/@cache # Cache files
 	btrfs subvolume create /mnt/@spool # Spool data
@@ -534,9 +535,6 @@ setup_drive() {
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Mounting btrfs subvolumes and EFI partition"
-
-    mkdir -p /mnt/var/lib/flatpak
-    mkdir -p /mnt/var/lib/libvirt
 
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@ "$root_partition" /mnt
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@root "$root_partition" /mnt/root
