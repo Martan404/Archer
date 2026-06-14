@@ -3,8 +3,9 @@
 #
 
 archer-help() {
-    {
+    {   # Get functions
         grep '^[[:alnum:]-]*()' /etc/bash.bash_aliases | awk -F'[(]' '{print $1}'
+        # Get aliases
         grep "^alias" /etc/bash.bash_aliases | awk -F= '{sub("^alias[ \t]*", ""); print $1}'
     } | sort
 }

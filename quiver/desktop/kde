@@ -2,6 +2,9 @@
 # shellcheck disable=SC2154
 
 echo -e "-------------------------------------------------------------------------"
+echo -e "Configuring KDE Plasma"
+
+echo -e "-------------------------------------------------------------------------"
 echo -e "Installing archer-backup and restoring home"
 
 mv /Archer-main/quiver/scripts/archer-backup /usr/local/bin/archer-backup
