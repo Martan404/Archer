@@ -79,15 +79,15 @@ setup_pacman() {
 	echo -e "-------------------------------------------------------------------------"
 
 	if [[ $cachyos_repo == "yes" ]]; then
-	    echo -e "Rating pacman and cachyos mirrors"
+	    echo -e "Ranking pacman and cachyos mirrors"
 	    cachyos-rate-mirrors >/dev/null
 	else
-		echo -e "Rating pacman mirrors"
+		echo -e "Ranking pacman mirrors"
 		rate-mirrors --allow-root --entry-country="$country_iso" --save=/etc/pacman.d/mirrorlist arch >/dev/null
 	fi
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Rating Chaotic-AUR mirrors"
+	echo -e "Ranking Chaotic-AUR mirrors"
 
 	rate-mirrors --allow-root --entry-country="$country_iso" --save=/etc/pacman.d/chaotic-mirrorlist chaotic-aur >/dev/null
 }
