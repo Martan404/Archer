@@ -117,7 +117,7 @@ create_config() {
     cat > "$config_file" <<EOL
 # $script_name configuration file
 # Any array named _INCLUDE will be checked
-# See examples at bottom for Firefox and Code OSS
+# See examples at bottom
 # Paths can be both files and directories
 
 NAME="$config_name"
@@ -184,6 +184,9 @@ CONFIG_INCLUDE=(
 
 # Firefox customization
 #FIREFOX_INCLUDE=("\$HOME/.mozilla/firefox/*.default-release/chrome")
+
+# Flatpak settings
+#FLATPAK_INCLUDE=("\$HOME/.var/app")
 EOL
 
     echo -e "[${green} Done ${clear}] Configuration file created at $(realpath "$config_file")"
