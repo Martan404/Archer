@@ -410,7 +410,7 @@ bash_config() {
 	chown "$user":"$user" /home/"$user"/.bash_aliases
 }
 
-yabsnap_setup() {
+snapshot_setup() {
 	source /Archer-main/quiver/snapshots/yabsnap
 }
 
@@ -578,6 +578,7 @@ package_installer() {
 setup_pacman
 setup_system
 setup_paru_pipx
+
 setup_bootloader
 setup_cpu
 setup_gpu
@@ -585,7 +586,7 @@ setup_laptop
 setup_hibernation
 
 install_packages
-yabsnap_setup
+snapshot_setup
 snapshot_rollback
 setup_environment
 bash_config
