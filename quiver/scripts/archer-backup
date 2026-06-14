@@ -68,25 +68,17 @@ backup() {
         local include_var_name=$1
         local include_array=("${!include_var_name}")
 
-        shopt -s nullglob
-
         for item in "${include_array[@]}"; do
-            #if [[ $item == *\** ]]; then
                 for expanded_path in $item; do
                     add_to_archive "$expanded_path"
                 done
-                #else
-                #add_to_archive "$item"
-            #fi
         done
-
-        shopt -u nullglob
     }
 
     # Detect and process all _INCLUDE arrays
     for include_var in $(compgen -A variable | grep '_INCLUDE$'); do
         echo -e "[${cyan} Check ${clear}] $include_var..."
-        process_include_array "$include_var"
+        process_include_array "${include_var}[@]"
     done
 
     # Include the configuration file in the backup archive
@@ -96,7 +88,7 @@ backup() {
     tar --append --file="$NAME.tar.gz" --directory="$script_dir" --transform="s|^$script_dir/||" "$script_name"
 
     if [[ $exists == true ]]; then
-        echo -e "[${green} Done ${clear}] Added new file to $(realpath "./$NAME.tar.gz")"
+        echo -e "[${green} Done ${clear}] Added new files to $(realpath "./$NAME.tar.gz")"
     else
         echo -e "[${green} Done ${clear}] Archive created at $(realpath "./$NAME.tar.gz")"
     fi
