@@ -461,7 +461,7 @@ setup_drive() {
 	if [[ $disk_encryption == "yes" ]]; then
 
         echo -e "-------------------------------------------------------------------------"
-        echo -e "Setting LUKS password"
+        echo -e "Setting LUKS password and opening root"
         printf '%s' "$luks_password" | cryptsetup -v -q luksFormat "$root_partition"
         printf '%s' "$luks_password" | cryptsetup open "$root_partition" root
 
