@@ -5,8 +5,8 @@ echo -e "Configuring fastfetch"
 
 mkdir -p /home/"$user"/.config/fastfetch/
 
-cat /Archer-main/quiver/configs/fastfetch-config.jsonc >/home/"$user"/.config/fastfetch/config.jsonc
-cat /Archer-main/quiver/configs/fastfetch-config-small.jsonc >/home/"$user"/.config/fastfetch/config-small.jsonc
+cat /Archer-main/quiver/config-files/fastfetch-config.jsonc >/home/"$user"/.config/fastfetch/config.jsonc
+cat /Archer-main/quiver/config-files/fastfetch-config-small.jsonc >/home/"$user"/.config/fastfetch/config-small.jsonc
 
 chown "$user":"$user" /home/"$user"/.config/fastfetch/
 chmod 775 /home/"$user"/.config/fastfetch/

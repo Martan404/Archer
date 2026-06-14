@@ -57,7 +57,7 @@ echo -e "Setting up netboot.xyz"
 curl -L https://boot.netboot.xyz/ipxe/netboot.xyz-legacy.efi -o /boot/EFI/netboot.xyz-legacy.efi
 curl -L https://boot.netboot.xyz/ipxe/netboot.xyz.efi -o /boot/EFI/netboot.xyz.efi
 
-cat /Archer-main/quiver/configs/45_netboot.xyz >/etc/grub.d/45_netboot.xyz
+cat /Archer-main/quiver/config-files/45_netboot.xyz >/etc/grub.d/45_netboot.xyz
 chown root:root /etc/grub.d/45_netboot.xyz
 chmod +x /etc/grub.d/45_netboot.xyz
 

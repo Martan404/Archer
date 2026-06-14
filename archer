@@ -6,8 +6,8 @@
 
 # Documentation: https://bash-tui-toolkit.timo-reymann.de/latest/docs/
 echo -e "Getting bash TUI toolkit"
-if [[ -f ./quiver/configs/bash-tui-toolkit.bash ]]; then
-    cp ./quiver/configs/bash-tui-toolkit.bash /bash-tui-toolkit.bash
+if [[ -f ./quiver/config-files/bash-tui-toolkit.bash ]]; then
+    cp ./quiver/config-files/bash-tui-toolkit.bash /bash-tui-toolkit.bash
     # shellcheck disable=SC1091
     source /bash-tui-toolkit.bash
 else

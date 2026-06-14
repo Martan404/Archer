@@ -2,4 +2,4 @@
 # Archer config file
 
 echo -e "Configuring fail2ban jail"		
-cat /Archer-main/quiver/configs/fail2ban-jail.local > /etc/fail2ban/jail.local
+cat /Archer-main/quiver/config-files/fail2ban-jail.local > /etc/fail2ban/jail.local
