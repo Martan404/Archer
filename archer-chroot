@@ -411,7 +411,7 @@ bash_config() {
 }
 
 snapshot_setup() {
-	source /Archer-main/quiver/snapshots/yabsnap
+	source /Archer-main/quiver/snapshot/yabsnap
 }
 
 snapshot_rollback() {

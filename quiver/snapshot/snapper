@@ -1,0 +1,78 @@
+#!/bin/bash
+#
+# Archive - Unused
+#
+if [[ $snapshot_layout == "snapper" ]]; then
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing Snapper packages"
+
+	package_installer "snapper snap-pac snapper-support"
+	[[ $bootloader == "grub" ]] && package_installer "snap-pac-grub"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating Snapper root config"
+
+	snapper --no-dbus -c root create-config /
+
+elif [[ $snapshot_layout == "arch" ]]; then
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing Snapper packages"
+
+	package_installer "snapper snap-pac"
+	[[ $bootloader == "grub" ]] && package_installer "snap-pac-grub"
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Removing /.snapshots"
+
+	umount /.snapshots
+	rm -r /.snapshots
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Creating Snapper root config"
+
+	snapper --no-dbus -c root create-config /
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Removing snapper /.snapshots subvolume"
+
+	btrfs subvolume delete /.snapshots
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Remounting $snapshot_subvol subvolume"
+
+	mount --mkdir -o subvol="$snapshot_subvol" "$root_partition" /.snapshots
+	mount -a
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting new ./snapshots permissions"
+
+	chmod 750 /.snapshots
+	chown -R :wheel /.snapshots/
+fi
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Configuring timeline cleanup"
+
+sed -i 's/^NUMBER_LIMIT="50"/NUMBER_LIMIT="10"/' /etc/snapper/configs/root
+sed -i 's/^TIMELINE_LIMIT_HOURLY="10"/TIMELINE_LIMIT_HOURLY="0"/' /etc/snapper/configs/root
+sed -i 's/^TIMELINE_LIMIT_DAILY="10"/TIMELINE_LIMIT_DAILY="0"/' /etc/snapper/configs/root
+sed -i 's/^TIMELINE_LIMIT_WEEKLY="10"/TIMELINE_LIMIT_WEEKLY="0"/' /etc/snapper/configs/root
+sed -i 's/^TIMELINE_LIMIT_MONTHLY="10"/TIMELINE_LIMIT_MONTHLY="0"/' /etc/snapper/configs/root
+sed -i 's/^TIMELINE_LIMIT_YEARLY="10"/TIMELINE_LIMIT_YEARLY="0"/' /etc/snapper/configs/root
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Adding wheel group to snapper permissions"
+
+sed -i 's/^ALLOW_GROUPS=""/ALLOW_GROUPS="wheel"/' /etc/snapper/configs/root
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Excluding /.snapshots from updatedb"
+
+echo "PRUNENAMES = \".snapshots\"" >>/etc/updatedb.conf
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Enabling Snapper Boot, Timeline and Cleanup timers"
+
+systemctl enable snapper-boot.timer
+systemctl enable snapper-timeline.timer
+systemctl enable snapper-cleanup.timer
