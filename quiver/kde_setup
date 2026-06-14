@@ -11,6 +11,7 @@ Name=Set Breeze GTK theme
 Exec=sh -c 'sleep 2; qdbus org.kde.GtkConfig /GtkConfig org.kde.GtkConfig.setGtkTheme Breeze; rm -f ~/.config/autostart/breeze-gtk.desktop'
 NoDisplay=true
 END
+chown "$user":"$user" /home/"$user"/.config/autostart/breeze-gtk.desktop
 
 echo -e "-------------------------------------------------------------------------"
 echo -e "Installing archer-backup and restoring home"

@@ -8,13 +8,13 @@ mkdir -p /home/"$user"/.config/autostart/
 chown "$user":"$user" /home/"$user"/.config/autostart/
 chmod 755 /home/"$user"/.config/autostart/
 
-cat <<EOF >>/home/"$user"/.config/autostart/flatpak-setup.desktop
+cat <<END >>/home/"$user"/.config/autostart/flatpak-setup.desktop
 [Desktop Entry]
 Exec=konsole -e /usr/bin/flatpak-setup
 Icon=/usr/share/pixmaps/archlinux-logo.png
 StartupNotify=true
 Type=Application
-EOF
+END
 chown "$user":"$user" /home/"$user"/.config/autostart/flatpak-setup.desktop
 
 echo -e "Setting up Flatpak install script"
