@@ -429,11 +429,12 @@ format_drive() {
 
 	umount /dev/mapper/root || true
 	umount /dev/mapper/cryptroot || true
+	sleep 0.2
 	cryptsetup luksClose root 2>/dev/null || true
+	cryptsetup luksClose cryptroot 2>/dev/null || true
 
 	sgdisk --zap-all "$disk"
 	wipefs -a "$disk"
-
 	parted -s "$disk" mklabel gpt
 
 	echo -e "-------------------------------------------------------------------------"
