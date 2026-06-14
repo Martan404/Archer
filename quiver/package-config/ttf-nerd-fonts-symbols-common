@@ -1,0 +1,8 @@
+#!/bin/bash
+# Archer config file
+
+echo -e "Linking nerd-font-symbols.conf to /etc/fonts/conf.d/"
+ln -s /usr/share/fontconfig/conf.avail/10-nerd-font-symbols.conf /etc/fonts/conf.d/
+
+echo -e "Rebuilding font cache"
+fc-cache -fv
