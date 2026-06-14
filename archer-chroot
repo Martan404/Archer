@@ -106,6 +106,12 @@ TIMEZONE=\$(curl -fsSL https://reallyfreegeoip.org/json/ 2>/dev/null | sed -n 's
 
 if [ -z "\$TIMEZONE" ]; then
     TIMEZONE=\$(curl -fsSL https://ifconfig.co/json 2>/dev/null | sed -n 's/.*"time_zone":[[:space:]]*"\([^"]*\)".*/\1/p')
+
+elif [ -z "\$TIMEZONE" ]; then
+    TIMEZONE=\$(curl -fsSL https://geoip.chrisdown.name/ 2>/dev/null | sed -n 's/.*"time_zone":[[:space:]]*"\([^"]*\)".*/\1/p')
+
+elif [ -z "\$TIMEZONE" ]; then
+        TIMEZONE=\$(curl -fsSL https://api.ipbase.com/v1/json/ 2>/dev/null | sed -n 's/.*"time_zone":[[:space:]]*"\([^"]*\)".*/\1/p')
 fi
 
 if [ -n "\$TIMEZONE" ]; then
