@@ -430,7 +430,7 @@ package_config() {
 	echo -e "Configuring installed packages"
 
 	installed_packages=$(pacman -Q)
-	[ "$install_type" != "lite" ] && installed_packages+=$'\n_not-installed 0'
+	installed_packages+=$'\n_not-installed 0'
 
 	while IFS= read -r line; do
 

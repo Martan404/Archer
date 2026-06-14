@@ -4,8 +4,9 @@
 # Use the boot_config function in any 'Archer config file' to write code to the
 # archer-boot script which then will be ran first time booting in to the new system
 
-if ! pacman -Q steam >/dev/null 2>&1; then
-    echo -e "Installing steam-devices package for Steam Flatpak"
+# shellcheck disable=SC2154
+if [ "$install_type" != "lite" ] && ! pacman -Q steam >/dev/null 2>&1; then
+    echo "Installing steam-devices package for Steam Flatpak"
     package_installer "steam-devices"
 fi
 
