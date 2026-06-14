@@ -55,7 +55,6 @@ setup_pacman() {
         chmod +x ./cachyos-repo.sh
         ./cachyos-repo.sh
         cd .. && rm -rf ./cachyos-repo
-
         package_installer "cachyos-rate-mirrors" pacman
     fi
 
@@ -70,19 +69,24 @@ setup_pacman() {
 	echo "Include = /etc/pacman.d/chaotic-mirrorlist" >> /etc/pacman.conf
 
     echo -e "-------------------------------------------------------------------------"
-	echo -e "Updating pacman databases and system"
+	echo -e "Updating pacman databases and system packages"
 
 	pacman -Syyuu --noconfirm
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Updating pacman mirrors"
 
 	if [[ $cachyos_repo == "yes" ]]; then
-	    cachyos-rate-mirrors
-
+	    echo -e "Rating pacman and cachyos mirrors"
+	    cachyos-rate-mirrors >/dev/null
 	else
-		reflector --age 48 --country "$country_iso" --fastest 5 --latest 20 --sort rate --save /etc/pacman.d/mirrorlist
+		echo -e "Rating pacman mirrors"
+		rate-mirrors --allow-root --entry-country="$country_iso" --save=/etc/pacman.d/mirrorlist arch >/dev/null
 	fi
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Rating Chaotic-AUR mirrors"
+
+	rate-mirrors --allow-root --entry-country="$country_iso" --save=/etc/pacman.d/chaotic-mirrorlist chaotic-aur >/dev/null
 }
 
 setup_system() {
