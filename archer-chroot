@@ -177,7 +177,7 @@ chmod +x /etc/NetworkManager/dispatcher.d/09-timezone
 	unset root_password user_password
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Adding ~/.local/bin PATH to /etc/profile.d/custom-path.sh"
+	echo -e "Adding ~/.local/bin to PATH in /etc/profile.d/custom-path.sh"
 
 	echo "export PATH=\$PATH:\$HOME/.local/bin" >>/etc/profile.d/custom-path.sh
 }
