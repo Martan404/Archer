@@ -3,8 +3,11 @@
 gpu_kernel_parameters=""
 
 # Untested
+# Optional dependencies for libva
+# intel-media-driver: backend for Intel GPUs (>= Broadwell)
+# libva-intel-driver: backend for Intel GPUs (<= Haswell)
 
 echo -e "-------------------------------------------------------------------------"
 echo -e "Installing packages"
 
-package_installer "mesa vulkan-intel intel-media-driver"
+package_installer "mesa vulkan-intel"
