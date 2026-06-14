@@ -2,6 +2,14 @@
 # shellcheck disable=SC2154
 
 echo -e "-------------------------------------------------------------------------"
+echo -e "Installing archer-backup and restoring home"
+
+mv /Archer-main/quiver/scripts/archer-backup /usr/local/bin/archer-backup
+chmod a+x /usr/local/bin/archer-backup
+
+sudo -u "$user" /usr/local/bin/archer-backup --restore /Archer-main/quiver/configs/Archer.tar.gz
+
+echo -e "-------------------------------------------------------------------------"
 echo -e "Setting up Breeze GTK theme"
 
 mkdir -p /home/"$user"/.config/autostart/
@@ -16,11 +24,3 @@ Exec=sh -c 'sleep 2; qdbus6 org.kde.GtkConfig /GtkConfig org.kde.GtkConfig.setGt
 NoDisplay=true
 END
 chown "$user":"$user" /home/"$user"/.config/autostart/breeze-gtk.desktop
-
-echo -e "-------------------------------------------------------------------------"
-echo -e "Installing archer-backup and restoring home"
-
-mv /Archer-main/quiver/scripts/archer-backup /usr/local/bin/archer-backup
-chmod a+x /usr/local/bin/archer-backup
-
-sudo -u "$user" /usr/local/bin/archer-backup --restore /Archer-main/quiver/configs/Archer.tar.gz
