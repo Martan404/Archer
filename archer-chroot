@@ -244,12 +244,12 @@ setup_cpu() {
 	if [[ $lscpu_output == *"AuthenticAMD"* ]]; then
 		echo -e "Found AMD"
 		export cpu="amd"
-		source /Archer-main/quiver/cpu/amd
+		source /Archer-main/quiver/hw-cpu/amd
 
 	elif [[ $lscpu_output == *"GenuineIntel"* ]]; then
 		echo -e "Found Intel"
 		export cpu="intel"
-		source /Archer-main/quiver/cpu/intel
+		source /Archer-main/quiver/hw-cpu/intel
 	fi
 
 	echo -e "-------------------------------------------------------------------------"
@@ -269,22 +269,22 @@ setup_gpu() {
 	if [[ $lspci_output == *"Radeon"* ]] || [[ $lspci_output == *"AMD"* ]]; then
 		echo -e "Found AMD"
 		export gpu="amd"
-		source /Archer-main/quiver/gpu/amd
+		source /Archer-main/quiver/hw-gpu/amd
 
 	elif [[ $lspci_output == *"Integrated Graphics Controller"* ]] || [[ $lspci_output == *"Intel Corporation HD"* ]] || [[ $lspci_output == *"Intel Corporation UHD"* ]]; then
 		echo -e "Found Intel"
 		export gpu="intel"
-		source /Archer-main/quiver/gpu/intel
+		source /Archer-main/quiver/hw-gpu/intel
 
 	elif [[ $lspci_output == *"NVIDIA"* ]] || [[ $lspci_output == *"GeForce"* ]]; then
 		echo -e "Found NVIDIA"
 		export gpu="nvidia"
-		source /Archer-main/quiver/gpu/nvidia
+		source /Archer-main/quiver/hw-gpu/nvidia
 
 	elif [[ ${lspci_output} =~ (Virtio|QEMU) ]] || [[ ${lspci_output_full} =~ (Virtio|QEMU) ]]; then
 		echo "Found QEMU"
 		export gpu="qemu"
-		source /Archer-main/quiver/gpu/qemu
+		source /Archer-main/quiver/hw-gpu/qemu
 	fi
 
 	echo -e "-------------------------------------------------------------------------"
