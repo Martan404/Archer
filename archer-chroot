@@ -55,6 +55,8 @@ setup_pacman() {
         chmod +x ./cachyos-repo.sh
         ./cachyos-repo.sh
         cd .. && rm -rf ./cachyos-repo
+
+        package_installer "cachyos-rate-mirrors" pacman
     fi
 
 	echo -e "-------------------------------------------------------------------------"
@@ -74,7 +76,13 @@ setup_pacman() {
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Updating pacman mirrors"
-    reflector --age 48 --country "$country_iso" --fastest 5 --latest 20 --sort rate --save /etc/pacman.d/mirrorlist
+
+	if [[ $cachyos_repo == "yes" ]]; then
+	    cachyos-rate-mirrors
+
+	else
+		reflector --age 48 --country "$country_iso" --fastest 5 --latest 20 --sort rate --save /etc/pacman.d/mirrorlist
+	fi
 }
 
 setup_system() {
