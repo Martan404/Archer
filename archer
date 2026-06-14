@@ -2,13 +2,7 @@
 # Main script 1/3
 
 # Pre init
-#[[ -e "archer-check" ]] && echo -e "Rebooting computer to start fresh" && read -r -t 3 && (reboot || shutdown -r now)
-if [[ -e "archer-check" ]]; then
-    swapoff -a 2>/dev/null || true
-    umount -R /mnt 2>/dev/null || true
-    cryptsetup luksClose root 2>/dev/null || true
-fi
-
+[[ -e "archer-check" ]] && echo -e "Rebooting computer to start fresh" && read -r -t 3 && (reboot || shutdown -r now)
 
 # Documentation: https://bash-tui-toolkit.timo-reymann.de/latest/docs/
 echo -e "Getting bash TUI toolkit"
@@ -174,10 +168,10 @@ check_keymap() {
 		set_keymap
 
 	else
-
 		confirmed=$(confirm "$existing_keymap is currently used as keymap. Set it as default?")
 		if [ "$confirmed" == 1 ]; then
 			keyboard_keymap=$existing_keymap
+
 		else
 			set_keymap
 		fi
