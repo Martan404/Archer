@@ -15,16 +15,46 @@ alias paru-cache-cleanup='paru -Scd'
 
 alias logout="shopt -q login_shell && logout || qdbus org.kde.ksmserver /KSMServer logout 0 0 1"
 
+update-mirror-list() {
+    sudo true || return
+    country_iso=$(curl ifconfig.co/country-iso)
+    case "$1" in
+        arch)
+            sudo rate-mirrors --allow-root --entry-country="$country_iso" --save=/etc/pacman.d/mirrorlist arch && sudo pacman -Syy
+            ;;
+        chaotic-aur)
+            sudo rate-mirrors --allow-root --entry-country="$country_iso" --save=/etc/pacman.d/chaotic-mirrorlist chaotic-aur && sudo pacman -Syy
+            ;;
+        cachyos)
+            sudo cachyos-rate-mirrors && sudo pacman -Syy
+            ;;
+        *)
+            if pacman -Q cachyos-mirrorlist &>/dev/null; then
+                echo "Rating CachyOS and Arch mirrors"
+                sudo cachyos-rate-mirrors
+                echo "Rating Chaotic-AUR mirrors"
+                sudo rate-mirrors --allow-root --entry-country="$country_iso" --save=/etc/pacman.d/chaotic-mirrorlist chaotic-aur
+            else
+                echo "Rating Arch mirrors"
+                sudo rate-mirrors --allow-root --entry-country="$country_iso" --save=/etc/pacman.d/mirrorlist arch
+                echo "Rating Chaotic-AUR mirrors"
+                sudo rate-mirrors --allow-root --entry-country="$country_iso" --save=/etc/pacman.d/chaotic-mirrorlist chaotic-aur
+            fi
+            sudo pacman -Syy
+            ;;
+    esac
+}
+
 # Fix unmountable ntfs partitions
 ntfs-fix-partition() { sudo ntfsfix --clear-dirty --clear-bad-sectors "$1"; }
 
 grub-update() {
-    sudo echo "" >/dev/null || return
+    sudo true || return
     sudo grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck
     sudo grub-mkconfig -o /boot/grub/grub.cfg
 }
 grub-repair() {
-    sudo echo "" >/dev/null || return
+    sudo true || return
     sudo pacman --noconfirm -S grub efibootmgr
     sudo grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck
     sudo grub-mkconfig -o /boot/grub/grub.cfg
@@ -40,7 +70,7 @@ paru-repair() {
 }
 
 pacman-fix-keys() {
-    sudo echo "" >/dev/null || return
+    sudo true || return
     echo -e "Refresh keys"
     sudo pacman-key --refresh-keys
     echo -e "Updating archlinux-keyring"
@@ -58,7 +88,7 @@ pacman-fix-keys() {
 }
 
 arch-maintain() {
-    sudo echo "" >/dev/null || return
+    sudo true || return
     echo -e "Checking for failed systemd services"
     systemctl --failed
     echo -e "Checking log files"
