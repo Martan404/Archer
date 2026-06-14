@@ -557,18 +557,6 @@ setup_environment() {
 	sed -i '/^#\[multilib\]/s/^#//' /etc/pacman.conf
 	sed -i '/^\[multilib\]$/,/^#Include/ s/^#//' /etc/pacman.conf
 
-	if [[ $cachyos_repo == "yes" ]]; then
-        echo -e "-------------------------------------------------------------------------"
-        echo -e "Enabling CachyOS repo"
-
-        curl https://mirror.cachyos.org/cachyos-repo.tar.xz -o cachyos-repo.tar.xz
-        tar xvf cachyos-repo.tar.xz && rm -rf cachyos-repo.tar.xz && cd cachyos-repo
-        sed -i 's/pacman /pacman --noconfirm /g' ./cachyos-repo.sh
-        chmod +x ./cachyos-repo.sh
-        ./cachyos-repo.sh
-        cd .. && rm -rf ./cachyos-repo
-    fi
-
     pacman -Sy
     country_iso=$(curl ifconfig.co/country-iso)
 	reflector --age 48 --country "$country_iso" --fastest 5 --latest 20 --sort rate --save /etc/pacman.d/mirrorlist
@@ -620,7 +608,7 @@ arch_chroot() {
 
 	export hostname && export user && export root_password && export user_password && export install_type && export cachyos_repo && export kernel && export keyboard_keymap && export default_locale && export timezone && export country_iso && export root_partition && export disk_encryption && export encrypted_root_partition
 
-	arch-chroot -S /mnt /bin/bash /Archer-main/archer-chroot
+	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot
 	rm -rf /mnt/Archer-main
 	unset root_password user_password
 }
