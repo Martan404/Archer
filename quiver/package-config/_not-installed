@@ -10,11 +10,12 @@ if ! pacman -Q steam >/dev/null 2>&1; then
 fi
 
 boot_config() {
-    echo -e "-------------------------------------------------------------------------"
-    echo -e "Setting keymap and locale system-wide"
+    keyboard_keymap=$(awk -F= '/^KEYMAP=/{print $2}' /etc/vconsole.conf)
+    default_locale=$(awk -F= '/^LANG=/{print $2}' /etc/locale.conf)
 
-    # shellcheck disable=SC2154
-    localectl set-keymap "$keyboard_keymap"
-    # shellcheck disable=SC2154
-    localectl set-locale "$default_locale"
+    echo -e "Setting keymap ($keyboard_keymap) and locale ($default_locale) system-wide"
+    # shellcheck disable=SC2086
+    localectl set-keymap $keyboard_keymap
+    # shellcheck disable=SC2086
+    localectl set-locale $default_locale
 }
