@@ -570,7 +570,7 @@ install_system() {
 
 	while true; do
 		# shellcheck disable=SC2086
-		pacstrap -K /mnt base base-devel $kernel $kernel-headers linux-firmware util-linux btrfs-progs sudo nano iptables reflector && break
+		pacstrap -K /mnt base base-devel $kernel $kernel-headers linux-firmware util-linux btrfs-progs sudo nano iptables rsync reflector && break
 
 		echo "$(tput setaf 9)Package installation failed. Retrying... $(tput sgr0)"
 	done

@@ -70,7 +70,7 @@ setup_pacman() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Updating pacman databases"
 
-	pacman -Syu --noconfirm
+	pacman -Syyuu --noconfirm
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Updating pacman mirrors"
@@ -565,6 +565,7 @@ package_config() {
 	echo -e "Configuring installed packages"
 
 	installed_packages=$(pacman -Q)
+	[ "$install_type" != "lite" ] && installed_packages+=$'\n_not-installed 0'
 
 	while IFS= read -r line; do
 
@@ -576,7 +577,6 @@ package_config() {
 
 			source "/Archer-main/quiver/package-config/$package_name"
 
-
             if declare -f boot_config >/dev/null; then
                 echo "Writing boot config for $package_name"
                 {
@@ -587,13 +587,6 @@ package_config() {
             fi
 		fi
 	done <<<"$installed_packages"
-
-	if [ "$install_type" != "lite" ]; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Configuring not installed packages"
-
-		find "/Archer-main/quiver/package-config/" -type f -name '_*' | while IFS= read -r config_path; do source "$config_path"; done
-	fi
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Moving pacman hooks"
@@ -616,7 +609,7 @@ boot_script() {
 	    echo -e "-------------------------------------------------------------------------"
 		echo -e "Preparing boot script"
 
-        cat <<-END >/usr/bin/archer-boot
+        cat <<-END >/usr/local/bin/archer-boot
 #!/bin/bash
 echo -e "
 -------------------------------------------------------------------------
@@ -629,8 +622,8 @@ echo -e "
             ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
 \$(tput sgr0)
 -------------------------------------------------------------------------
-                           Arch install script"
--------------------------------------------------------------------------
+                           Arch install script
+-------------------------------------------------------------------------"
 END
 
         prepared="yes"
@@ -639,7 +632,7 @@ END
         echo -e "-------------------------------------------------------------------------"
         echo -e "Finishing boot script"
 
-        cat <<-END >>/usr/bin/archer-boot
+        cat <<-END >>/usr/local/bin/archer-boot
 echo -e "-------------------------------------------------------------------------"
 echo -e "Cleaning up script"
 
@@ -654,7 +647,7 @@ END
 Description=Archer boot setup script
 
 [Service]
-ExecStart=/usr/bin/archer-boot
+ExecStart=/usr/local/bin/archer-boot
 
 [Install]
 WantedBy=multi-user.target
@@ -663,7 +656,7 @@ END
 	    systemctl enable archer-boot.service
 	fi
 
-	chmod a+x /usr/bin/archer-boot
+	chmod a+x /usr/local/bin/archer-boot
 }
 
 exit_chroot() {
