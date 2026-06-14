@@ -68,14 +68,13 @@ setup_pacman() {
 	echo "Include = /etc/pacman.d/chaotic-mirrorlist" >> /etc/pacman.conf
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Updating pacman databases"
-
-	pacman -Syyuu --noconfirm
-
-	echo -e "-------------------------------------------------------------------------"
 	echo -e "Updating pacman mirrors"
     reflector --age 48 --country "$country_iso" --fastest 5 --latest 20 --sort rate --save /etc/pacman.d/mirrorlist
 
+    echo -e "-------------------------------------------------------------------------"
+	echo -e "Updating pacman databases and system"
+
+	pacman -Syyuu --noconfirm
 }
 
 setup_system() {
@@ -128,9 +127,6 @@ chmod +x /etc/NetworkManager/dispatcher.d/09-timezone
 
 	echo "LANG=$default_locale" >>/etc/locale.conf
 	echo "KEYMAP=$keyboard_keymap" >>/etc/vconsole.conf
-
-    localectl set-locale "$default_locale"
-    localectl set-keymap "$keyboard_keymap"
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting hostname to $hostname"
@@ -217,7 +213,7 @@ setup_grub() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing Grub packages"
 
-	package_installer "grub-btrfs efibootmgr inotify-tools rsync"
+	package_installer "grub-btrfs efibootmgr inotify-tools"
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Creating efibootmgr wrapper script to prevent fail"
@@ -636,8 +632,8 @@ END
 echo -e "-------------------------------------------------------------------------"
 echo -e "Cleaning up script"
 
-systemctl disable --now archer-boot.service
-rm -f /etc/systemd/system/archer-boot.service
+#systemctl disable --now archer-boot.service
+#rm -f /etc/systemd/system/archer-boot.service
 #rm -f \${BASH_SOURCE[0]}
 exit
 END
