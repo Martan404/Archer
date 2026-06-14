@@ -67,14 +67,14 @@ setup_pacman() {
 	echo "[chaotic-aur]" >> /etc/pacman.conf
 	echo "Include = /etc/pacman.d/chaotic-mirrorlist" >> /etc/pacman.conf
 
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Updating pacman mirrors"
-    reflector --age 48 --country "$country_iso" --fastest 5 --latest 20 --sort rate --save /etc/pacman.d/mirrorlist
-
     echo -e "-------------------------------------------------------------------------"
 	echo -e "Updating pacman databases and system"
 
 	pacman -Syyuu --noconfirm
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Updating pacman mirrors"
+    reflector --age 48 --country "$country_iso" --fastest 5 --latest 20 --sort rate --save /etc/pacman.d/mirrorlist
 }
 
 setup_system() {
