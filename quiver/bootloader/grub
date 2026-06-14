@@ -32,7 +32,7 @@ echo -e "Enabling GRUB-btrfsd snapshot daemon"
 systemctl enable grub-btrfsd
 
 echo -e "-------------------------------------------------------------------------"
-echo -e "Disabling snapshot listing in pacman for grub-btrfs"
+echo -e "Disabling snapshot listings in pacman-hook for grub-btrfs"
 
 sed -i '/^[#]*GRUB_BTRFS_SHOW_SNAPSHOTS_FOUND=/s/true/false/' /etc/default/grub-btrfs/config
 sed -i '/^#GRUB_BTRFS_SHOW_SNAPSHOTS_FOUND/s/^#//' /etc/default/grub-btrfs/config
