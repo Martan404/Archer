@@ -4,7 +4,6 @@
 echo -e "Creating flatpak-setup desktop entry"
 
 mkdir -p /home/"$user"/.config/autostart/
-
 chown "$user":"$user" /home/"$user"/.config/autostart/
 chmod 755 /home/"$user"/.config/autostart/
 
