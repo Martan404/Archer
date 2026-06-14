@@ -1,11 +1,12 @@
 #!/bin/bash
 # Archer config file
-# This is for configuring packages that did not get installed
+# This file is for extra package configuration
 # Use the boot_config function in any 'Archer config file' to write code to the
 # archer-boot script which then will be ran first time booting in to the new system
 
 # shellcheck disable=SC2154
 if [ "$install_type" != "lite" ] && ! pacman -Q steam >/dev/null 2>&1; then
+    # If steam was not installed then prepare with steam-devices package
     echo "Installing steam-devices package for Steam Flatpak"
     package_installer "steam-devices"
 fi
