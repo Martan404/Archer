@@ -137,8 +137,8 @@ set_kernel() {
 	echo -e "Select which kernel to use"
 
      kernel_options=(
-         "Linux Zen (linux-zen)"
          "Linux (linux)"
+         "Linux Zen (linux-zen)"
          "Linux LTS (linux-lts)"
          "Linux Hardened (linux-hardened)"
      )
@@ -148,8 +148,8 @@ set_kernel() {
          selected_idx=$(list "Kernel:" "${kernel_options[@]}")
 
          case $selected_idx in
-             0) kernel="linux-zen" ;;
-             1) kernel="linux" ;;
+             0) kernel="linux" ;;
+             1) kernel="linux-zen" ;;
              2) kernel="linux-lts" ;;
              3) kernel="linux-hardened" ;;
          esac
