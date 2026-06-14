@@ -372,7 +372,7 @@ install_packages() {
 
 setup_environment() {
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting up system desktop environment"
+	echo -e "Setting up desktop environment"
 
 	[[ $install_type == "lite" ]] && echo -e "Nothing to do. Skipping..."
 	[[ $install_type == "kde" ]] && source "/Archer-main/quiver/desktop/kde"
