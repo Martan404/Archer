@@ -558,10 +558,12 @@ setup_environment() {
 	sed -i '/^#\[multilib\]/s/^#//' /etc/pacman.conf
 	sed -i '/^\[multilib\]$/,/^#Include/ s/^#//' /etc/pacman.conf
 
-    pacman -Sy
+    echo -e "-------------------------------------------------------------------------"
+	echo -e "Updating Pacman mirrors"
     country_iso=$(curl ifconfig.co/country-iso)
 	reflector --age 48 --country "$country_iso" --fastest 5 --latest 20 --sort rate --save /etc/pacman.d/mirrorlist
 
+    pacman -Sy
 }
 
 install_system() {
