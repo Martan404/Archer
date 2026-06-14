@@ -5,10 +5,10 @@ echo -e "Enabling firewalld service"
 systemctl enable firewalld.service
 
 boot_config() {
-	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up Firewalld rules"
 
 	firewall-cmd
+	sleep 2
 	firewall-cmd --permanent --zone=internal --change-interface=lo
 	firewall-cmd --permanent --zone=trusted --change-interface=virbr0
 	firewall-cmd --permanent --zone=trusted --change-interface=waydroid0
