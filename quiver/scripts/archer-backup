@@ -137,6 +137,7 @@ SHARE_INCLUDE=(
     "\$SHARE_DIR/icons"
     "\$SHARE_DIR/konsole"
     "\$SHARE_DIR/kwin"
+    "\$SHARE_DIR/kxmlgui"
     "\$SHARE_DIR/kxmlgui5"
     "\$SHARE_DIR/kxmlgui6"
     "\$SHARE_DIR/plasma"
