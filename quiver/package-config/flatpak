@@ -1,12 +1,6 @@
 #!/bin/bash
 # shellcheck disable=SC2154,SC2002
 
-echo -e "Enabling Flatpak theming"
-
-#flatpak override --filesystem=xdg-config/{Kvantum,gtkrc,gtkrc-2.0,gtk-3.0,gtk-4.0}:ro
-#flatpak override --filesystem={~/.themes,~/.icons,~/.fonts,~/.local/share/themes}:ro
-#flatpak override --env=GTK_THEME=Breeze
-
 echo -e "Creating flatpak-setup desktop entry"
 
 mkdir -p /home/"$user"/.config/autostart/
