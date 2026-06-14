@@ -1,0 +1,8 @@
+#!/bin/bash
+# shellcheck disable=SC2034
+gpu_kernel_parameters=""
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Installing packages"
+
+package_installer "qemu-guest-agent vulkan-virtio lib32-vulkan-virtio"

@@ -1,0 +1,8 @@
+#!/bin/bash
+# shellcheck disable=SC2034
+cpu_kernel_parameters="intel_iommu=on iommu=pt nowatchdog modprobe.blacklist=iTCO_wdt"
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Installing packages"
+
+package_installer "intel-ucode"

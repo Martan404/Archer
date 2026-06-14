@@ -1,0 +1,30 @@
+#!/bin/bash
+echo -e "-------------------------------------------------------------------------"
+echo -e "Installing Yabsnap"
+
+package_installer "yabsnap"
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Creating Yabsnap root config"
+
+yabsnap create-config root
+
+sed -i 's/source =/source = \//' /etc/yabsnap/configs/root.conf
+sed -i 's/keep_user = 1/keep_user = 2/' /etc/yabsnap/configs/root.conf
+sed -i 's/trigger_interval = 1 hour/trigger_interval = 5 minutes/' /etc/yabsnap/configs/root.conf
+sed -i 's/keep_preinstall = 1/keep_preinstall = 10/' /etc/yabsnap/configs/root.conf
+sed -i 's/keep_daily = 0/keep_daily = 7/' /etc/yabsnap/configs/root.conf
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Excluding /.snapshots from updatedb"
+
+echo "PRUNENAMES = \".snapshots\"" >>/etc/updatedb.conf
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Enabling Yabsnap service"
+
+systemctl enable yabsnap.timer
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Changing grub-btrfs title format"
+sed -i 's|^#\?GRUB_BTRFS_TITLE_FORMAT=.*|GRUB_BTRFS_TITLE_FORMAT=("snapshot" "description")|' /etc/default/grub-btrfs/config

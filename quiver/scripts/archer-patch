@@ -1,0 +1,46 @@
+#!/bin/bash
+set -euo pipefail
+
+echo -e "
+-------------------------------------------------------------------------
+$(tput setaf 4)
+             █████╗ ██████╗  ██████╗██╗  ██╗███████╗██████╗
+            ██╔══██╗██╔══██╗██╔════╝██║  ██║██╔════╝██╔══██╗
+            ███████║██████╔╝██║     ███████║█████╗  ██████╔╝
+            ██╔══██║██╔══██╗██║     ██╔══██║██╔══╝  ██╔══██╗
+            ██║  ██║██║  ██║╚██████╗██║  ██║███████╗██║  ██║
+            ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+$(tput sgr0)
+-------------------------------------------------------------------------
+                             Patch script"
+
+# Environment safety checks
+IS_SSH=0
+IS_TTY=0
+
+[ -n "${SSH_CONNECTION:-}" ] && IS_SSH=1
+tty -s && IS_TTY=1
+
+if [ -n "${DISPLAY:-}" ] || [ -n "${WAYLAND_DISPLAY:-}" ]; then
+  echo "Refusing to run inside a graphical session."
+  echo "Switch to TTY (Ctrl+Alt+F3) or SSH and retry."
+  exit 1
+fi
+
+if [ "$IS_SSH" -ne 1 ] && [ "$IS_TTY" -ne 1 ]; then
+  echo "Not running in a safe TTY/SSH environment."
+  exit 1
+fi
+
+# Check root access
+if [ "$EUID" -ne 0 ]; then
+  echo "Please run this script with sudo or as root."
+  exit 1
+fi
+
+# Patch
+
+# Exit
+echo "Done. Rebooting in 5 seconds... Ctrl+C to cancel"
+sleep 5
+reboot

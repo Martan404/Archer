@@ -1,0 +1,67 @@
+#!/bin/bash
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Installing Grub packages"
+
+package_installer "grub-btrfs efibootmgr inotify-tools"
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Creating efibootmgr wrapper script to prevent fail"
+
+cat <<-END >/usr/local/bin/efibootmgr
+#!/bin/sh
+exec /usr/bin/efibootmgr -e 3 "\$@"
+END
+chmod +x /usr/local/bin/efibootmgr
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Configuring Grub"
+
+grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck
+grub-mkconfig -o /boot/grub/grub.cfg
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Installing Grub theme"
+
+mv /Archer-main/quiver/bootloader/themes/arch-silence /boot/grub/themes/arch-silence
+sed -i '/^[#]*GRUB_THEME=/c\GRUB_THEME="\/boot\/grub\/themes\/arch-silence\/theme.txt"' /etc/default/grub
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Enabling GRUB-btrfsd snapshot daemon"
+
+systemctl enable grub-btrfsd
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Disabling snapshot listing in pacman for grub-btrfs"
+
+sed -i '/^[#]*GRUB_BTRFS_SHOW_SNAPSHOTS_FOUND=/s/true/false/' /etc/default/grub-btrfs/config
+sed -i '/^#GRUB_BTRFS_SHOW_SNAPSHOTS_FOUND/s/^#//' /etc/default/grub-btrfs/config
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Removing 'quiet' kernel parameter"
+
+sed -i '/GRUB_CMDLINE_LINUX_DEFAULT/s/ quiet//g' /etc/default/grub
+
+if [[ $disk_encryption == "yes" ]]; then
+echo -e "-------------------------------------------------------------------------"
+echo -e "Setting encryption kernel parameters"
+
+root_disk_uuid=$(blkid -s UUID -o value "$encrypted_root_partition")
+sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 rd.luks.name=$root_disk_uuid=root root=\/dev\/mapper\/root\"/" /etc/default/grub
+fi
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Setting up netboot.xyz"
+
+# https://netboot.xyz/docs/kb/hardware/usb-keyboard
+curl -L https://boot.netboot.xyz/ipxe/netboot.xyz-legacy.efi -o /boot/EFI/netboot.xyz-legacy.efi
+curl -L https://boot.netboot.xyz/ipxe/netboot.xyz.efi -o /boot/EFI/netboot.xyz.efi
+
+cat /Archer-main/quiver/configs/45_netboot.xyz >/etc/grub.d/45_netboot.xyz
+chown root:root /etc/grub.d/45_netboot.xyz
+chmod +x /etc/grub.d/45_netboot.xyz
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Preparing /boot backup directory structure"
+
+mkdir -p /.boot-backup/{pre-update,post-update}

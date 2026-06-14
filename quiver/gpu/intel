@@ -1,0 +1,10 @@
+#!/bin/bash
+# shellcheck disable=SC2034
+gpu_kernel_parameters=""
+
+# Untested
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Installing packages"
+
+package_installer "mesa vulkan-intel intel-media-driver"

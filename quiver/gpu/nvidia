@@ -1,0 +1,27 @@
+#!/bin/bash
+# shellcheck disable=SC2034,SC2154
+gpu_kernel_parameters="nvidia_drm.modeset=1 nvidia_drm.fbdev=1 nvidia.NVreg_PreserveVideoMemoryAllocations=1"
+
+if [[ $lspci_output == *"RTX"* ]]; then
+	nvidia_driver="nvidia-open-dkms nvidia-utils"
+
+elif [[ $lspci_output == *"GTX"* ]]; then
+	echo -e "Found GTX card. Installing nvidia-580xx-dkms"
+	nvidia_driver="nvidia-580xx-dkms nvidia-580xx-settings nvidia-580xx-utils"
+
+else
+	echo -e "Installing Nouveau driver"
+	nvidia_driver="mesa"
+fi
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Installing packages"
+
+package_installer "$nvidia_driver"
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Enabling support for suspend/wakeup"
+
+systemctl enable nvidia-suspend.service
+systemctl enable nvidia-hibernate.service
+systemctl enable nvidia-resume.service

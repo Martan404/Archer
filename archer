@@ -6,13 +6,14 @@
 
 # Documentation: https://bash-tui-toolkit.timo-reymann.de/latest/docs/
 echo -e "Getting bash TUI toolkit"
-if [[ -f ./quiver/bash-tui-toolkit.bash ]]; then
-    source ./quiver/bash-tui-toolkit.bash
-
-else
-    curl -fsSL https://bash-tui-toolkit.timo-reymann.de/latest/bundle.bash -o /bash-tui-toolkit.sh
+if [[ -f ./quiver/configs/bash-tui-toolkit.bash ]]; then
+    cp ./quiver/configs/bash-tui-toolkit.bash /bash-tui-toolkit.bash
     # shellcheck disable=SC1091
-    source /bash-tui-toolkit.sh
+    source /bash-tui-toolkit.bash
+else
+    curl -fsSL https://bash-tui-toolkit.timo-reymann.de/latest/bundle.bash -o /bash-tui-toolkit.bash
+    # shellcheck disable=SC1091
+    source /bash-tui-toolkit.bash
 fi
 
 show_logo() {
@@ -28,10 +29,11 @@ $(tput setaf 4)
             ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
 $(tput sgr0)
 -------------------------------------------------------------------------"
-	echo -ne "$archer_logo"
-	echo -e "
+    archer_desc="
                            Arch install script
 -------------------------------------------------------------------------"
+	echo -ne "$archer_logo"
+	echo -e "$archer_desc"
 }
 
 set_variables() {
@@ -593,7 +595,7 @@ arch_chroot() {
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Copying Bash TUI toolkit"
-	cp /bash-tui-toolkit.sh /mnt
+	cp /bash-tui-toolkit.bash /mnt
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Copying locale.gen"
@@ -603,9 +605,11 @@ arch_chroot() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Changing root to new system"
 
+	export archer_logo && export archer_desc
 	export hostname && export user && export root_password && export user_password && export install_type && export cachyos_repo && export kernel && export keyboard_keymap && export default_locale && export timezone && export country_iso && export root_partition && export disk_encryption && export encrypted_root_partition
 
 	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot
+
 	rm -rf /mnt/Archer-main
 	unset root_password user_password
 }

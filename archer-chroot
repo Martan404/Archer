@@ -3,6 +3,9 @@
 # shellcheck disable=SC2002,SC2164,SC2269,SC1090,SC1091
 
 # Declaring exported variables from first script
+archer_logo=${archer_logo}
+archer_desc=${archer_desc}
+
 hostname=${hostname}
 user=${user}
 root_password=${root_password}
@@ -18,8 +21,8 @@ root_partition=${root_partition}
 disk_encryption=${disk_encryption}
 encrypted_root_partition=${encrypted_root_partition}
 
-source /bash-tui-toolkit.sh
-rm /bash-tui-toolkit.sh
+source /bash-tui-toolkit.bash
+rm /bash-tui-toolkit.bash
 
 setup_pacman() {
 	echo -e "-------------------------------------------------------------------------"
@@ -227,72 +230,8 @@ setup_paru_pipx() {
 	package_installer "python-pipx"
 }
 
-setup_grub() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing Grub packages"
-
-	package_installer "grub-btrfs efibootmgr inotify-tools"
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating efibootmgr wrapper script to prevent fail"
-
-	cat <<-END >/usr/local/bin/efibootmgr
-#!/bin/sh
-exec /usr/bin/efibootmgr -e 3 "\$@"
-	END
-	chmod +x /usr/local/bin/efibootmgr
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Configuring Grub"
-
-	grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck
-	grub-mkconfig -o /boot/grub/grub.cfg
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing Grub theme"
-
-	mv /Archer-main/quiver/bootloader/themes/arch-silence /boot/grub/themes/arch-silence
-	sed -i '/^[#]*GRUB_THEME=/c\GRUB_THEME="\/boot\/grub\/themes\/arch-silence\/theme.txt"' /etc/default/grub
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling GRUB-btrfsd snapshot daemon"
-
-	systemctl enable grub-btrfsd
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Disabling snapshot listing in pacman for grub-btrfs"
-
-	sed -i '/^[#]*GRUB_BTRFS_SHOW_SNAPSHOTS_FOUND=/s/true/false/' /etc/default/grub-btrfs/config
-	sed -i '/^#GRUB_BTRFS_SHOW_SNAPSHOTS_FOUND/s/^#//' /etc/default/grub-btrfs/config
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Removing 'quiet' kernel parameter"
-
-	sed -i '/GRUB_CMDLINE_LINUX_DEFAULT/s/ quiet//g' /etc/default/grub
-
-	if [[ $disk_encryption == "yes" ]]; then
-		echo -e "-------------------------------------------------------------------------"
-		echo -e "Setting encryption kernel parameters"
-
-		root_disk_uuid=$(blkid -s UUID -o value "$encrypted_root_partition")
-		sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 rd.luks.name=$root_disk_uuid=root root=\/dev\/mapper\/root\"/" /etc/default/grub
-	fi
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting up netboot.xyz"
-
-    # https://netboot.xyz/docs/kb/hardware/usb-keyboard
-	curl -L https://boot.netboot.xyz/ipxe/netboot.xyz-legacy.efi -o /boot/EFI/netboot.xyz-legacy.efi
-	curl -L https://boot.netboot.xyz/ipxe/netboot.xyz.efi -o /boot/EFI/netboot.xyz.efi
-
-	cat /Archer-main/quiver/configs/45_netboot.xyz >/etc/grub.d/45_netboot.xyz
-	chown root:root /etc/grub.d/45_netboot.xyz
-	chmod +x /etc/grub.d/45_netboot.xyz
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Preparing /boot backup directory structure"
-
-	mkdir -p /.boot-backup/{pre-update,post-update}
+setup_bootloader() {
+    source /Archer-main/quiver/bootloader/grub
 }
 
 setup_cpu() {
@@ -304,40 +243,19 @@ setup_cpu() {
 
 	if [[ $lscpu_output == *"AuthenticAMD"* ]]; then
 		echo -e "Found AMD"
-		amd_cpu
+		export cpu="amd"
+		source /Archer-main/quiver/cpu/amd
 
 	elif [[ $lscpu_output == *"GenuineIntel"* ]]; then
 		echo -e "Found Intel"
-		intel_cpu
+		export cpu="intel"
+		source /Archer-main/quiver/cpu/intel
 	fi
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting cpu kernel parameters"
 
 	[ -n "$cpu_kernel_parameters" ] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $cpu_kernel_parameters\"/" /etc/default/grub
-}
-
-amd_cpu() {
-	cpu_kernel_parameters="nowatchdog modprobe.blacklist=sp5100_tco"
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing packages"
-
-	package_installer "amd-ucode"
-}
-
-intel_cpu() {
-	cpu_kernel_parameters="intel_iommu=on iommu=pt nowatchdog modprobe.blacklist=iTCO_wdt"
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing packages"
-
-	package_installer "intel-ucode thermald"
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling thermald service"
-
-	systemctl enable thermald.service
 }
 
 setup_gpu() {
@@ -350,83 +268,29 @@ setup_gpu() {
 
 	if [[ $lspci_output == *"Radeon"* ]] || [[ $lspci_output == *"AMD"* ]]; then
 		echo -e "Found AMD"
-		amd_gpu
+		export gpu="amd"
+		source /Archer-main/quiver/gpu/amd
 
 	elif [[ $lspci_output == *"Integrated Graphics Controller"* ]] || [[ $lspci_output == *"Intel Corporation HD"* ]] || [[ $lspci_output == *"Intel Corporation UHD"* ]]; then
 		echo -e "Found Intel"
-		intel_gpu
+		export gpu="intel"
+		source /Archer-main/quiver/gpu/intel
 
 	elif [[ $lspci_output == *"NVIDIA"* ]] || [[ $lspci_output == *"GeForce"* ]]; then
 		echo -e "Found NVIDIA"
-		nvidia_gpu
+		export gpu="nvidia"
+		source /Archer-main/quiver/gpu/nvidia
 
 	elif [[ ${lspci_output} =~ (Virtio|QEMU) ]] || [[ ${lspci_output_full} =~ (Virtio|QEMU) ]]; then
 		echo "Found QEMU"
-		qemu_gpu
+		export gpu="qemu"
+		source /Archer-main/quiver/gpu/qemu
 	fi
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting gpu kernel parameters"
 
 	[ -n "$gpu_kernel_parameters" ] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $gpu_kernel_parameters\"/" /etc/default/grub
-}
-
-amd_gpu() {
-	gpu_kernel_parameters=""
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing packages"
-
-	package_installer "mesa vulkan-radeon xf86-video-amdgpu"
-}
-
-nvidia_gpu() {
-	gpu_kernel_parameters="nvidia_drm.modeset=1 nvidia_drm.fbdev=1 nvidia.NVreg_PreserveVideoMemoryAllocations=1"
-
-	if [[ $lspci_output == *"RTX"* ]]; then
-		nvidia_driver="nvidia-open-dkms nvidia-utils"
-
-	elif [[ $lspci_output == *"GTX"* ]]; then
-		echo -e "Found GTX card. Installing nvidia-580xx-dkms"
-		nvidia_driver="nvidia-580xx-dkms nvidia-580xx-settings nvidia-580xx-utils"
-
-	else
-		echo -e "Installing Nouveau driver"
-		nvidia_driver="mesa"
-	fi
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing packages"
-
-	package_installer "$nvidia_driver"
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling support for suspend/wakeup"
-
-	systemctl enable nvidia-suspend.service
-	systemctl enable nvidia-hibernate.service
-	systemctl enable nvidia-resume.service
-}
-
-intel_gpu() {
-	gpu_kernel_parameters=""
-
-	# Need a way to test for new and old gpu and also if cpu
-	# QuickSync # LEGACY intel-media-driver intel-media-sdk # TIGER LAKE(2020+) libva-intel-driver vpl-gpu-rt
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing packages"
-
-	package_installer "mesa vulkan-intel intel-media-driver"
-}
-
-qemu_gpu() {
-	gpu_kernel_parameters=""
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing packages"
-
-	package_installer "qemu-guest-agent vulkan-virtio lib32-vulkan-virtio"
 }
 
 setup_laptop() {
@@ -445,12 +309,27 @@ setup_laptop() {
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Installing laptop packages"
 
-		package_installer "auto-cpufreq switcheroo-control"
+		package_installer " switcheroo-control"
+		systemctl enable switcheroo-control.service
 
 		systemctl mask power-profiles-daemon.service
-		systemctl enable auto-cpufreq.service
 
-		systemctl enable switcheroo-control.service
+        if [ "$cpu" == "amd" ]; then
+			package_installer "auto-cpufreq"
+
+			echo -e "Enabling auto-cpufreq service"
+			systemctl enable auto-cpufreq.service
+        elif [ "$cpu" == "intel" ]; then
+			package_installer "thermald"
+
+			echo -e "Enabling thermald service"
+			systemctl enable thermald.service
+	    fi
+
+		if [ "$gpu" == "nvidia" ]; then
+		    echo -e "Enabling nvidia-powerd service"
+		    systemctl enable nvidia-powerd.service
+		fi
 
 	elif [ $laptop_status = 1 ]; then
 		echo -e "-------------------------------------------------------------------------"
@@ -495,7 +374,7 @@ setup_environment() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up desktop environment"
 
-	[[ $install_type == "lite" ]]
+	[[ $install_type != "lite" ]] && echo -e "Skipping..."
 	[[ $install_type == "kde" ]] && source "/Archer-main/quiver/kde_setup"
 }
 
@@ -532,35 +411,7 @@ bash_config() {
 }
 
 yabsnap_setup() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing Yabsnap"
-
-	package_installer "yabsnap"
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Creating Yabsnap root config"
-
-	yabsnap create-config root
-
-	sed -i 's/source =/source = \//' /etc/yabsnap/configs/root.conf
-	sed -i 's/keep_user = 1/keep_user = 2/' /etc/yabsnap/configs/root.conf
-	sed -i 's/trigger_interval = 1 hour/trigger_interval = 5 minutes/' /etc/yabsnap/configs/root.conf
-	sed -i 's/keep_preinstall = 1/keep_preinstall = 10/' /etc/yabsnap/configs/root.conf
-	sed -i 's/keep_daily = 0/keep_daily = 7/' /etc/yabsnap/configs/root.conf
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Excluding /.snapshots from updatedb"
-
-	echo "PRUNENAMES = \".snapshots\"" >>/etc/updatedb.conf
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enabling Yabsnap service"
-
-	systemctl enable yabsnap.timer
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Changing grub-btrfs title format"
-	sed -i 's|^#\?GRUB_BTRFS_TITLE_FORMAT=.*|GRUB_BTRFS_TITLE_FORMAT=("snapshot" "description")|' /etc/default/grub-btrfs/config
+	source /Archer-main/quiver/snapshots/yabsnap
 }
 
 snapshot_rollback() {
@@ -601,11 +452,13 @@ package_config() {
             fi
 		fi
 	done <<<"$installed_packages"
+}
 
-	echo -e "-------------------------------------------------------------------------"
+pacman_hooks() {
+    echo -e "-------------------------------------------------------------------------"
 	echo -e "Moving pacman hooks"
 
-	mv /Archer-main/quiver/hooks/* /etc/pacman.d/hooks/
+	mv /Archer-main/quiver/pacman-hooks/* /etc/pacman.d/hooks/
 	chown -R :wheel /etc/pacman.d/hooks/*
 
 	echo -e "-------------------------------------------------------------------------"
@@ -625,19 +478,7 @@ boot_script() {
 
         cat <<-END >/usr/local/bin/archer-boot
 #!/bin/bash
-echo -e "
--------------------------------------------------------------------------
-\$(tput setaf 4)
-             █████╗ ██████╗  ██████╗██╗  ██╗███████╗██████╗
-            ██╔══██╗██╔══██╗██╔════╝██║  ██║██╔════╝██╔══██╗
-            ███████║██████╔╝██║     ███████║█████╗  ██████╔╝
-            ██╔══██║██╔══██╗██║     ██╔══██║██╔══╝  ██╔══██╗
-            ██║  ██║██║  ██║╚██████╗██║  ██║███████╗██║  ██║
-            ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
-\$(tput sgr0)
--------------------------------------------------------------------------
-                           Arch install script
--------------------------------------------------------------------------"
+echo -e "${archer_logo}${archer_desc}"
 END
 
         prepared="yes"
@@ -737,7 +578,7 @@ package_installer() {
 setup_pacman
 setup_system
 setup_paru_pipx
-setup_grub
+setup_bootloader
 setup_cpu
 setup_gpu
 setup_laptop
@@ -750,5 +591,7 @@ setup_environment
 bash_config
 boot_script
 package_config
+
+pacman_hooks
 boot_script
 exit_chroot
