@@ -52,12 +52,12 @@ noto-fonts
 noto-fonts-cjk
 noto-fonts-emoji
 noto-fonts-extra
+terminus-font
 ttf-bitstream-vera
 ttf-dejavu
 ttf-liberation
 ttf-ms-fonts
 ttf-nerd-fonts-symbols
-ttf-nerd-fonts-symbols-common
 ttf-nerd-fonts-symbols-mono
 dosfstools
 e2fsprogs

@@ -3,14 +3,13 @@
 
 # DRIVERS #
 networkmanager
-iwd
 wireless-regdb
-ufw
 dosfstools
 exfatprogs
 ntfs-3g
 ntfsprogs
 fatresize
+terminus-font
 # DRIVERS #
 
 # SYSTEM #
@@ -32,6 +31,7 @@ rebuild-detector
 reflector
 shellcheck
 topgrade
+ufw
 usbutils
 vivid
 # SYSTEM #
