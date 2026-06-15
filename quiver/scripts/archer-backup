@@ -133,6 +133,10 @@ HOME_INCLUDE=(
     "\$HOME/.themes"
 )
 
+BIN_DIR=(
+
+)
+
 CONFIG_INCLUDE=(
     "\$CONFIG_DIR/Kvantum"
     "\$CONFIG_DIR/breezerc"
