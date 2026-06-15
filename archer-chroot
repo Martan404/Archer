@@ -152,7 +152,17 @@ chmod +x /etc/NetworkManager/dispatcher.d/09-timezone
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting hostname to $hostname"
 
-	echo "$hostname" >>/etc/hostname
+	echo "$hostname" >/etc/hostname
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting ter-v16n as console font"
+
+	echo "FONT=ter-v16n" >> /etc/vconsole.conf
+
+    echo -e "-------------------------------------------------------------------------"
+	echo -e "Enabling consolefont hook in mkinitcpio.conf"
+
+	sed -i '/^HOOKS=/ s/\(keymap\)/\1 consolefont/' /etc/mkinitcpio.conf
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling btrfs module in mkinitcpio.conf"
