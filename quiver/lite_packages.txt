@@ -4,6 +4,7 @@
 # DRIVERS #
 networkmanager
 wireless-regdb
+impala
 dosfstools
 exfatprogs
 ntfs-3g

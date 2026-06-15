@@ -123,29 +123,14 @@ create_config() {
 NAME="$config_name"
 
 # Common paths
-CONFIG_DIR="\$HOME/.config"
 BIN_DIR="\$HOME/.local/bin"
+CONFIG_DIR="\$HOME/.config"
 SHARE_DIR="\$HOME/.local/share"
 
 HOME_INCLUDE=(
     "\$HOME/.fonts"
     "\$HOME/.icons"
     "\$HOME/.themes"
-)
-
-SHARE_INCLUDE=(
-    "\$SHARE_DIR/aurorae"
-    "\$SHARE_DIR/color-schemes"
-    "\$SHARE_DIR/fonts"
-    "\$SHARE_DIR/icons"
-    "\$SHARE_DIR/konsole"
-    "\$SHARE_DIR/kwin"
-    "\$SHARE_DIR/kxmlgui"
-    "\$SHARE_DIR/kxmlgui5"
-    "\$SHARE_DIR/kxmlgui6"
-    "\$SHARE_DIR/plasma"
-    "\$SHARE_DIR/wallpapers"
-    "\$SHARE_DIR/user-places.xbel"
 )
 
 CONFIG_INCLUDE=(
@@ -178,6 +163,21 @@ CONFIG_INCLUDE=(
     "\$CONFIG_DIR/plasma-org.kde.plasma.desktop-appletsrc"
     "\$CONFIG_DIR/plasmarc"
     "\$CONFIG_DIR/plasmashellrc"
+)
+
+SHARE_INCLUDE=(
+    "\$SHARE_DIR/aurorae"
+    "\$SHARE_DIR/color-schemes"
+    "\$SHARE_DIR/fonts"
+    "\$SHARE_DIR/icons"
+    "\$SHARE_DIR/konsole"
+    "\$SHARE_DIR/kwin"
+    "\$SHARE_DIR/kxmlgui"
+    "\$SHARE_DIR/kxmlgui5"
+    "\$SHARE_DIR/kxmlgui6"
+    "\$SHARE_DIR/plasma"
+    "\$SHARE_DIR/wallpapers"
+    "\$SHARE_DIR/user-places.xbel"
 )
 
 # Code OSS settings
