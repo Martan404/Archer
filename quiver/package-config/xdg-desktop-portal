@@ -5,13 +5,13 @@ echo -e "Setting up XDG user directories"
 xdg-user-dirs-update
 
 #sed -i '/TEMPLATES/s/^/#/' /etc/xdg/user-dirs.defaults
-sed -i '/PUBLICSHARE/s/^/#/' /etc/xdg/user-dirs.defaults
+#sed -i '/PUBLICSHARE/s/^/#/' /etc/xdg/user-dirs.defaults
 
 cat <<-END >> /etc/xdg/user-dirs.defaults
 APPLICATIONS=Applications
 GAMES=Games
 PROJECTS=Projects
-SYNC=Sync
+PUBLICSHARE=Share
 END
 
 echo -e "Creating home sub-directories for $user"
@@ -22,7 +22,7 @@ sudo -u "$user" mkdir -p /home/"$user"/System/{icons,scripts}
 
 
 echo -e "Setting sub-directory icons"
-sudo -u "$user" touch /home/"$user"/{Applications,Games,Projects,Sync,System}/.directory
+sudo -u "$user" touch /home/"$user"/{Applications,Games,Projects,Share,System}/.directory
 {
 echo "[Desktop Entry]"
 echo "Icon=folder-flatpak"
@@ -38,7 +38,7 @@ echo "Icon=folder-script"
 {
 echo "[Desktop Entry]"
 echo "Icon=folder-cloud"
-} >> /home/"$user"/Sync/.directory
+} >> /home/"$user"/Share/.directory
 {
 echo "[Desktop Entry]"
 echo "Icon=folder-build" 

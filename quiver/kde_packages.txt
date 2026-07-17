@@ -6,6 +6,7 @@ com.discordapp.Discord
 com.github.Matoking.protontricks
 com.spotify.Client
 net.davidotek.pupgui2
+io.github.DenysMb.Kontainer
 io.github.Faugus.faugus-launcher
 org.gtk.Gtk3theme.Breeze
 org.kde.kdenlive
@@ -187,5 +188,4 @@ vlc
 vlc-plugins-all
 xdg-desktop-portal
 xdg-desktop-portal-kde
-xdg-desktop-portal-gtk
 # DESKTOP #
