@@ -7,8 +7,9 @@ archer-help() {
         grep '^[[:alnum:]-]*()' /etc/bash.bash_aliases | awk -F'[(]' '{print $1}'
         # Get aliases
         grep "^alias" /etc/bash.bash_aliases | awk -F= '{sub("^alias[ \t]*", ""); print $1}'
-    } | sort
+    } | sort -u
 }
+alias archer-help='archer-help'
 
 alias update='topgrade -y || (paru -Sy --needed --noconfirm archlinux-keyring; paru -Syu; flatpak update; pipx upgrade-all)'
 alias logout="shopt -q login_shell && logout || qdbus org.kde.ksmserver /KSMServer logout 0 0 1"
@@ -18,19 +19,24 @@ alias pacman-clean-orphan-packages='sudo pacman -Rns $(pacman -Qtdq)'
 alias paru-cache-cleanup='paru -Scd'
 
 why() { pacman -Qi "$1"; } # Check why a package is installed
+alias why='why'
 
 flatpak-clean() {
     sudo true || return
     flatpak uninstall --unused --delete-data
     flatpak remove --unused --delete-data
 }
+alias flatpak-clean='flatpak-clean'
 
 grub-update() { sudo true || return; grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; grub-mkconfig -o /boot/grub/grub.cfg; }
 grub-repair() { sudo true || return; pacman --noconfirm -S grub efibootmgr; grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; grub-mkconfig -o /boot/grub/grub.cfg; }
+alias grub-update='grub-update'
+alias grub-repair='grub-repair'
 alias grub-rescue='grub-repair'
 
 # Fix unmountable ntfs partitions
 ntfs-fix-partition() { sudo ntfsfix --clear-dirty --clear-bad-sectors "$1"; }
+alias ntfs-fix-partition='ntfs-fix-partition'
 
 paru-repair() {
     git clone https://aur.archlinux.org/paru-git.git
@@ -39,6 +45,7 @@ paru-repair() {
     cd ..
     rm -rf ./paru-git
 }
+alias paru-repair='paru-repair'
 
 pacman-fix-keys() {
     sudo true || return
@@ -57,6 +64,7 @@ pacman-fix-keys() {
     echo -e "Updating system"
     sudo pacman -Syu
 }
+alias pacman-fix-keys='pacman-fix-keys'
 
 arch-maintain() {
     sudo true || return
@@ -82,8 +90,9 @@ arch-maintain() {
     echo -e "Checking ~/.config size"
     du -sh "$HOME"/.config
 }
+alias arch-maintain='arch-maintain'
 
-refresh-mirrors() {
+mirror-refresh() {
     sudo true || return
     country_iso=$(curl ifconfig.co/country-iso)
     case "$1" in
@@ -112,5 +121,5 @@ refresh-mirrors() {
             ;;
     esac
 }
-alias refresh-mirror-list='refresh-mirrors'
-alias update-mirror-list='refresh-mirrors'
+alias mirror-refresh='mirror-refresh'
+alias mirror-update='mirror-refresh'

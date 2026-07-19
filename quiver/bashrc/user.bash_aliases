@@ -7,11 +7,13 @@ archer-help() {
         grep '^[[:alnum:]-]*()' /etc/bash.bash_aliases | awk -F'[(]' '{print $1}'
         # Get aliases
         grep "^alias" /etc/bash.bash_aliases | awk -F= '{sub("^alias[ \t]*", ""); print $1}'
-    } | sort
+    } | sort -u
 }
+alias archer-help='archer-help'
 
 # Automatically do an ls after each cd
 cd() { builtin cd "${1:-~}" && ls -a; }
+alias cd='cd'
 
 # Shortcuts
 alias home='cd ~'

@@ -1,0 +1,17 @@
+#!/bin/bash
+# Archer config file
+
+echo -e "Creating desktop entry to enable h264 codec in Steam"
+
+mkdir -p /home/"$user"/.config/autostart/
+chown "$user":"$user" /home/"$user"/.config/autostart/
+chmod 755 /home/"$user"/.config/autostart/
+
+cat <<END >>/home/"$user"/.config/autostart/h264-steam.desktop
+[Desktop Entry]
+Exec=sh -c 'steam steam://unlockh264/; rm -f "$HOME/.config/autostart/h264-steam.desktop"'
+Icon=/usr/share/pixmaps/archlinux-logo.png
+StartupNotify=true
+Type=Application
+END
+chown "$user":"$user" /home/"$user"/.config/autostart/h264-steam.desktop
