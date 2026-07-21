@@ -21,3 +21,23 @@ boot_config() {
     # shellcheck disable=SC2086
     localectl set-locale $default_locale
 }
+
+echo -e "-------------------------------------------------------------------------"
+echo -e "Setting up Archer-Config"
+
+mkdir -p /home/"$user"/.config/autostart/
+chown "$user":"$user" /home/"$user"/.config/autostart/
+chmod 755 /home/"$user"/.config/autostart/
+
+cat <<-END > /home/"$user"/.config/autostart/Archer-Config.desktop
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Type=Application
+Name=Archer Configuration Toolkit
+Comment=Launch Archer Configuration Toolkit
+Exec=konsole -e bash <(curl -fsSL https://raw.githubusercontent.com/Martan404/Archer-Config/main/archer-config) --temp; rm -f ~/.config/autostart/Archer-Config.desktop
+Terminal=false
+Icon=breeze-settings
+Categories=Utility;
+END
+chown "$user":"$user" /home/"$user"/.config/autostart/Archer-Config.desktop
