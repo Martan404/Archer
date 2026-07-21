@@ -148,7 +148,7 @@ reinstall_grub() {
 }
 
 reinstall_kernel(){
-	mapfile -t kernels < <(pacman -Qq | grep -E '^linux($|-(zen|lts|hardened))$')
+	mapfile -t kernels < <(pacman -Qq | grep -E '^linux($|-(zen|lts|hardened|cachyos))$')
 
 	if [ "${#kernels[@]}" -eq 0 ]; then
 		echo "No kernels found in system!"
