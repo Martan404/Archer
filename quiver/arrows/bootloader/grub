@@ -23,7 +23,7 @@ grub-mkconfig -o /boot/grub/grub.cfg
 echo -e "-------------------------------------------------------------------------"
 echo -e "Installing Grub theme"
 
-mv /Archer-main/quiver/bootloader/themes/arch-silence /boot/grub/themes/arch-silence
+mv /Archer-main/quiver/arrows/bootloader/themes/arch-silence /boot/grub/themes/arch-silence
 sed -i '/^[#]*GRUB_THEME=/c\GRUB_THEME="\/boot\/grub\/themes\/arch-silence\/theme.txt"' /etc/default/grub
 
 echo -e "-------------------------------------------------------------------------"
