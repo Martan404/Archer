@@ -107,14 +107,15 @@ mirror-refresh() {
             ;;
         *)
             if pacman -Q cachyos-mirrorlist &>/dev/null; then
-                echo "Ranking CachyOS and Arch mirrors"
+                echo "Rating CachyOS and Arch mirrors"
                 sudo cachyos-rate-mirrors
-                echo "Ranking Chaotic-AUR mirrors"
-                sudo rate-mirrors --allow-root --entry-country="$country_iso" --save=/etc/pacman.d/chaotic-mirrorlist chaotic-aur
             else
-                echo "Ranking Arch mirrors"
+                echo "Rating Arch mirrors"
                 sudo rate-mirrors --allow-root --entry-country="$country_iso" --save=/etc/pacman.d/mirrorlist arch
-                echo "Ranking Chaotic-AUR mirrors"
+            fi
+            
+            if pacman -Q chaotic-mirrorlist &>/dev/null; then
+                echo "Rating Chaotic-AUR mirrors"
                 sudo rate-mirrors --allow-root --entry-country="$country_iso" --save=/etc/pacman.d/chaotic-mirrorlist chaotic-aur
             fi
             sudo pacman -Syy
