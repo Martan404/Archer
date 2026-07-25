@@ -106,6 +106,7 @@ rebuild-detector
 reflector
 shellcheck
 spectacle
+superfile
 topgrade
 usbutils
 vivid
