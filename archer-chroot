@@ -319,17 +319,13 @@ setup_laptop() {
 		echo -e "-------------------------------------------------------------------------"
 		echo -e "Installing laptop packages"
 
-		package_installer " switcheroo-control"
-		systemctl enable switcheroo-control.service
-
+		package_installer "switcheroo-control auto-cpufreq"
+		
 		systemctl mask power-profiles-daemon.service
+		systemctl enable switcheroo-control.service
+		systemctl enable auto-cpufreq.service
 
-        if [ "$cpu" == "amd" ]; then
-			package_installer "auto-cpufreq"
-
-			echo -e "Enabling auto-cpufreq service"
-			systemctl enable auto-cpufreq.service
-        elif [ "$cpu" == "intel" ]; then
+        if [ "$cpu" == "intel" ]; then
 			package_installer "thermald"
 
 			echo -e "Enabling thermald service"
