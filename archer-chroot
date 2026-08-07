@@ -11,7 +11,6 @@ user=${user}
 root_password=${root_password}
 user_password=${user_password}
 install_type=${install_type}
-cachyos_repo=${cachyos_repo}
 kernel=${kernel}
 keyboard_keymap=${keyboard_keymap}
 default_locale=${default_locale}
@@ -48,19 +47,6 @@ setup_pacman() {
 	sed -i '/^ParallelDownloads = .*/a ILoveCandy' /etc/pacman.conf
 	sed -i '/^#Color/s/^#//' /etc/pacman.conf
 
-    if [[ $cachyos_repo == "yes" ]]; then
-        echo -e "-------------------------------------------------------------------------"
-        echo -e "Enabling CachyOS repo"
-
-        curl https://mirror.cachyos.org/cachyos-repo.tar.xz -o cachyos-repo.tar.xz
-        tar xvf cachyos-repo.tar.xz && rm -rf cachyos-repo.tar.xz && cd cachyos-repo
-        sed -i 's/pacman /pacman --noconfirm /g' ./cachyos-repo.sh
-        chmod +x ./cachyos-repo.sh
-        ./cachyos-repo.sh
-        cd .. && rm -rf ./cachyos-repo
-        package_installer "cachyos-rate-mirrors" pacman
-    fi
-
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Enabling Chaotic-AUR repo"
 
@@ -77,14 +63,8 @@ setup_pacman() {
 	pacman -Syyuu --noconfirm
 
 	echo -e "-------------------------------------------------------------------------"
-
-	if [[ $cachyos_repo == "yes" ]]; then
-	    echo -e "Ranking pacman and cachyos mirrors"
-	    cachyos-rate-mirrors >/dev/null
-	else
-		echo -e "Ranking pacman mirrors"
-		rate-mirrors --allow-root --entry-country="$country_iso" --save=/etc/pacman.d/mirrorlist arch >/dev/null
-	fi
+	echo -e "Ranking pacman mirrors"
+	rate-mirrors --allow-root --entry-country="$country_iso" --save=/etc/pacman.d/mirrorlist arch >/dev/null
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Ranking Chaotic-AUR mirrors"
@@ -303,6 +283,22 @@ setup_gpu() {
 	[ -n "$gpu_kernel_parameters" ] && sed -i "s/\(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*\)\"/\1 $gpu_kernel_parameters\"/" /etc/default/grub
 }
 
+install_packages() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Installing system packages"
+
+	[[ $install_type == "lite" ]] && package_installer "/Archer-main/quiver/lite_packages.txt"
+	[[ $install_type == "kde" ]] && package_installer "/Archer-main/quiver/kde_packages.txt"
+}
+
+setup_environment() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting up desktop environment"
+
+	[[ $install_type == "lite" ]] && echo -e "Nothing to do. Skipping..."
+	[[ $install_type == "kde" ]] && source "/Archer-main/quiver/arrows/desktop/kde"
+}
+
 setup_laptop() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing laptop-detect package"
@@ -368,20 +364,19 @@ setup_hibernation() {
 	fi
 }
 
-install_packages() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Installing system packages"
-
-	[[ $install_type == "lite" ]] && package_installer "/Archer-main/quiver/lite_packages.txt"
-	[[ $install_type == "kde" ]] && package_installer "/Archer-main/quiver/kde_packages.txt"
+snapshot_setup() {
+	source /Archer-main/quiver/arrows/snapshot/yabsnap
 }
 
-setup_environment() {
+snapshot_rollback() {
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting up desktop environment"
+	echo -e "Setting up Snapshot rollback script"
 
-	[[ $install_type == "lite" ]] && echo -e "Nothing to do. Skipping..."
-	[[ $install_type == "kde" ]] && source "/Archer-main/quiver/arrows/desktop/kde"
+	cat /Archer-main/quiver/scripts/rollback >/usr/local/bin/rollback
+	chmod a+x /usr/local/bin/rollback
+
+	cat /Archer-main/quiver/scripts/rollback-tui >/usr/local/bin/rollback-tui
+	chmod a+x /usr/local/bin/rollback-tui
 }
 
 bash_config() {
@@ -414,21 +409,6 @@ bash_config() {
 
 	cat /Archer-main/quiver/bashrc/user.bash_aliases >>/home/"$user"/.bash_aliases
 	chown "$user":"$user" /home/"$user"/.bash_aliases
-}
-
-snapshot_setup() {
-	source /Archer-main/quiver/arrows/snapshot/yabsnap
-}
-
-snapshot_rollback() {
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting up Snapshot rollback script"
-
-	cat /Archer-main/quiver/scripts/rollback >/usr/local/bin/rollback
-	chmod a+x /usr/local/bin/rollback
-
-	cat /Archer-main/quiver/scripts/rollback-tui >/usr/local/bin/rollback-tui
-	chmod a+x /usr/local/bin/rollback-tui
 }
 
 package_config() {
@@ -588,13 +568,15 @@ setup_paru_pipx
 setup_bootloader
 setup_cpu
 setup_gpu
-setup_laptop
-setup_hibernation
 
 install_packages
+setup_environment
+
+setup_laptop
+setup_hibernation
 snapshot_setup
 snapshot_rollback
-setup_environment
+
 bash_config
 boot_script
 package_config

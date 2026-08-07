@@ -86,6 +86,7 @@ blesh-git
 btop
 btrfs-assistant
 btrfsmaintenance
+code
 udisks2-btrfs
 dialog
 duperemove
@@ -110,7 +111,6 @@ superfile
 topgrade
 usbutils
 vivid
-zed
 # SYSTEM #
 
 # DESKTOP #

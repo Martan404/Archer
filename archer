@@ -121,16 +121,6 @@ set_variables() {
 		install_type="lite"
 		;;
 	esac
-
-    confirmed=0
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Enable CachyOS repo?"
-
-	while [ "$confirmed" != 1 ]; do
-        cachyos_repo=$(confirm "Choice:")
-        confirmed=$(confirm "Is this correct?")
-    done
-    [[ $cachyos_repo == 1 ]] && cachyos_repo="yes"
 }
 
 set_kernel() {
@@ -386,7 +376,6 @@ review_installation() {
     echo "User:            $user"
     echo "Encryption:      $disk_encryption"
     echo "Install type:    $install_type"
-    echo "CachyOS repo:    $cachyos_repo"
     echo "Kernel:          $kernel"
     echo "Keymap:          $keyboard_keymap"
     echo "Default locale:  $default_locale"
@@ -606,7 +595,7 @@ arch_chroot() {
 	echo -e "Changing root to new system"
 
 	export archer_logo && export archer_desc
-	export hostname && export user && export root_password && export user_password && export install_type && export cachyos_repo && export kernel && export keyboard_keymap && export default_locale && export timezone && export country_iso && export root_partition && export disk_encryption && export encrypted_root_partition
+	export hostname && export user && export root_password && export user_password && export install_type && export kernel && export keyboard_keymap && export default_locale && export timezone && export country_iso && export root_partition && export disk_encryption && export encrypted_root_partition
 
 	arch-chroot /mnt /bin/bash /Archer-main/archer-chroot
 
