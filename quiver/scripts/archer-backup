@@ -131,9 +131,11 @@ HOME_INCLUDE=(
     "\$HOME/.fonts"
     "\$HOME/.icons"
     "\$HOME/.themes"
+    "\$HOME/.gtkrc"
+    "\$HOME/.gtkrc-2.0"
 )
 
-BIN_DIR=(
+BIN_INCLUDE=(
 
 )
 
