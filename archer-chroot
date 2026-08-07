@@ -451,10 +451,6 @@ pacman_hooks() {
 	echo -e "Rebuilding GRUB configs"
 
 	grub-mkconfig -o /boot/grub/grub.cfg
-
-	echo -e "-------------------------------------------------------------------------"
-	echo -e "Making sure /home/$user belongs to $user"
-	chown -R "$user":"$user" /home/"$user"
 }
 
 boot_script() {
@@ -501,6 +497,10 @@ END
 }
 
 exit_chroot() {
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Making sure /home/$user belongs to $user"
+	chown -R "$user":"$user" /home/"$user"
+
 	echo "-------------------------------------------------------------------------"
 	echo "Restoring password requirement for wheel group"
 
