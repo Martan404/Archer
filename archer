@@ -215,11 +215,21 @@ set_locale() {
             continue
         fi
 
+        # Add "Skip" option at second locale
+        if [ "$more_locales" == 1 ]; then
+            locales=("Skip" "${locales[@]}")
+        fi
+        
         # Add "Search again" option at start
         locales=("Search again" "${locales[@]}")
 
         selected_idx=$(list "Select locale to add" "${locales[@]}")
         chosen_locale="${locales[$selected_idx]}"
+
+        # Handle Skip 
+        if [ "$chosen_locale" == "Skip" ]; then
+            chosen_locale=""
+        fi
 
         # Handle Search again
         if [ "$chosen_locale" == "Search again" ]; then
