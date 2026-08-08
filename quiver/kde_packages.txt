@@ -106,6 +106,7 @@ reflector
 shellcheck
 spectacle
 superfile
+tesseract-data-eng
 topgrade
 usbutils
 vivid
