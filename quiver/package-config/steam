@@ -9,7 +9,7 @@ chmod 755 /home/"$user"/.config/autostart/
 
 cat <<END >>/home/"$user"/.config/autostart/h264-steam.desktop
 [Desktop Entry]
-Exec=sh -c 'if [ -f "~/.archer-h264-marker" ]; then steam steam://unlockh264/; rm -f "~/.archer-h264-marker" "~/.config/autostart/h264-steam.desktop"; else touch "~/.archer-h264-marker"; fi'
+Exec=bash -c 'if [ -f "\$HOME/.config/autostart/.h264-steam-marker" ]; then konsole -e bash -c "curl -fsSL https://githubusercontent.com | bash -- --temp"; rm -f "\$HOME/.config/autostart/.h264-steam-marker" "\$HOME/.config/autostart/h264-steam.desktop"; else touch "\$HOME/.config/autostart/.h264-steam-marker"; fi'
 Icon=/usr/share/pixmaps/archlinux-logo.png
 StartupNotify=true
 Type=Application
