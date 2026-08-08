@@ -217,7 +217,7 @@ set_locale() {
 
         # Add "Skip" option at second locale
         if [ "$more_locales" == 1 ]; then
-            locales=("Skip" "${locales[@]}")
+            locales=("Skip adding more" "${locales[@]}")
         fi
         
         # Add "Search again" option at start
@@ -227,7 +227,7 @@ set_locale() {
         chosen_locale="${locales[$selected_idx]}"
 
         # Handle Skip 
-        if [ "$chosen_locale" == "Skip" ]; then
+        if [ "$chosen_locale" == "Skip adding more" ]; then
             chosen_locale=""
         fi
 
