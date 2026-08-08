@@ -26,12 +26,18 @@ fi
 # Documentation: https://bash-tui-toolkit.timo-reymann.de/latest/docs/
 echo -e "Getting bash TUI toolkit"
 
-if [[ -f ./quiver/bash-tui-toolkit.bash ]]; then
+if [[ -f ./bash-tui-toolkit.bash ]]; then
+    source ./bash-tui-toolkit.bash
+elif [[ -f ./quiver/bash-tui-toolkit.bash ]]; then
+    source ./quiver/bash-tui-toolkit.bash
+elif [[ -d ./quiver ]]; then
+    curl -qsS https://bash-tui-toolkit.timo-reymann.de/latest/bundle.bash -o ./quiver/bash-tui-toolkit.bash
     source ./quiver/bash-tui-toolkit.bash
 else
-    # shellcheck disable=SC1090
-    source <(curl -qsS https://bash-tui-toolkit.timo-reymann.de/latest/bundle.bash)
+    curl -qsS https://bash-tui-toolkit.timo-reymann.de/latest/bundle.bash -o ./bash-tui-toolkit.bash
+    source ./bash-tui-toolkit.bash
 fi
+
 script_path="$(realpath "${BASH_SOURCE[0]}")"
 
 get_root() {
