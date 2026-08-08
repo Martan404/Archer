@@ -236,7 +236,8 @@ set_locale() {
             continue
         fi
 
-        selected_locales+=("$chosen_locale")
+        # Only add if not empty
+        [ ! "$chosen_locale" == "" ] && selected_locales+=("$chosen_locale")
 
         more_locales=$(confirm "Add another locale?")
 
