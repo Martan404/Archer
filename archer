@@ -404,7 +404,7 @@ review_installation() {
         swapsize=""
         disk_encryption=""
         unset luks_password luks_password_confirm
-        config_installation
+        setup_installation
     fi
 }
 
@@ -551,6 +551,59 @@ setup_environment() {
     pacman -Sy
 }
 
+check_wifi() {
+    echo -e "-------------------------------------------------------------------------"
+    echo -e "Testing internet connection"
+    ping -w 5 -c 2 1.1.1.1 >/dev/null 2>&1
+
+    echo -e "Checking for active wifi interface"
+    for device in $(iwctl device list | awk 'NR>3 {print $2}'); do
+        if iwctl station "$device" show | grep -q 'State.*connected'; then
+            interface="$device"
+            break
+        fi
+    done
+
+    if [ -n "$interface" ]; then
+        echo -e "Found interface: $interface"
+
+        connected_ssid=$(iwctl station "$interface" show | grep 'Connected network' | sed 's/Connected network//g' | xargs)
+
+        if [ -n "$connected_ssid" ]; then
+            echo -e "Connected to network: $connected_ssid"
+            
+            # Locate the correct matching .psk file based on the active connection
+            if [ -f "/var/lib/iwd/${connected_ssid}.psk" ]; then
+                iwd_file="/var/lib/iwd/${connected_ssid}.psk"
+            else
+                # Decode fallback: convert SSID string to hex to match iwd's encoding format
+                hex_ssid=$(echo -n "$connected_ssid" | xxd -p | tr -d '\n')
+                if [ -f "/var/lib/iwd/=${hex_ssid}.psk" ]; then
+                    iwd_file="/var/lib/iwd/=${hex_ssid}.psk"
+                fi
+            fi
+
+            # Process the selected profile file
+            if [ -f "$iwd_file" ]; then
+
+                ssid="$connected_ssid"
+                ssid_password=$(grep '^Passphrase=' "$iwd_file" | cut -d= -f2)
+                [ -z "$ssid_password" ] && ssid_password=$(grep '^PreSharedKey=' "$iwd_file" | cut -d= -f2)
+
+                echo -e "Exporting wifi network credentials"
+                export ssid ssid_password
+            else
+                    echo -e "Network is connected but no matching .psk file found"
+            fi
+        else
+            echo -e "No connected network found"
+        fi
+
+    else
+        echo -e "No wifi interface found"
+    fi
+}
+
 install_system() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing base and kernel packages"
@@ -625,7 +678,7 @@ exit_install() {
 	exit
 }
 
-config_installation() {
+setup_installation() {
     show_logo
     set_variables
     set_kernel
@@ -639,7 +692,7 @@ config_installation() {
     set_swap
 }
 
-config_installation
+setup_installation
 review_installation
 
 format_drive
@@ -647,6 +700,7 @@ touch archer-check
 setup_drive
 setup_environment
 
+check_wifi
 install_system
 arch_chroot
 exit_install

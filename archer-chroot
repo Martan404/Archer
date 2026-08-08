@@ -19,6 +19,8 @@ country_iso=${country_iso}
 root_partition=${root_partition}
 disk_encryption=${disk_encryption}
 encrypted_root_partition=${encrypted_root_partition}
+ssid=${ssid}
+ssid_password=${ssid_password}
 
 source /bash-tui-toolkit.bash
 rm /bash-tui-toolkit.bash
@@ -299,6 +301,45 @@ setup_environment() {
 	[[ $install_type == "kde" ]] && source "/Archer-main/quiver/arrows/desktop/kde"
 }
 
+setup_wifi() {
+	if [ -n "$ssid" ]; then
+
+		# Generate a new unique UUID
+		uuid=$(cat /proc/sys/kernel/random/uuid)
+
+		echo -e "-------------------------------------------------------------------------"
+		echo -e "Creating NetworkManager entry for $ssid"
+
+		mkdir -p /etc/NetworkManager/system-connections/
+		cat << EOF > "/etc/NetworkManager/system-connections/${ssid}.nmconnection"
+[connection]
+id=${ssid}
+uuid=${uuid}
+type=wifi
+
+[wifi]
+mode=infrastructure
+ssid=${ssid}
+
+[wifi-security]
+auth-alg=open
+key-mgmt=wpa-psk
+psk=${ssid_password}
+
+[ipv4]
+method=auto
+
+[ipv6]
+method=auto
+addr-gen-mode=default
+EOF
+
+		# Set strict permissions and preview output
+		chmod 600 "/etc/NetworkManager/system-connections/${ssid}.nmconnection"
+
+	fi
+}
+
 setup_laptop() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Installing laptop-detect package"
@@ -572,6 +613,7 @@ setup_gpu
 install_packages
 setup_environment
 
+setup_wifi
 setup_laptop
 setup_hibernation
 snapshot_setup
