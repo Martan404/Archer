@@ -362,8 +362,9 @@ set_swap() {
 	confirmed=0
     swapsize=""
 
-    echo "Enter size for SWAP file. Minimum same as RAM recommended"
-
+    ram_gib=$(awk '/MemTotal:/ {printf "%d", int(($2 + 1024*1024 - 1)/(1024*1024))}' /proc/meminfo)
+    echo "Enter size for SWAP file. Minimum ${ram_gib} GiB recommended"
+    
     while [ "$confirmed" != 1 ]; do
 
         swapsize=$(with_validate 'input "Size (GiB):"' validate_present)
