@@ -30,15 +30,13 @@ chown "$user":"$user" /home/"$user"/.config/autostart/
 chmod 755 /home/"$user"/.config/autostart/
 
 cat <<-END > /home/"$user"/.config/autostart/Archer-Config.desktop
-#!/usr/bin/env xdg-open
 [Desktop Entry]
 Type=Application
 Name=Archer Configuration Toolkit
 Comment=Launch Archer Configuration Toolkit
-Exec=bash -c 'if [ -f "\$HOME/.config/autostart/.archer-config-marker" ]; then konsole -e bash <(curl -fsSL https://raw.githubusercontent.com/Martan404/Archer-Config/main/archer-config) --temp; rm -f "\$HOME/.config/autostart/"{.archer-config-marker,Archer-Config.desktop}; else touch "\$HOME/.config/autostart/.archer-config-marker"; fi'
+Exec=bash -c "if [ -f \"\$HOME/.config/autostart/.archer-config-marker\" ]; then konsole -e bash <(curl -fsSL https://raw.githubusercontent.com/Martan404/Archer-Config/main/archer-config) --temp; rm -f \"\$HOME/.config/autostart/.archer-config-marker\" \"\$HOME/.config/autostart/Archer-Config.desktop\"; else mkdir -p \"\$HOME/.config/autostart\" && touch \"\$HOME/.config/autostart/.archer-config-marker\"; fi"
 Terminal=false
 Icon=breeze-settings
 Categories=Utility;
 END
 chown "$user":"$user" /home/"$user"/.config/autostart/Archer-Config.desktop
-chmod +x /home/"$user"/.config/autostart/Archer-Config.desktop

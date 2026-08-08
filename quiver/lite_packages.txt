@@ -10,7 +10,6 @@ exfatprogs
 ntfs-3g
 ntfsprogs
 fatresize
-terminus-font
 ttf-nerd-fonts-symbols
 ttf-nerd-fonts-symbols-mono
 # DRIVERS #
