@@ -7,11 +7,12 @@ mkdir -p /home/"$user"/.config/autostart/
 chown "$user":"$user" /home/"$user"/.config/autostart/
 chmod 755 /home/"$user"/.config/autostart/
 
-cat <<END >>/home/"$user"/.config/autostart/h264-steam.desktop
+# Deletes itself after second launch
+cat <<END >/home/"$user"/.config/autostart/h264-steam.desktop
 [Desktop Entry]
-Exec=bash -c "if [ -f \"\$HOME/.config/autostart/.h264-steam-marker\" ]; then steam steam://unlockh264/; rm -f \"\$HOME/.config/autostart/.h264-steam-marker\" \"\$HOME/.config/autostart/h264-steam.desktop\"; else mkdir -p \"\$HOME/.config/autostart\" && touch \"\$HOME/.config/autostart/.h264-steam-marker\" && steam steam://unlockh264/; fi"
-Icon=/usr/share/pixmaps/archlinux-logo.png
-StartupNotify=true
 Type=Application
+Exec=bash -c "if [ -f /home/$user/.config/autostart/.h264-steam-marker ]; then steam steam://unlockh264/; rm -f /home/$user/.config/autostart/.h264-steam-marker /home/$user/.config/autostart/h264-steam.desktop; else mkdir -p /home/$user/.config/autostart && touch /home/$user/.config/autostart/.h264-steam-marker && steam steam://unlockh264/; fi"
+Terminal=false
+Icon=/usr/share/pixmaps/archlinux-logo.png
 END
 chown "$user":"$user" /home/"$user"/.config/autostart/h264-steam.desktop
