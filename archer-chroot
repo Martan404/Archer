@@ -112,7 +112,7 @@ END
 chmod +x /etc/NetworkManager/dispatcher.d/09-timezone
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting hardware clock to UTC"
+	echo -e "Setting hardware clock to correct UTC time"
 
 	hwclock --systohc
 	timedatectl set-local-rtc 0
@@ -554,6 +554,39 @@ exit_chroot() {
 	exit
 }
 
+update_mirrors() {
+    confirmed=0
+
+    mapfile -t all_countries < <(reflector --list-countries)
+
+    while [ "$confirmed" != 1 ]; do
+        search=$(input "Search mirror country (20 results)")
+
+        # Search countries
+        mapfile -t countries < <(
+            printf '%s\n' "${all_countries[@]}" | grep -i -- "$search" | head -n 20
+        )
+
+        # Try again if no results
+        if [ "${#countries[@]}" -eq 0 ]; then
+            continue
+        fi
+
+        # Add "Search again" option at start
+        countries=("Search again" "${countries[@]}")
+
+        selected_idx=$(list "Select mirror country" "${countries[@]}")
+        mirror_country="${countries[$selected_idx]}"
+
+        # Handle Search again
+        [ "$mirror_country" == "Search again" ] && continue
+ 
+        confirmed=$(confirm "Use '$mirror_country' for Arch mirrors?")
+    done
+
+    reflector --country "$mirror_country" --protocol https --latest 10 --sort rate --save /etc/pacman.d/mirrorlist
+}
+
 package_installer() {
 	input_packages=$1
 	package_manager=$2
@@ -572,11 +605,9 @@ package_installer() {
 		# shellcheck disable=SC2086
 		if [ "$package_manager" == "pacman" ]; then
 			[ "$try_count" -eq 1 ] && pacman -S --needed --noconfirm $packages && break
-			[ "$try_count" -eq 2 ] && echo -e "Refreshing keyring keys" && pacman-key --refresh-keys &>/dev/null
 			[ "$try_count" -gt 1 ] && pacman -S --needed $packages && break
 		else
 			[ "$try_count" -eq 1 ] && sudo -u "$user" paru -S --needed --noconfirm $packages && break
-			[ "$try_count" -eq 2 ] && echo -e "Refreshing keyring keys" && pacman-key --refresh-keys &>/dev/null
 			[ "$try_count" -gt 1 ] && sudo -u "$user" paru -S --needed $packages && break
 		fi
 
@@ -589,7 +620,9 @@ package_installer() {
 		echo -e "Choose option"
 		echo -e "1. Try again"
 		echo -e "2. Try again without signature verification"
-		echo -e "3. Exit"
+		echo -e "3. Refresh keys in keyring"
+		echo -e "4. Get new mirrors"
+		echo -e "5. Exit"
 
 		while true; do
 			read -r -p "Select: " choice
@@ -614,6 +647,13 @@ package_installer() {
 				rm -f "$tmp_pacman_conf"
 				;;
 			[3])
+				echo -e "Refreshing keyring keys"
+				pacman-key --refresh-keys &>/dev/null
+				;;
+			[4])
+				update_mirrors
+				;;
+			[5])
 				echo "$(tput setaf 9)Exiting...$(tput sgr0)"
 				exit
 				;;
