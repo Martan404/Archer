@@ -204,11 +204,11 @@ setup_paru_pipx() {
 		package_installer "git rust cmake" pacman
 
 		cd /home/"$user"/
-		sudo -u "$user" git clone https://aur.archlinux.org/paru-git.git 2>&1 | sudo_quiet
+		sudo -u "$user" git clone https://aur.archlinux.org/paru-git.git
 		cd paru
 
 		while true; do
-			sudo -u "$user" makepkg -si --needed --noconfirm 2>&1 | sudo_quiet && break
+			sudo -u "$user" makepkg -si --needed --noconfirm && break
 			echo "$(tput setaf 9)Paru build failed. Retrying...$(tput sgr0)"
 		done
 		cd .. && rm -rf paru/ && cd /
@@ -549,8 +549,6 @@ exit_chroot() {
 	exit
 }
 
-sudo_quiet() { grep -v "unable to find terminal name for device"; }
-
 package_installer() {
 	input_packages=$1
 	package_manager=$2
@@ -571,7 +569,7 @@ package_installer() {
 			pacman -S --needed --noconfirm $packages && break
 
 		else
-			sudo -u "$user" paru -S --needed --noconfirm $packages 2>&1 | sudo_quiet && break
+			sudo -u "$user" paru -S --needed --noconfirm $packages && break
 		fi
 
 		echo "$(tput setaf 9)Package installation failed. Retrying... ($try_count/$max_tries)$(tput sgr0)"
