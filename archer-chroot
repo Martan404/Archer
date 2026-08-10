@@ -572,11 +572,11 @@ package_installer() {
 		# shellcheck disable=SC2086
 		if [ "$package_manager" == "pacman" ]; then
 			[ "$try_count" -eq 1 ] && pacman -S --needed --noconfirm $packages && break
-			[ "$try_count" -eq 2 ] && echo -e "Refreshing keyring keys" && pacman-key --refresh-keys >/dev/null
+			[ "$try_count" -eq 2 ] && echo -e "Refreshing keyring keys" && pacman-key --refresh-keys &>/dev/null
 			[ "$try_count" -gt 1 ] && pacman -S --needed $packages && break
 		else
 			[ "$try_count" -eq 1 ] && sudo -u "$user" paru -S --needed --noconfirm $packages && break
-			[ "$try_count" -eq 2 ] && echo -e "Refreshing keyring keys" && pacman-key --refresh-keys >/dev/null
+			[ "$try_count" -eq 2 ] && echo -e "Refreshing keyring keys" && pacman-key --refresh-keys &>/dev/null
 			[ "$try_count" -gt 1 ] && sudo -u "$user" paru -S --needed $packages && break
 		fi
 
