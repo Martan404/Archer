@@ -604,7 +604,8 @@ package_installer() {
 				tmp_pacman_conf=$(mktemp)
 				
 				cp /etc/pacman.conf "$tmp_pacman_conf"
-				
+				chmod 644 "$tmp_pacman_conf"
+
 				sed -i '/^[[:space:]]*#\?[[:space:]]*SigLevel[[:space:]]*=/d' "$tmp_pacman_conf"
 				sed -i '/^\[options\]/a SigLevel = Never' "$tmp_pacman_conf"
 				
