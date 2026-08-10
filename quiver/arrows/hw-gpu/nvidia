@@ -3,7 +3,7 @@
 gpu_kernel_parameters="nvidia_drm.modeset=1 nvidia_drm.fbdev=1 nvidia.NVreg_PreserveVideoMemoryAllocations=1"
 
 if [[ $lspci_output == *"RTX"* ]]; then
-	nvidia_driver="nvidia-open-dkms nvidia-utils"
+	nvidia_driver="nvidia-open-dkms nvidia-utils lib32-nvidia-utils"
 
 elif [[ $lspci_output == *"GTX"* ]]; then
 	echo -e "Found GTX card. Installing nvidia-580xx-dkms"
