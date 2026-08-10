@@ -612,7 +612,6 @@ package_installer() {
 				sudo -u "$user" paru --config "$tmp_pacman_conf" -S --needed $packages
 
 				rm -f "$tmp_pacman_conf"
-				break
 				;;
 			[3])
 				echo "$(tput setaf 9)Exiting...$(tput sgr0)"
