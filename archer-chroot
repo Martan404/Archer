@@ -74,8 +74,7 @@ setup_pacman() {
 	rate-mirrors --allow-root --entry-country="$country_iso" --save=/etc/pacman.d/chaotic-mirrorlist chaotic-aur >/dev/null
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Setting up archlinux keyring"
-	pacman -Sy --needed --noconfirm archlinux-keyring
+	echo -e "Setting up keyring"
 	pacman-key --init
 	pacman-key --populate
 }
@@ -573,18 +572,12 @@ package_installer() {
 		# shellcheck disable=SC2086
 		if [ "$package_manager" == "pacman" ]; then
 			[ "$try_count" -eq 1 ] && pacman -S --needed --noconfirm $packages && break
-			if [ "$try_count" -gt 1 ]; then
-				echo -e "Refreshing keyring keys"
-				pacman-key --refresh-keys >/dev/null
-				pacman -S --needed $packages && break
-			fi
+			[ "$try_count" -eq 2 ] && echo -e "Refreshing keyring keys" && pacman-key --refresh-keys >/dev/null
+			[ "$try_count" -gt 1 ] && pacman -S --needed $packages && break
 		else
 			[ "$try_count" -eq 1 ] && sudo -u "$user" paru -S --needed --noconfirm $packages && break
-			if [ "$try_count" -gt 1 ]; then
-				echo -e "Refreshing keyring keys"
-				pacman-key --refresh-keys >/dev/null
-				sudo -u "$user" paru -S --needed $packages && break
-			fi
+			[ "$try_count" -eq 2 ] && echo -e "Refreshing keyring keys" && pacman-key --refresh-keys >/dev/null
+			[ "$try_count" -gt 1 ] && sudo -u "$user" paru -S --needed $packages && break
 		fi
 
 		echo "$(tput setaf 9)Package installation failed. Retrying... ($try_count/$max_tries)$(tput sgr0)"
@@ -595,7 +588,8 @@ package_installer() {
 
 		echo -e "Choose option"
 		echo -e "1. Try again"
-		echo -e "2. Exit"
+		echo -e "2. Try again without signature verification"
+		echo -e "3. Exit"
 
 		while true; do
 			read -r -p "Select: " choice
@@ -606,7 +600,20 @@ package_installer() {
 				package_installer "$packages" "$package_manager"
 				break
 				;;
-			[nN2])
+			[2])
+				tmp_pacman_conf=$(mktemp)
+				
+				cp /etc/pacman.conf "$tmp_pacman_conf"
+				
+				sed -i '/^[[:space:]]*#\?[[:space:]]*SigLevel[[:space:]]*=/d' "$tmp_pacman_conf"
+				sed -i '/^\[options\]/a SigLevel = Never' "$tmp_pacman_conf"
+				
+				sudo -u "$user" paru -S --needed $packages
+
+				rm -f "$tmp_pacman_conf"
+				break
+				;;
+			[nN3])
 				echo "$(tput setaf 9)Exiting...$(tput sgr0)"
 				exit
 				;;
