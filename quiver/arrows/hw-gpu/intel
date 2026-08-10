@@ -10,4 +10,4 @@ gpu_kernel_parameters=""
 echo -e "-------------------------------------------------------------------------"
 echo -e "Installing packages"
 
-package_installer "mesa vulkan-intel"
+package_installer "mesa vulkan-intel lib32-vulkan-intel"
