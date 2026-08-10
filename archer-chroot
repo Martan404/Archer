@@ -560,7 +560,7 @@ update_mirrors() {
     mapfile -t all_countries < <(reflector --list-countries)
 
     while [ "$confirmed" != 1 ]; do
-        search=$(input "Search mirror country (20 results)")
+        search=$(input "Search country (20 results)")
 
         # Search countries
         mapfile -t countries < <(
