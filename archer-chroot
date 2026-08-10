@@ -268,7 +268,7 @@ setup_gpu() {
 		export gpu="amd"
 		source /Archer-main/quiver/arrows/hw-gpu/amd
 
-	elif [[ $lspci_output == *"Integrated Graphics Controller"* ]] || [[ $lspci_output == *"Intel Corporation HD"* ]] || [[ $lspci_output == *"Intel Corporation UHD"* ]]; then
+	elif [[ $lspci_output == *"Intel Corporation"* ]]; then
 		echo -e "Found Intel"
 		export gpu="intel"
 		source /Archer-main/quiver/arrows/hw-gpu/intel
