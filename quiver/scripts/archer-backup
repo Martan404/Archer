@@ -183,7 +183,6 @@ SHARE_INCLUDE=(
     "\$SHARE_DIR/kxmlgui6"
     "\$SHARE_DIR/plasma"
     "\$SHARE_DIR/wallpapers"
-    "\$SHARE_DIR/user-places.xbel"
 )
 
 # Code OSS settings
