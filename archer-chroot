@@ -72,6 +72,11 @@ setup_pacman() {
 	echo -e "Ranking Chaotic-AUR mirrors"
 
 	rate-mirrors --allow-root --entry-country="$country_iso" --save=/etc/pacman.d/chaotic-mirrorlist chaotic-aur >/dev/null
+
+	echo -e "-------------------------------------------------------------------------"
+	echo -e "Setting up archlinux keyring"
+	pacman-key --init
+	pacman-key --populate
 }
 
 setup_system() {
