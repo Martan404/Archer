@@ -65,7 +65,7 @@ setup_pacman() {
 	pacman -Syyuu --noconfirm
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Ranking Pacman mirrors"
+	echo -e "Ranking Arch mirrors"
 	rate-mirrors --allow-root --entry-country="$country_iso" --save=/etc/pacman.d/mirrorlist arch >/dev/null
 
 	echo -e "-------------------------------------------------------------------------"
