@@ -595,7 +595,7 @@ package_installer() {
 			read -r -p "Select: " choice
 
 			case $choice in
-			[yY1])
+			[1])
 				try_count=0
 				package_installer "$packages" "$package_manager"
 				break
@@ -608,12 +608,12 @@ package_installer() {
 				sed -i '/^[[:space:]]*#\?[[:space:]]*SigLevel[[:space:]]*=/d' "$tmp_pacman_conf"
 				sed -i '/^\[options\]/a SigLevel = Never' "$tmp_pacman_conf"
 				
-				sudo -u "$user" paru -S --needed $packages
+				sudo -u "$user" paru --config "$tmp_pacman_conf" -S --needed $packages
 
 				rm -f "$tmp_pacman_conf"
 				break
 				;;
-			[nN3])
+			[3])
 				echo "$(tput setaf 9)Exiting...$(tput sgr0)"
 				exit
 				;;
