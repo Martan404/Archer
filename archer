@@ -346,7 +346,7 @@ set_efi() {
     confirmed=0
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Choose EFI partition size"
-    efi_sizes=("256MiB" "512MiB" "1GiB")
+    efi_sizes=("256MiB" "512MiB" "1GiB" "2GiB" "3GiB" "4GiB" "5GiB")
 
     while [ "$confirmed" != 1 ]; do
 
