@@ -75,8 +75,10 @@ setup_pacman() {
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Setting up archlinux keyring"
+	pacman -Sy --needed --noconfirm archlinux-keyring
 	pacman-key --init
 	pacman-key --populate
+	pacman -Syu
 }
 
 setup_system() {
