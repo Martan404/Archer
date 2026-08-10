@@ -584,7 +584,7 @@ update_mirrors() {
         confirmed=$(confirm "Use '$mirror_country' for Arch mirrors?")
     done
 
-    reflector --country "$mirror_country" --protocol https --latest 10 --sort rate --save /etc/pacman.d/mirrorlist
+    reflector --country "$mirror_country" --protocol https --latest 5 --sort rate --save /etc/pacman.d/mirrorlist
 }
 
 package_installer() {
