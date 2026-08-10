@@ -65,7 +65,7 @@ setup_pacman() {
 	pacman -Syyuu --noconfirm
 
 	echo -e "-------------------------------------------------------------------------"
-	echo -e "Ranking pacman mirrors"
+	echo -e "Ranking Pacman mirrors"
 	rate-mirrors --allow-root --entry-country="$country_iso" --save=/etc/pacman.d/mirrorlist arch >/dev/null
 
 	echo -e "-------------------------------------------------------------------------"
@@ -78,7 +78,6 @@ setup_pacman() {
 	pacman -Sy --needed --noconfirm archlinux-keyring
 	pacman-key --init
 	pacman-key --populate
-	pacman-key --refresh-keys
 }
 
 setup_system() {
@@ -574,11 +573,18 @@ package_installer() {
 		# shellcheck disable=SC2086
 		if [ "$package_manager" == "pacman" ]; then
 			[ "$try_count" -eq 1 ] && pacman -S --needed --noconfirm $packages && break
-			[ "$try_count" -gt 1 ] && pacman-key --refresh-keys && pacman -S --needed $packages && break
-
+			if [ "$try_count" -gt 1 ]; then
+				echo -e "Refreshing keyring keys"
+				pacman-key --refresh-keys >/dev/null
+				pacman -S --needed $packages && break
+			fi
 		else
 			[ "$try_count" -eq 1 ] && sudo -u "$user" paru -S --needed --noconfirm $packages && break
-			[ "$try_count" -gt 1 ] && pacman-key --refresh-keys && sudo -u "$user" paru -S --needed $packages && break
+			if [ "$try_count" -gt 1 ]; then
+				echo -e "Refreshing keyring keys"
+				pacman-key --refresh-keys >/dev/null
+				sudo -u "$user" paru -S --needed $packages && break
+			fi
 		fi
 
 		echo "$(tput setaf 9)Package installation failed. Retrying... ($try_count/$max_tries)$(tput sgr0)"
