@@ -44,7 +44,7 @@ set_variables() {
 
     while [ "$confirmed" != 1 ]; do
         hostname=$(with_validate 'input "Hostname:"' validate_present)
-
+        echo
         confirmed=$(confirm "Is this correct?")
     done
 
@@ -53,7 +53,7 @@ set_variables() {
 	echo -e "Enter name for user"
     while [ "$confirmed" != 1 ]; do
         user=$(with_validate 'input "User:"' validate_present)
-
+        echo
         confirmed=$(confirm "Is this correct?")
     done
 
@@ -86,6 +86,7 @@ set_variables() {
 
 	while [ "$confirmed" != 1 ]; do
         disk_encryption=$(confirm "Choice:")
+        echo
         confirmed=$(confirm "Is this correct?")
     done
 
@@ -110,6 +111,7 @@ set_variables() {
 	install_options=("KDE Plasma" "Lite")
     while [ "$confirmed" != 1 ]; do
         install_option=$(list "Selection:" "${install_options[@]}")
+        echo
         confirmed=$(confirm "Is this correct?")
     done
 
@@ -145,6 +147,7 @@ set_kernel() {
              2) kernel="linux-lts" ;;
              3) kernel="linux-hardened" ;;
          esac
+         echo
          confirmed=$(confirm "Use $kernel kernel?")
      done
 }
@@ -160,6 +163,7 @@ check_keymap() {
 		set_keymap
 
 	else
+        echo
 		confirmed=$(confirm "$existing_keymap is currently used as keymap. Set it as default?")
 		if [ "$confirmed" == 1 ]; then
 			keyboard_keymap=$existing_keymap
@@ -194,6 +198,7 @@ set_keymap() {
             continue
         fi
 
+        echo
         confirmed=$(confirm "Is '$keyboard_keymap' correct?")
     done
 }
@@ -245,6 +250,7 @@ set_locale() {
 
             printf "Selected locales: %s\n" "$(printf '%s | ' "${selected_locales[@]}" | sed 's/ | $//')"
 
+            echo
             confirmed=$(confirm "Is this selection correct?")
 
             if [ "$confirmed" == 0 ]; then
@@ -311,7 +317,10 @@ set_timezone() {
             done
         fi
 
-        [ -z "$timezone" ] || confirmed=$(confirm "Use timezone '$timezone'?")
+        if [[ -n "$timezone" ]]; then
+            echo
+            confirmed=$(confirm "Use timezone '$timezone'?")
+        fi
     done
 }
 
@@ -338,6 +347,7 @@ set_disk() {
         echo "Disk info: "
         lsblk "$disk"
 
+        echo
         confirmed=$(confirm "Is disk $disk correct?")
     done
 }
@@ -353,6 +363,7 @@ set_efi() {
         selected_idx=$(list "Size:" "${efi_sizes[@]}")
         efi_size="${efi_sizes[$selected_idx]}"
 
+        echo
         confirmed=$(confirm "Use $efi_size EFI size?")
     done
 }
@@ -374,6 +385,7 @@ set_swap() {
             echo "Invalid input. Enter a valid number"
             continue
         fi
+        echo
         confirmed=$(confirm "Use ${swapsize}GiB swap file?")
     done
 }
@@ -400,6 +412,7 @@ review_installation() {
 
     while [ "$confirmed" != 1 ]; do
         proceed=$(confirm "Proceed with installation?")
+        echo
         confirmed=$(confirm "Are you sure?")
     done
 
@@ -417,6 +430,7 @@ review_installation() {
         disk_encryption=""
         unset luks_password luks_password_confirm
         setup_installation
+        review_installation
     fi
 }
 
