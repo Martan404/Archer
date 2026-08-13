@@ -2,7 +2,7 @@
 
 sudo echo >/dev/null
 # Patch 1
-sudo cat <<-END >/etc/xdg/user-dirs.defaults
+cat <<-END > $HOME/user-dirs.defaults
 # Default settings for user directories
 #
 # The values are relative pathnames from the home directory and
@@ -23,6 +23,7 @@ PROJECTS=Projects
 APPLICATIONS=Applications
 GAMES=Games
 END
+sudo mv $HOME/user-dirs.defaults /etc/xdg/user-dirs.defaults
 
 {
 echo "[Desktop Entry]"
