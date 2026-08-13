@@ -23,21 +23,15 @@ boot_config() {
 }
 
 echo -e "-------------------------------------------------------------------------"
-echo -e "Setting up Archer-Config"
+echo -e "Creating Archer-Config desktop entry"
 
-mkdir -p /home/"$user"/.config/autostart/
-chown "$user":"$user" /home/"$user"/.config/autostart/
-chmod 755 /home/"$user"/.config/autostart/
-
-# Deletes itself after second launch
-cat <<-END > /home/"$user"/.config/autostart/Archer-Config.desktop
+cat <<-END > /usr/share/applications/archer-config.desktop
 [Desktop Entry]
 Type=Application
 Name=Archer Configuration Toolkit
-Comment=Launch Archer Configuration Toolkit
-Exec=bash -c "if [ -f /home/$user/.config/autostart/.archer-config-marker ]; then konsole -e bash <(curl -fsSL https://raw.githubusercontent.com/Martan404/Archer-Config/main/archer-config) --temp; rm -f /home/$user/.config/autostart/.archer-config-marker /home/$user/.config/autostart/Archer-Config.desktop; else mkdir -p /home/$user/.config/autostart && touch /home/$user/.config/autostart/.archer-config-marker; fi"
+Comment=Install and configure new features
+Exec=konsole -e bash <(curl -fsSL https://raw.githubusercontent.com/Martan404/Archer-Config/main/archer-config) --temp
 Terminal=false
-Icon=breeze-settings
+Icon=project-open
 Categories=Utility;
 END
-chown "$user":"$user" /home/"$user"/.config/autostart/Archer-Config.desktop
