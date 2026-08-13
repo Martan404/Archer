@@ -245,7 +245,6 @@ set_locale() {
 
             printf "Selected locales: %s\n" "$(printf '%s | ' "${selected_locales[@]}" | sed 's/ | $//')"
 
-            echo
             confirmed=$(confirm "Is this selection correct?")
 
             if [ "$confirmed" == 0 ]; then
