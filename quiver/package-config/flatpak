@@ -66,7 +66,9 @@ flatpak_install_script() {
     reboot
 }
 
-awk '/^flatpak_install_script\(\) \{$/ { found=1; next } found && /^}$/ { exit } found { print }' "${BASH_SOURCE[0]}" > /home/"$user"/.local/bin/flatpak-installer
+echo "#!/bin/bash" > /home/"$user"/.local/bin/flatpak-installer
+declare -f flatpak_install_script | tail -n +3 | head -n -1 >> /home/"$user"/.local/bin/flatpak-installer
+
 chmod a+x /home/"$user"/.local/bin/flatpak-installer
 chown "$user":"$user" /home/"$user"/.local/bin/flatpak-installer
 
