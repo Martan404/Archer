@@ -30,6 +30,7 @@ echo "Icon=folder-publicshare"
 } >> /home/"$USER"/Public/.directory
 
 rm /home/"$USER"/Applications/.directory
+{
 echo "[Desktop Entry]"
 echo "Icon=folder-appimage"
 } >> /home/"$USER"/Applications/.directory
