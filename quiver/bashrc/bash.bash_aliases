@@ -23,13 +23,13 @@ alias why='why'
 
 flatpak-clean() {
     sudo true || return
-    flatpak uninstall --unused --delete-data
-    flatpak remove --unused --delete-data
+    sudo flatpak uninstall --unused --delete-data
+    sudo flatpak remove --unused --delete-data
 }
 alias flatpak-clean='flatpak-clean'
 
-grub-update() { sudo true || return; grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; grub-mkconfig -o /boot/grub/grub.cfg; }
-grub-repair() { sudo true || return; pacman --noconfirm -S grub efibootmgr; grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; grub-mkconfig -o /boot/grub/grub.cfg; }
+grub-update() { sudo true || return; sudo grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; sudo grub-mkconfig -o /boot/grub/grub.cfg; }
+grub-repair() { sudo true || return; sudo pacman --noconfirm -S grub efibootmgr; sudo grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; sudo grub-mkconfig -o /boot/grub/grub.cfg; }
 alias grub-update='grub-update'
 alias grub-repair='grub-repair'
 alias grub-rescue='grub-repair'
