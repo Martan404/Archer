@@ -27,12 +27,12 @@ END
 {
 echo "[Desktop Entry]"
 echo "Icon=folder-publicshare"
-} >> /home/"$user"/Public/.directory
+} >> /home/"$USER"/Public/.directory
 
-rm /home/"$user"/Applications/.directory
+rm /home/"$USER"/Applications/.directory
 echo "[Desktop Entry]"
 echo "Icon=folder-appimage"
-} >> /home/"$user"/Applications/.directory
+} >> /home/"$USER"/Applications/.directory
 
 rm -rf $HOME/Share
 
@@ -40,10 +40,10 @@ xdg-user-dirs-update --force
 
 # Patch 2
 sudo sed -i '$d' /etc/updatedb.conf
-sed -i 's/^PRUNENAMES = "\(.*\)"/PRUNENAMES = "\1 .snapshots"/' /etc/updatedb.conf
+sudo sed -i 's/^PRUNENAMES = "\(.*\)"/PRUNENAMES = "\1 .snapshots"/' /etc/updatedb.conf
 
 sudo updatedb
 
 # Patch 3
 
-rm "$USER"/.local/share/user-places.xbel
+rm "$HOME"/.local/share/user-places.xbel
