@@ -18,7 +18,7 @@ sed -i 's/keep_daily = 5/keep_daily = 3/' /etc/yabsnap/configs/root.conf
 echo -e "-------------------------------------------------------------------------"
 echo -e "Excluding /.snapshots from updatedb"
 
-echo "PRUNENAMES = \".snapshots\"" >>/etc/updatedb.conf
+sed -i 's/^PRUNENAMES = "\(.*\)"/PRUNENAMES = "\1 .snapshots"/' /etc/updatedb.conf
 
 echo -e "-------------------------------------------------------------------------"
 echo -e "Enabling Yabsnap service"
