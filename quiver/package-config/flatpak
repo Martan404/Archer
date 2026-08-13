@@ -69,7 +69,7 @@ flatpak_install_script() {
 mkdir -p /home/"$user"/.local/bin/
 
 echo "#!/bin/bash" > /home/"$user"/.local/bin/flatpak-installer
-declare -f flatpak_install_script | tail -n +3 | head -n -1 >> /home/"$user"/.local/bin/flatpak-installer
+declare -f flatpak_install_script | tail -n +3 | head -n -1 | sed 's/^[[:space:]]\{4\}//' >> /home/"$user"/.local/bin/flatpak-installer
 
 chmod a+x /home/"$user"/.local/bin/flatpak-installer
 chown "$user":"$user" /home/"$user"/.local/bin/flatpak-installer
