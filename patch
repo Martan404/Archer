@@ -1,0 +1,49 @@
+#!/bin/bash
+
+sudo echo >/dev/null
+# Patch 1
+sudo cat <<-END >/etc/xdg/user-dirs.defaults
+# Default settings for user directories
+#
+# The values are relative pathnames from the home directory and
+# will be translated on a per-path-element basis into the users locale
+DESKTOP=Desktop
+DOWNLOAD=Downloads
+TEMPLATES=Templates
+PUBLICSHARE=Public
+DOCUMENTS=Documents
+MUSIC=Music
+PICTURES=Pictures
+VIDEOS=Videos
+PROJECTS=Projects
+# Another alternative is:
+#MUSIC=Documents/Music
+#PICTURES=Documents/Pictures
+#VIDEOS=Documents/Videos
+APPLICATIONS=Applications
+GAMES=Games
+END
+
+{
+echo "[Desktop Entry]"
+echo "Icon=folder-publicshare"
+} >> /home/"$user"/Public/.directory
+
+rm /home/"$user"/Applications/.directory
+echo "[Desktop Entry]"
+echo "Icon=folder-appimage"
+} >> /home/"$user"/Applications/.directory
+
+rm -rf $HOME/Share
+
+xdg-user-dirs-update --force
+
+# Patch 2
+sudo sed -i '$d' /etc/updatedb.conf
+sed -i 's/^PRUNENAMES = "\(.*\)"/PRUNENAMES = "\1 .snapshots"/' /etc/updatedb.conf
+
+sudo updatedb
+
+# Patch 3
+
+rm "$USER"/.local/share/user-places.xbel
