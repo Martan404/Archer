@@ -46,6 +46,7 @@ done
 while true; do
 	flatpak install flathub -y --noninteractive $packages && break
     echo "$(tput setaf 9)Package installation failed. Retrying...$(tput sgr0)"
+    sleep 3
 done
 
 echo -e "Fix game controller remote access pop up spam in KDE Plasma"
