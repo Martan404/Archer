@@ -68,7 +68,7 @@ sed -i 's/^ALLOW_GROUPS=""/ALLOW_GROUPS="wheel"/' /etc/snapper/configs/root
 echo -e "-------------------------------------------------------------------------"
 echo -e "Excluding /.snapshots from updatedb"
 
-echo "PRUNENAMES = \".snapshots\"" >>/etc/updatedb.conf
+sed -i 's/^PRUNENAMES = "\(.*\)"/PRUNENAMES = "\1 .snapshots"/' /etc/updatedb.conf
 
 echo -e "-------------------------------------------------------------------------"
 echo -e "Enabling Snapper Boot, Timeline and Cleanup timers"
