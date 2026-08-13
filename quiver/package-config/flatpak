@@ -66,6 +66,8 @@ flatpak_install_script() {
     reboot
 }
 
+mkdir -p /home/"$user"/.local/bin/
+
 echo "#!/bin/bash" > /home/"$user"/.local/bin/flatpak-installer
 declare -f flatpak_install_script | tail -n +3 | head -n -1 >> /home/"$user"/.local/bin/flatpak-installer
 
