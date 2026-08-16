@@ -9,4 +9,4 @@ Target = usr/lib/modules/*/vmlinuz
 Depends = rsync
 Description = Backing up /boot after updating...
 When = PostTransaction
-Exec = /usr/bin/rsync -a --delete /boot /.boot-backup/post-update
+Exec = /usr/bin/rsync -a --delete --exclude='*.iso' /boot /.boot-backup/post-update
