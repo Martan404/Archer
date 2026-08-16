@@ -7,10 +7,10 @@ echo -e "Configuring KDE Plasma"
 echo -e "-------------------------------------------------------------------------"
 echo -e "Installing archer-backup and restoring home"
 
-mv /Archer-main/quiver/scripts/archer-backup /usr/local/bin/archer-backup
-chmod a+x /usr/local/bin/archer-backup
+tar -xf /Archer-main/quiver/config-files/Archer.tar -C "/usr/local/bin" archer-backup
 
-sudo -u "$user" /usr/local/bin/archer-backup --restore /Archer-main/quiver/config-files/Archer.tar.gz
+chmod a+x /usr/local/bin/archer-backup
+sudo -u "$user" /usr/local/bin/archer-backup --restore /Archer-main/quiver/config-files/Archer.tar
 
 echo -e "-------------------------------------------------------------------------"
 echo -e "Setting up Breeze GTK theme"
