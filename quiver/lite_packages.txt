@@ -7,9 +7,6 @@ wireless-regdb
 impala
 dosfstools
 exfatprogs
-ntfs-3g
-ntfsprogs
-fatresize
 ttf-nerd-fonts-symbols
 ttf-nerd-fonts-symbols-mono
 # DRIVERS #
@@ -29,6 +26,7 @@ man-pages
 openssh
 pacman-contrib
 pacutils
+plocate
 rebuild-detector
 reflector
 shellcheck
