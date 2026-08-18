@@ -30,6 +30,6 @@ station [device name] scan
 station [device name] get-networks
 station [device name] connect [network name]
 ```
-Enter your password and run `exit`. You can test if you have internet connection by running `ping archlinux.org`, press Ctrl + C to stop the ping test
+Enter your password and then `exit`. You can test if you have internet connection by running `ping archlinux.org`, press Ctrl + C to stop the ping test
 
 *You can check if the WiFi is blocked by running `rfkill list`. If it says **Soft blocked: yes**, then run `rfkill unblock wifi`*
