@@ -64,4 +64,4 @@ chmod +x /etc/grub.d/45_netboot.xyz
 echo -e "-------------------------------------------------------------------------"
 echo -e "Preparing /boot backup directory structure"
 
-mkdir -p /.boot-backup/{pre-update,post-update}
+mkdir -p /.boot-backup

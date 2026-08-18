@@ -9,4 +9,4 @@ Target = usr/lib/modules/*/vmlinuz
 Depends = rsync
 Description = Backing up /boot before updating...
 When = PreTransaction
-Exec = /usr/bin/rsync -a --delete --exclude='*.iso' /boot /.boot-backup/pre-update
+Exec = /usr/bin/rsync -a --delete --exclude='*.iso' /boot /.boot-backup
