@@ -6,11 +6,11 @@ sudo rm -rf /.boot-backup/post-update
 sudo rm -rf /.boot-backup/pre-update
 sudo sed -i 's|/boot /.boot-backup/pre-update$|/boot /.boot-backup|' /etc/pacman.d/hooks/00-boot-backup-pre-update.hook
 
-curl -L https://raw.githubusercontent.com/Martan404/Archer/main/patch_files/bashrc/bash.bash_aliases | sudo tee /etc/bash.bash_aliases > /dev/null
+curl -L https://raw.githubusercontent.com/Martan404/Archer/main/quiver/bashrc/bash.bash_aliases | sudo tee /etc/bash.bash_aliases > /dev/null
 
-curl -L https://raw.githubusercontent.com/Martan404/Archer/main/patch_files/bashrc/bash.bashrc | sudo tee /etc/bash.bashrc > /dev/null
+curl -L https://raw.githubusercontent.com/Martan404/Archer/main/patch_files/bash.bashrc | sudo tee /etc/bash.bashrc > /dev/null
 
-curl -L https://raw.githubusercontent.com/Martan404/Archer/main/patch_files/bashrc/.bashrc | tee ~/.bashrc > /dev/null
+curl -L https://raw.githubusercontent.com/Martan404/Archer/main/patch_files/.bashrc | tee ~/.bashrc > /dev/null
 
 echo "Done"
 
