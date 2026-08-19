@@ -60,7 +60,7 @@ pacman-fix-keys() {
     echo -e "Updating pacman databases"
     sudo pacman -Sy
     echo -e "Refreshing mirror list"
-    refresh-mirror-list
+    mirror-refresh
     echo -e "Updating system"
     sudo pacman -Syu
 }
