@@ -110,6 +110,7 @@ ffmpegthumbs
 flatpak
 flatpak-kcm
 flatpak-xdg-utils
+isoimagewriter
 kcron
 kde-gtk-config
 kde-inotify-survey
