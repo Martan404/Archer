@@ -12,5 +12,7 @@ curl -L https://raw.githubusercontent.com/Martan404/Archer/main/patch_files/bash
 
 curl -L https://raw.githubusercontent.com/Martan404/Archer/main/patch_files/.bashrc | tee ~/.bashrc > /dev/null
 
+curl -L https://raw.githubusercontent.com/Martan404/Archer/main/quiver/bashrc/user.bash_aliases | tee ~/.bash_aliases > /dev/null
+
 echo "Done"
 
