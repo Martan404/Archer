@@ -48,5 +48,7 @@ arch-maintain() {\
     du -sh "$HOME"/.config\
 }' /etc/bash.bash_aliases
 
+sudo sed -i 's/refresh-mirror-list/mirror-refresh/g' /etc/bash.bash_aliases
+
 echo "Done"
 
