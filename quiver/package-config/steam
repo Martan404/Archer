@@ -11,7 +11,7 @@ chmod 755 /home/"$user"/.config/autostart/
 cat <<END >/home/"$user"/.config/autostart/h264-steam.desktop
 [Desktop Entry]
 Type=Application
-Exec=bash -c "if [ -f /home/$user/.config/autostart/.h264-steam-marker ]; then steam steam://unlockh264/; rm -f /home/$user/.config/autostart/.h264-steam-marker /home/$user/.config/autostart/h264-steam.desktop; else mkdir -p /home/$user/.config/autostart && touch /home/$user/.config/autostart/.h264-steam-marker && steam steam://unlockh264/; fi"
+Exec=bash -c "if [ -f /home/$user/.config/autostart/.h264-steam-marker ]; then steam steam://unlockh264/ && rm -f /home/$user/.config/autostart/{.h264-steam-marker,h264-steam.desktop}; else mkdir -p /home/$user/.config/autostart && touch /home/$user/.config/autostart/.h264-steam-marker && steam steam://unlockh264/; fi"
 Terminal=false
 Icon=/usr/share/pixmaps/archlinux-logo.png
 END

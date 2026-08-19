@@ -66,32 +66,6 @@ pacman-fix-keys() {
 }
 alias pacman-fix-keys='pacman-fix-keys'
 
-arch-maintain() {
-    sudo true || return
-    echo -e "Checking for failed systemd services"
-    systemctl --failed
-    echo -e "Checking log files"
-    sudo timeout 3s journalctl -p 3 -xb -f
-    echo -e "Cleaning log files"
-    sudo journalctl --vacuum-time=1day
-    sudo journalctl --flush --rotate
-    echo -e "Refreshing pacman mirrors"
-    refresh-mirror-list
-    echo -e "Updating system"
-    sudo pacman -Syu
-    echo -e "Removing orphaned packages"
-    sudo pacman -Rns "$(pacman -Qtdq)"
-    echo -e "Removing cached packages"
-    paccache -rvuk0
-    echo -e "Removing cached AUR packages"
-    paru --clean
-    echo -e "Cleaning ~/.cache"
-    rm -rf "$HOME"/.cache/*
-    echo -e "Checking ~/.config size"
-    du -sh "$HOME"/.config
-}
-alias arch-maintain='arch-maintain'
-
 mirror-refresh() {
     sudo true || return
     country_iso=$(curl ifconfig.co/country-iso)
@@ -124,3 +98,29 @@ mirror-refresh() {
 }
 alias mirror-refresh='mirror-refresh'
 alias mirror-update='mirror-refresh'
+
+arch-maintain() {
+    sudo true || return
+    echo -e "Checking for failed systemd services"
+    systemctl --failed
+    echo -e "Checking log files"
+    sudo timeout 3s journalctl -p 3 -xb -f
+    echo -e "Cleaning log files"
+    sudo journalctl --vacuum-time=1day
+    sudo journalctl --flush --rotate
+    echo -e "Refreshing pacman mirrors"
+    mirror-refresh
+    echo -e "Updating system"
+    topgrade || sudo pacman -Syu
+    echo -e "Removing orphaned packages"
+    sudo pacman -Rns "$(pacman -Qtdq)"
+    echo -e "Removing cached packages"
+    paccache -rvuk0
+    echo -e "Removing cached AUR packages"
+    paru --clean
+    echo -e "Cleaning ~/.cache"
+    rm -rf "$HOME"/.cache/*
+    echo -e "Checking ~/.config size"
+    du -sh "$HOME"/.config
+}
+alias arch-maintain='arch-maintain'
