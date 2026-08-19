@@ -8,5 +8,9 @@ sudo sed -i 's|/boot /.boot-backup/pre-update$|/boot /.boot-backup|' /etc/pacman
 
 curl -L https://raw.githubusercontent.com/Martan404/Archer/main/quiver/bashrc/bash.bash_aliases | sudo tee /etc/bash.bash_aliases > /dev/null
 
+curl -L https://raw.githubusercontent.com/Martan404/Archer/main/quiver/bashrc/bash.bashrc | sudo tee /etc/bash.bashrc > /dev/null
+
+curl -L https://raw.githubusercontent.com/Martan404/Archer/main/quiver/bashrc/user.bashrc | tee ~/.bashrc > /dev/null
+
 echo "Done"
 

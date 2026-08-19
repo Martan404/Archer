@@ -1,10 +1,8 @@
 
 # Check /etc/bash.bashrc for more configuration
 
+# ble.sh
 [[ $- == *i* ]] && source /usr/share/blesh/ble.sh --noattach
-
-# If not running interactively, don't do anything
-[[ $- != *i* ]] && return
 
 # Get user aliases
 [[ -r $HOME/.bash_aliases ]] && source $HOME/.bash_aliases
