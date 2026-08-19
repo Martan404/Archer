@@ -12,7 +12,7 @@ archer-help() {
 alias archer-help='archer-help'
 
 # Automatically do an ls after each cd
-cd() { builtin cd "${1:-~}" && ls -A --color=auto; }
+cd() { builtin cd "${1:-~}" && ls --color=auto; }
 alias cd='cd'
 
 # Shortcuts
