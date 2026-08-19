@@ -651,7 +651,7 @@ arch_chroot() {
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Downloading Quiver"
 
-	cd /mnt && curl -L https://github.com/Martan404/Archer/archive/master.tar.gz | tar -xz Archer-main && cd /
+	cd /mnt && curl -L https://github.com/Martan404/Archer/archive/main.tar.gz | tar -xz Archer-main && cd /
 
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Copying Bash TUI toolkit"
@@ -695,6 +695,10 @@ exit_install() {
 	reboot || shutdown now
 	exit
 }
+
+#-------------------------------------------------------------------------
+################################## Main ##################################
+#-------------------------------------------------------------------------
 
 setup_installation() {
     show_logo
