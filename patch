@@ -1,0 +1,52 @@
+#!/bin/bash
+
+sudo sed -i '/^grub-update()/,/^}/c\
+grub-update() { sudo grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; sudo grub-mkconfig -o /boot/grub/grub.cfg; }\
+' /etc/bash.bash_aliases
+
+sudo sed -i '/^grub-repair()/,/^}/c\
+grub-repair() { sudo pacman --noconfirm -S grub efibootmgr; sudo grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck; sudo grub-mkconfig -o /boot/grub/grub.cfg; }\
+' /etc/bash.bash_aliases
+
+sudo sed -i '/^flatpak-clean()/,/^}/c\
+flatpak-clean() {\
+    sudo true || return\
+    sudo flatpak uninstall --unused --delete-data\
+    sudo flatpak remove --unused --delete-data\
+}\
+' /etc/bash.bash_aliases
+
+sudo sed -i "/rsync/s#rsync -a#rsync -a --exclude='*.iso'#" /etc/pacman.d/hooks/00-boot-backup-pre-update.hook
+sudo rm /etc/pacman.d/hooks/95-boot-backup-post-update.hook
+sudo rm -rf /.boot-backup/post-update
+sudo rm -rf /.boot-backup/pre-update
+sudo sed -i 's|/boot /.boot-backup/pre-update$|/boot /.boot-backup|' /etc/pacman.d/hooks/00-boot-backup-pre-update.hook
+
+sudo sed -i '/^arch-maintain() {$/,/^}$/c\
+arch-maintain() {\
+    sudo true || return\
+    echo -e "Checking for failed systemd services"\
+    systemctl --failed\
+    echo -e "Checking log files"\
+    sudo timeout 3s journalctl -p 3 -xb -f\
+    echo -e "Cleaning log files"\
+    sudo journalctl --vacuum-time=1day\
+    sudo journalctl --flush --rotate\
+    echo -e "Refreshing pacman mirrors"\
+    mirror-refresh\
+    echo -e "Updating system"\
+    topgrade || sudo pacman -Syu\
+    echo -e "Removing orphaned packages"\
+    sudo pacman -Rns "$(pacman -Qtdq)"\
+    echo -e "Removing cached packages"\
+    paccache -rvuk0\
+    echo -e "Removing cached AUR packages"\
+    paru --clean\
+    echo -e "Cleaning ~/.cache"\
+    rm -rf "$HOME"/.cache/*\
+    echo -e "Checking ~/.config size"\
+    du -sh "$HOME"/.config\
+}' /etc/bash.bash_aliases
+
+echo "Done"
+
