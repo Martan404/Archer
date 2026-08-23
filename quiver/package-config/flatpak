@@ -44,7 +44,7 @@ flatpak_install_script() {
     done
 
     while true; do
-        flatpak install flathub -y --noninteractive $packages && break
+        flatpak install flathub --system --assumeyes --noninteractive $packages && break
         echo "$(tput setaf 9)Package installation failed. Retrying...$(tput sgr0)"
         sleep 3
     done
