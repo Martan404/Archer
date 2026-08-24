@@ -43,10 +43,8 @@ flatpak_install_script() {
         sleep 5
     done
 
-    flatpak remote-add --if-not-exists --user flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-
     while true; do
-        flatpak install flathub --user --assumeyes --noninteractive $packages && break
+        flatpak install flathub --system --assumeyes --noninteractive $packages && break
         echo "$(tput setaf 9)Package installation failed. Retrying...$(tput sgr0)"
         sleep 3
     done
