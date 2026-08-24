@@ -40,11 +40,13 @@ flatpak_install_script() {
 
     while ! ping -q -c 1 -W 1 archlinux.org > /dev/null 2>&1; do
         echo "Waiting for internet connection..."
-        sleep 10
+        sleep 5
     done
 
+    flatpak remote-add --if-not-exists --user flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
     while true; do
-        flatpak install flathub --system --assumeyes --noninteractive $packages && break
+        flatpak install flathub --user --assumeyes --noninteractive $packages && break
         echo "$(tput setaf 9)Package installation failed. Retrying...$(tput sgr0)"
         sleep 3
     done
