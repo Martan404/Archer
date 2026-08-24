@@ -8,6 +8,7 @@ com.spotify.Client
 net.davidotek.pupgui2
 io.github.Faugus.faugus-launcher
 org.gtk.Gtk3theme.Breeze
+org.kde.kcalc
 org.kde.kdenlive
 org.kde.krita
 org.qbittorrent.qBittorrent
@@ -21,6 +22,7 @@ avahi
 networkmanager
 networkmanager-openvpn
 wireless-regdb
+nfs-utils
 nss-mdns
 bluez
 cups
