@@ -1,6 +1,7 @@
 #!/bin/bash
 #
 # Archive - Unused
+# Needs fix for kio-snapshot https://invent.kde.org/system/kio-snapshot
 #
 if [[ $snapshot_layout == "snapper" ]]; then
 	echo -e "-------------------------------------------------------------------------"
