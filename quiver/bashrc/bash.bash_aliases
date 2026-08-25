@@ -14,7 +14,8 @@ alias archer-help='archer-help'
 alias update='topgrade -y || (paru -Sy --needed --noconfirm archlinux-keyring; paru -Syu; flatpak update; pipx upgrade-all)'
 alias logout="shopt -q login_shell && logout || qdbus org.kde.ksmserver /KSMServer logout 0 0 1"
 alias sudo-password-unlock='faillock --user $USER --reset'
-alias pacman-refresh-mirrors='sudo reflector --age 48 --country "$(curl ifconfig.co/country-iso)" --fastest 5 --latest 20 --sort rate --save /etc/pacman.d/mirrorlist'
+alias pacman-refresh-mirrors='mirror-refresh'
+alias pacman-mirror-refresh='mirror-refresh'
 alias pacman-clean-orphan-packages='sudo pacman -Rns $(pacman -Qtdq)'
 alias paru-cache-cleanup='paru -Scd'
 
