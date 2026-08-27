@@ -30,9 +30,7 @@ mount -t btrfs "/dev/disk/by-uuid/$root_uuid" /mnt
 
 if [[ -e "/mnt/@prev-root" ]]; then
     echo -e "Removing previous root"
-    [[ -e "/mnt/@prev-root/var/lib/portables" ]] && btrfs subvolume delete /mnt/@prev-root/var/lib/portables >/dev/null 2>&1
-    [[ -e "/mnt/@prev-root/var/lib/machines" ]] && btrfs subvolume delete /mnt/@prev-root/var/lib/machines >/dev/null 2>&1
-    btrfs subvolume delete /mnt/@prev-root
+    btrfs subvolume delete --recursive /mnt/@prev-root
     rm -rf /mnt/@prev-root
 fi
 
@@ -53,9 +51,7 @@ if [[ -e "/mnt/@/var/lib/pacman/db.lck" ]]; then
 fi
 
 echo -e "Removing previous root"
-[[ -e "/mnt/@prev-root/var/lib/portables" ]] && btrfs subvolume delete /mnt/@prev-root/var/lib/portables >/dev/null 2>&1
-[[ -e "/mnt/@prev-root/var/lib/machines" ]] && btrfs subvolume delete /mnt/@prev-root/var/lib/machines >/dev/null 2>&1
-btrfs subvolume delete /mnt/@prev-root 
+btrfs subvolume delete --recursive /mnt/@prev-root
 rm -rf /mnt/@prev-root
 
 echo -e "Unmounting /mnt"
