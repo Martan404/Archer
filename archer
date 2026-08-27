@@ -489,6 +489,7 @@ setup_drive() {
         echo -e "Formatting root partition"
 		mkfs.btrfs -f -L "$hostname" "$root_partition"
 	fi
+
 	echo -e "-------------------------------------------------------------------------"
 	echo -e "Mounting root and creating btrfs subvolumes"
 
@@ -500,6 +501,8 @@ setup_drive() {
 	btrfs subvolume create /mnt/@log # Log files
 	btrfs subvolume create /mnt/@flatpak # Flatpak files
 	btrfs subvolume create /mnt/@libvirt # Libvirt files
+    btrfs subvolume create /mnt/@machines #SystemD files
+    btrfs subvolume create /mnt/@portables #SystemD files
 	btrfs subvolume create /mnt/@tmp # Temp files
 	btrfs subvolume create /mnt/@cache # Cache files
 	btrfs subvolume create /mnt/@spool # Spool data
@@ -521,6 +524,8 @@ setup_drive() {
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@log "$root_partition" /mnt/var/log
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@flatpak "$root_partition" /mnt/var/lib/flatpak
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@libvirt "$root_partition" /mnt/var/lib/libvirt
+    mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@machines "$root_partition" /mnt/var/lib/machines
+    mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@portables "$root_partition" /mnt/var/lib/portables
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@tmp "$root_partition" /mnt/var/tmp
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@cache "$root_partition" /mnt/var/cache
 	mount --mkdir -t btrfs -o ssd,noatime,compress=zstd,space_cache=v2,subvol=@spool "$root_partition" /mnt/var/spool
